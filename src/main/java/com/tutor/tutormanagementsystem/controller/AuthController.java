@@ -1,5 +1,6 @@
 package com.tutor.tutormanagementsystem.controller;
 
+import com.tutor.tutormanagementsystem.dto.AuthResponse;
 import com.tutor.tutormanagementsystem.dto.LoginRequest;
 import com.tutor.tutormanagementsystem.model.User;
 import com.tutor.tutormanagementsystem.service.UserService;
@@ -18,15 +19,29 @@ public class AuthController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody User user) {
+    public ResponseEntity<AuthResponse> register(@RequestBody User user) {
         User newUser = userService.registerUser(user);
-        return ResponseEntity.ok(newUser);
+        AuthResponse response = new AuthResponse(
+                newUser.getId(),
+                newUser.getEmail(),
+                newUser.getFullName(),
+                newUser.getRole(),
+                null
+        );
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<User> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest loginRequest) {
 
         User user = userService.loginUser(loginRequest.getEmail(), loginRequest.getPassword());
-        return ResponseEntity.ok(user);
+        AuthResponse response = new AuthResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getFullName(),
+                user.getRole(),
+                null
+        );
+        return ResponseEntity.ok(response);
     }
 }
