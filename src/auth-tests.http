@@ -9,6 +9,17 @@ Content-Type: application/json
   "role": "STUDENT"
 }
 
+### Test User Registration
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Moshe Levy",
+  "email": "Moshe@gmail.com",
+  "password": "password123",
+  "role": "TEACHER"
+}
+
 ### Test User Login
 POST http://localhost:8080/api/auth/login
 Content-Type: application/json
