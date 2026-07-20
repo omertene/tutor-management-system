@@ -1,7 +1,9 @@
 package com.tutor.tutormanagementsystem.service;
 
+import com.tutor.tutormanagementsystem.dto.RegisterRequest;
 import com.tutor.tutormanagementsystem.exception.BadCredentialsException;
 import com.tutor.tutormanagementsystem.exception.EmailAlreadyExistsException;
+import com.tutor.tutormanagementsystem.model.Role;
 import com.tutor.tutormanagementsystem.model.User;
 import com.tutor.tutormanagementsystem.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,14 +19,20 @@ public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public User registerUser(User user) {
+    public User registerUser(RegisterRequest registerRequest) {
 
-        if (getUserByEmail(user.getEmail()).isPresent()) {
+        if (getUserByEmail(registerRequest.getEmail()).isPresent()) {
             throw new EmailAlreadyExistsException("Error: Email already exists");
         }
 
+        User user = new User();
+        user.setEmail(registerRequest.getEmail());
+        user.setFullName(registerRequest.getFullName());
+
         String hashedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashedPassword);
+
+        user.setRole(Role.STUDENT);
 
         return userRepository.save(user);
     }
