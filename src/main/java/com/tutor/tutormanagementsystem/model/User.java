@@ -17,7 +17,7 @@ import java.util.UUID;
 public class User {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(nullable = false, unique = true) // לבדוק במקרה של הורה עם אותו מייל לשני תלמידים
