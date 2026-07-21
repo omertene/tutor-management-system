@@ -10,12 +10,12 @@ import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "availability_windows")
+@Table(name = "availabilities")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AvailabilityWindow {
+public class Availability {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
