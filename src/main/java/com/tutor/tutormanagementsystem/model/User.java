@@ -20,7 +20,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, unique = true) // לבדוק במקרה של הורה עם אותו מייל לשני תלמידים
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false)

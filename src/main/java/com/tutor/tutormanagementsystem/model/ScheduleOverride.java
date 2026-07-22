@@ -1,21 +1,19 @@
-
 package com.tutor.tutormanagementsystem.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "availability_override")
+@Table(name = "schedule_override")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AvailabilityOverride {
+public class ScheduleOverride {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -33,9 +31,5 @@ public class AvailabilityOverride {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OverrideType overrideType;
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
 
 }
