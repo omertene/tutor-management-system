@@ -39,9 +39,6 @@ public class User {
 
     private String phone;
 
-    @Column(columnDefinition = "TEXT") // teacher's notes about the student, optional
-    private String notes;
-
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

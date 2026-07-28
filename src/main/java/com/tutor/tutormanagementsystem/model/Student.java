@@ -40,4 +40,7 @@ public class Student {
     // not always a real grade (could be prep year, university, etc.), so keeping it as free text
     // maybe i'll change to enum later
     private String educationLevel;
+
+    @Column(columnDefinition = "TEXT") // teacher's notes about the student, optional
+    private String notes;
 }
