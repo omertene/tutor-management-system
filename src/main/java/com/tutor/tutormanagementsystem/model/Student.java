@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 // this holds the extra info that only students need (not the teacher)
-// the id/user fields link this back to the User row that has the login info
+// the id and user fields link this back to the User row that has the login info
 @Entity
 @Table(name = "students")
 @Data
