@@ -2,6 +2,7 @@ package com.tutor.tutormanagementsystem.service;
 
 import com.tutor.tutormanagementsystem.dto.CreateStudentRequest;
 import com.tutor.tutormanagementsystem.dto.StudentResponse;
+import com.tutor.tutormanagementsystem.exception.DuplicateEmailException;
 import com.tutor.tutormanagementsystem.model.Role;
 import com.tutor.tutormanagementsystem.model.Student;
 import com.tutor.tutormanagementsystem.model.User;
@@ -23,9 +24,8 @@ public class StudentService {
     @Transactional
     public StudentResponse createStudent(CreateStudentRequest request) {
 
-        // TODO: error handling later
         if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new RuntimeException("email already registered");
+            throw new DuplicateEmailException("email already registered");
         }
 
         User user = User.builder()
