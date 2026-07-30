@@ -1,0 +1,13 @@
+POST http://localhost:8080/teacher/register
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0ZWFjaGVyQGV4YW1wbGUuY29tIiwidXNlcklkIjoxLCJyb2xlIjoiVEVBQ0hFUiIsImlhdCI6MTc4NTQzMDE3NiwiZXhwIjoxNzg1NTE2NTc2fQ.dQvRdWzBOOAMITOeM8e9UXGCuzfqIYA4hPB0Ly6M81HC4kG6FcykdUG_Yp0hyPBFWcptuRdklxuAOG3lXzVVGQ
+Content-Type: application/json
+
+{
+  "email": "student1@example.com",
+  "password": "temp123",
+  "firstName": "Avi",
+  "lastName": "Cohen",
+  "phone": "0501234567",
+  "hourlyRate": 120,
+  "educationLevel": "11th grade"
+}
