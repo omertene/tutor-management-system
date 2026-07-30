@@ -24,10 +24,12 @@ public class StudentService {
     @Transactional
     public StudentResponse createStudent(CreateStudentRequest request) {
 
+        // checks user doesn't exist already
         if (userRepository.findByEmail(request.email()).isPresent()) {
             throw new DuplicateEmailException("email already registered");
         }
 
+        // builds new user with the information received
         User user = User.builder()
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
@@ -40,6 +42,7 @@ public class StudentService {
         // user needs its id generated before Student can borrow it via @MapsId
         userRepository.save(user);
 
+        // adds the student specific fields
         Student student = Student.builder()
                 .user(user)
                 .hourlyRate(request.hourlyRate())
