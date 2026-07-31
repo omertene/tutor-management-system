@@ -9,6 +9,7 @@ public record StudentResponse(
         String lastName,
         String phone,
         BigDecimal hourlyRate,
-        String educationLevel
+        String educationLevel,
+        String notes
 ) {
 }

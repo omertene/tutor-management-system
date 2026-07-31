@@ -47,6 +47,7 @@ public class StudentService {
                 .user(user)
                 .hourlyRate(request.hourlyRate())
                 .educationLevel(request.educationLevel())
+                .notes(request.notes())
                 .build();
 
         studentRepository.save(student);
@@ -58,7 +59,8 @@ public class StudentService {
                 user.getLastName(),
                 user.getPhone(),
                 student.getHourlyRate(),
-                student.getEducationLevel()
+                student.getEducationLevel(),
+                student.getNotes()
         );
     }
 }

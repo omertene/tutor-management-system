@@ -9,6 +9,7 @@ public record CreateStudentRequest(
         String lastName,
         String phone,
         BigDecimal hourlyRate,
-        String educationLevel
+        String educationLevel,
+        String notes
 ) {
 }
