@@ -4,13 +4,14 @@ import TeacherDashboard from "./pages/TeacherDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SubjectsPage from "./pages/SubjectsPage";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        
+
         <Route
           path="/teacher"
           element={
@@ -34,6 +35,15 @@ function App() {
           element={
             <ProtectedRoute requiredRole="TEACHER">
               <RegisterPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/teacher/subjects"
+          element={
+            <ProtectedRoute requiredRole="TEACHER">
+              <SubjectsPage />
             </ProtectedRoute>
           }
         />

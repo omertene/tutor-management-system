@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import LogoutButton from "../components/LogoutButton";
 
@@ -15,28 +15,26 @@ function TeacherDashboard() {
   const [students, setStudents] = useState<Student[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    async function loadStudents() {
-      const token = localStorage.getItem("token");
+  async function handleLoadStudents() {
+    setErrorMessage("");
 
-      const response = await fetch(`${API_BASE_URL}/teacher/students`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const token = localStorage.getItem("token");
 
-      if (!response.ok) {
-        setErrorMessage("Failed to load students");
-        return;
-      }
+    const response = await fetch(`${API_BASE_URL}/teacher/students`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      const data = await response.json();
-
-      setStudents(data);
+    if (!response.ok) {
+      setErrorMessage("Failed to load students");
+      return;
     }
 
-    loadStudents();
-  }, []);
+    const data = await response.json();
+
+    setStudents(data);
+  }
 
   return (
     <div>
@@ -45,8 +43,13 @@ function TeacherDashboard() {
       <p>Welcome! Here you will see your upcoming lessons and students.</p>
 
       <Link to="/teacher/register">Add student</Link>
+      <br/>
+      <Link to="/teacher/subjects">subject screen</Link>
+
 
       <h2>Your Students:</h2>
+
+      <button onClick={handleLoadStudents}>show all students</button>
 
       <p>{errorMessage}</p>
 
