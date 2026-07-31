@@ -13,6 +13,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class StudentService {
@@ -62,5 +64,20 @@ public class StudentService {
                 student.getEducationLevel(),
                 student.getNotes()
         );
+    }
+
+    public List<StudentResponse> getAllStudents() {
+        return studentRepository.findAll().stream()
+                .map(student -> new StudentResponse(
+                        student.getUser().getId(),
+                        student.getUser().getEmail(),
+                        student.getUser().getFirstName(),
+                        student.getUser().getLastName(),
+                        student.getUser().getPhone(),
+                        student.getHourlyRate(),
+                        student.getEducationLevel(),
+                        student.getNotes()
+                ))
+                .toList();
     }
 }
