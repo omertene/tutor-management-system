@@ -1,0 +1,9 @@
+package com.tutor.tutormanagementsystem.dto;
+
+import com.tutor.tutormanagementsystem.model.OverrideType;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+public record ScheduleOverrideRequest(LocalDate date, LocalTime startTime, LocalTime endTime, OverrideType type, String note) {
+}

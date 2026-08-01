@@ -6,6 +6,7 @@ import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SubjectsPage from "./pages/SubjectsPage";
 import ScheduleRulePage from "./pages/ScheduleRulePage"
+import ScheduleOverridePage from "./pages/ScheduleOverridePage"
 
 function App() {
   return (
@@ -54,6 +55,15 @@ function App() {
           element={
             <ProtectedRoute requiredRole="TEACHER">
               <ScheduleRulePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/teacher/schedule-overrides"
+          element={
+            <ProtectedRoute requiredRole="TEACHER">
+              <ScheduleOverridePage />
             </ProtectedRoute>
           }
         />

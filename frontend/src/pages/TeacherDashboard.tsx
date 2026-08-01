@@ -47,6 +47,8 @@ function TeacherDashboard() {
       <Link to="/teacher/subjects">subject screen</Link>
       <br/>
       <Link to="/teacher/schedule-rules">schedule rules screen</Link>
+      <br/>
+      <Link to="/teacher/schedule-overrides">schedule overrides screen</Link>
 
 
       <h2>Your Students:</h2>
