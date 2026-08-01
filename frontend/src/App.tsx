@@ -5,6 +5,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SubjectsPage from "./pages/SubjectsPage";
+import ScheduleRulePage from "./pages/ScheduleRulePage"
 
 function App() {
   return (
@@ -44,6 +45,15 @@ function App() {
           element={
             <ProtectedRoute requiredRole="TEACHER">
               <SubjectsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/teacher/schedule-rules"
+          element={
+            <ProtectedRoute requiredRole="TEACHER">
+              <ScheduleRulePage />
             </ProtectedRoute>
           }
         />

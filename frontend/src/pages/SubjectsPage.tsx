@@ -1,4 +1,5 @@
 import { useState } from "react";
+import LogoutButton from "../components/LogoutButton";
 
 const API_BASE_URL = "http://localhost:8080";
 
@@ -78,6 +79,10 @@ function SubjectsPage() {
       <button onClick={handleAddSubjects}>add subject</button>
 
       {errorMessage && <p>{errorMessage}</p>}
+
+      <br />
+
+      <LogoutButton />
     </div>
   );
 }

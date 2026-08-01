@@ -2,6 +2,7 @@ package com.tutor.tutormanagementsystem.service;
 
 import com.tutor.tutormanagementsystem.dto.ScheduleRuleRequest;
 import com.tutor.tutormanagementsystem.dto.ScheduleRuleResponse;
+import com.tutor.tutormanagementsystem.exception.InvalidTimeRangeException;
 import com.tutor.tutormanagementsystem.exception.ScheduleConflictException;
 import com.tutor.tutormanagementsystem.model.ScheduleRule;
 import com.tutor.tutormanagementsystem.repository.ScheduleRuleRepository;
@@ -19,6 +20,9 @@ public class ScheduleRuleService {
 
     public ScheduleRuleResponse createScheduleRule(ScheduleRuleRequest request) {
 
+        if (request.startTime().isAfter(request.endTime())) {
+            throw new InvalidTimeRangeException("Start time must be before end time");
+        }
         List<ScheduleRule> overlapping = scheduleRuleRepository
                 .findAllByDayOfWeekAndStartTimeLessThanAndEndTimeGreaterThan(
                         request.dayOfWeek(), request.endTime(), request.startTime());

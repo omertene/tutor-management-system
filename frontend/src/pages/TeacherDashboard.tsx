@@ -45,6 +45,8 @@ function TeacherDashboard() {
       <Link to="/teacher/register">Add student</Link>
       <br/>
       <Link to="/teacher/subjects">subject screen</Link>
+      <br/>
+      <Link to="/teacher/schedule-rules">schedule rules screen</Link>
 
 
       <h2>Your Students:</h2>
