@@ -4,6 +4,7 @@ package com.tutor.tutormanagementsystem.service;
 import com.tutor.tutormanagementsystem.dto.SubjectRequest;
 import com.tutor.tutormanagementsystem.dto.SubjectResponse;
 import com.tutor.tutormanagementsystem.exception.DuplicateSubjectException;
+import com.tutor.tutormanagementsystem.exception.SubjectNotFoundException;
 import com.tutor.tutormanagementsystem.model.Subject;
 import com.tutor.tutormanagementsystem.repository.SubjectRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,5 +31,12 @@ public class SubjectService {
 
     public List<SubjectResponse> getAllSubjects() {
         return subjectRepository.findAll().stream().map(subject -> new SubjectResponse(subject.getId(), subject.getName())).toList();
+    }
+
+    // returns the raw entity for other services (e.g. LessonService) that need
+    // to work with the Subject entity directly instead of its DTO projection
+    public Subject getSubjectEntity(Long subjectId) {
+        return subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new SubjectNotFoundException("Subject not found"));
     }
 }

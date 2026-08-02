@@ -3,6 +3,7 @@ package com.tutor.tutormanagementsystem.service;
 import com.tutor.tutormanagementsystem.dto.CreateStudentRequest;
 import com.tutor.tutormanagementsystem.dto.StudentResponse;
 import com.tutor.tutormanagementsystem.exception.DuplicateEmailException;
+import com.tutor.tutormanagementsystem.exception.StudentNotFoundException;
 import com.tutor.tutormanagementsystem.model.Role;
 import com.tutor.tutormanagementsystem.model.Student;
 import com.tutor.tutormanagementsystem.model.User;
@@ -79,5 +80,12 @@ public class StudentService {
                         student.getNotes()
                 ))
                 .toList();
+    }
+
+    // returns the raw entity for other services (e.g. LessonService) that need
+    // to work with the Student aggregate directly instead of its DTO projection
+    public Student getStudentEntity(Long studentId) {
+        return studentRepository.findById(studentId)
+                .orElseThrow(() -> new StudentNotFoundException("Student not found"));
     }
 }
