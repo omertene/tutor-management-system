@@ -37,7 +37,7 @@ public class User {
     @Column(nullable = false)
     private String lastName;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String phone;
 
     @CreationTimestamp

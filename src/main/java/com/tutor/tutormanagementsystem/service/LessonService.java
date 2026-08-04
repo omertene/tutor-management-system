@@ -9,18 +9,15 @@ import com.tutor.tutormanagementsystem.exception.LessonNotFoundException;
 import com.tutor.tutormanagementsystem.exception.SlotNotAvailableException;
 import com.tutor.tutormanagementsystem.model.Lesson;
 import com.tutor.tutormanagementsystem.model.LessonStatus;
-import com.tutor.tutormanagementsystem.model.OverrideType;
 import com.tutor.tutormanagementsystem.model.Role;
-import com.tutor.tutormanagementsystem.model.ScheduleOverride;
 import com.tutor.tutormanagementsystem.model.Student;
 import com.tutor.tutormanagementsystem.model.Subject;
 import com.tutor.tutormanagementsystem.repository.LessonRepository;
-import com.tutor.tutormanagementsystem.repository.ScheduleOverrideRepository;
-import com.tutor.tutormanagementsystem.repository.ScheduleRuleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -32,10 +29,13 @@ public class LessonService {
     private final LessonRepository lessonRepository;
     private final StudentService studentService;
     private final SubjectService subjectService;
-    private final ScheduleRuleRepository scheduleRuleRepository;
-    private final ScheduleOverrideRepository scheduleOverrideRepository;
+    private final AvailabilityService availabilityService;
 
     // teacher books a lesson on behalf of a given student
+    // isolation is pinned explicitly rather than relying on Postgres' default - the locking
+    // strategy below depends on READ_COMMITTED semantics (each statement re-reads committed
+    // data), so a future change to the datasource's default isolation shouldn't silently break it
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public LessonResponse createLessonForStudent(LessonRequest request) {
         Student student = studentService.getStudentEntity(request.studentId());
 
@@ -43,12 +43,15 @@ public class LessonService {
     }
 
     // student books a lesson for themselves
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public LessonResponse createLessonAsStudent(Long studentId, StudentLessonRequest request) {
         Student student = studentService.getStudentEntity(studentId);
 
         return createLesson(student, request.subjectId(), request.date(), request.startTime(), request.endTime());
     }
 
+    // must run inside the @Transactional scope of the two public methods above -
+    // acquireDateLock's effect only lasts for the surrounding transaction
     private LessonResponse createLesson(Student student, Long subjectId, LocalDate date, LocalTime startTime, LocalTime endTime) {
 
         Subject subject = subjectService.getSubjectEntity(subjectId);
@@ -57,7 +60,11 @@ public class LessonService {
             throw new InvalidTimeRangeException("Start time must be before end time");
         }
 
-        if (!isTimeAvailable(date, startTime, endTime)) {
+        // serializes concurrent booking attempts for this date so the availability/conflict
+        // checks below and the insert further down can't race - see LessonRepository.acquireDateLock
+        lessonRepository.acquireDateLock(date.toEpochDay());
+
+        if (!availabilityService.isTimeAvailable(date, startTime, endTime)) {
             throw new SlotNotAvailableException("This time is not available");
         }
 
@@ -82,27 +89,6 @@ public class LessonService {
         lessonRepository.save(lesson);
 
         return toResponse(lesson, true);
-    }
-
-    // checks the weekly rule for this day, minus any BLOCK override, plus any ADD override
-    private boolean isTimeAvailable(LocalDate date, LocalTime startTime, LocalTime endTime) {
-        DayOfWeek dayOfWeek = date.getDayOfWeek();
-
-        boolean coveredByRule = !scheduleRuleRepository
-                .findAllByDayOfWeekAndStartTimeLessThanAndEndTimeGreaterThan(dayOfWeek, endTime, startTime)
-                .isEmpty();
-
-        List<ScheduleOverride> overridesOnDate = scheduleOverrideRepository
-                .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThan(date, endTime, startTime);
-
-        boolean blocked = overridesOnDate.stream().anyMatch(o -> o.getType() == OverrideType.BLOCK);
-        boolean addedByOverride = overridesOnDate.stream().anyMatch(o -> o.getType() == OverrideType.ADD);
-
-        if (addedByOverride) {
-            return true;
-        }
-
-        return coveredByRule && !blocked;
     }
 
     // callerId/callerRole identify who is asking - a student may only cancel their own lesson,
