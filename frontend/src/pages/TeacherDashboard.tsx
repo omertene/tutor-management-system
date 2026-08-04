@@ -1,15 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import LogoutButton from "../components/LogoutButton";
+import type { Student } from "../types";
 
 const API_BASE_URL = "http://localhost:8080";
-
-type Student = {
-  id: number;
-  email: string;
-  firstName: string;
-  lastName: string;
-};
 
 function TeacherDashboard() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -49,6 +43,8 @@ function TeacherDashboard() {
       <Link to="/teacher/schedule-rules">schedule rules screen</Link>
       <br/>
       <Link to="/teacher/schedule-overrides">schedule overrides screen</Link>
+      <br/>
+      <Link to="/teacher/lessons">lessons screen</Link>
 
 
       <h2>Your Students:</h2>

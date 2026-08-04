@@ -1,12 +1,8 @@
 import { useState } from "react";
 import LogoutButton from "../components/LogoutButton";
+import type { Subject } from "../types";
 
 const API_BASE_URL = "http://localhost:8080";
-
-type Subject = {
-  id: number;
-  name: string;
-};
 
 function SubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
