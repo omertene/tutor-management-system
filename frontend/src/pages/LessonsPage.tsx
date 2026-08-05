@@ -156,6 +156,27 @@ function LessonsPage() {
         setLessons([...lessons, createdLesson]);
     }
 
+
+    async function handleCancleLesson(lessonId: number) {
+        setErrorMessage("");
+
+        const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            setErrorMessage(errorData.message || "Failed to cancle lesson");
+            return;
+        }
+
+        const canclledLesson = await response.json();
+        setLessons(lessons.map((lesson) => lesson.id == lessonId ? canclledLesson : lesson));
+    }
+
     return (
 
         <div>
@@ -234,6 +255,8 @@ function LessonsPage() {
                         {lesson.date} {lesson.startTime}-{lesson.endTime} —{" "}
                         {lesson.subjectName} — {lesson.studentFirstName} {lesson.studentLastName} —{" "}
                         {lesson.status}
+                        {" "}
+                        <button onClick={() => handleCancleLesson(lesson.id)}>cancel</button>
                     </li>
                 ))}
             </ul>
