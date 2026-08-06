@@ -1,0 +1,19 @@
+spring.application.name=tutor-backend
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/tutor_db2
+spring.datasource.username=postgres
+spring.datasource.password=changeme
+
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+
+# generate a real one with: openssl rand -base64 64
+jwt.secret=changeme
+
+# the one teacher account gets created automatically on startup if it doesn't exist yet
+teacher.seed.email=teacher@example.com
+teacher.seed.password=changeme
