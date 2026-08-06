@@ -32,10 +32,7 @@ public class LessonService {
     private final SubjectService subjectService;
     private final AvailabilityService availabilityService;
 
-    // teacher books a lesson on behalf of a given student
-    // isolation is pinned explicitly rather than relying on Postgres' default - the locking
-    // strategy below depends on READ_COMMITTED semantics (each statement re-reads committed
-    // data), so a future change to the datasource's default isolation shouldn't silently break it
+
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public LessonResponse createLessonForStudent(LessonRequest request) {
         Student student = studentService.getStudentEntity(request.studentId());
@@ -51,8 +48,7 @@ public class LessonService {
         return createLesson(student, request.subjectId(), request.date(), request.startTime(), request.endTime());
     }
 
-    // must run inside the @Transactional scope of the two public methods above -
-    // acquireDateLock's effect only lasts for the surrounding transaction
+
     private LessonResponse createLesson(Student student, Long subjectId, LocalDate date, LocalTime startTime, LocalTime endTime) {
 
         Subject subject = subjectService.getSubjectEntity(subjectId);
@@ -124,6 +120,12 @@ public class LessonService {
 
     public BigDecimal sumCompletedLessonPricesForStudent(Long studentId) {
         return lessonRepository.sumLessonPricesForStudentByStatus(studentId, LessonStatus.COMPLETED);
+    }
+
+
+    public Lesson getLessonEntity(Long lessonId) {
+        return lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
     }
 
     // includeNotes controls whether the teacher-only notes field is exposed

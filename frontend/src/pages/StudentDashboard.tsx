@@ -10,6 +10,8 @@ function StudentDashboard() {
       <Link to="/student/lessons">lessons screen</Link>
       <br />
       <Link to="/student/payments">payments screen</Link>
+      <br />
+      <Link to="/student/materials">materials screen</Link>
 
       <br />
       <LogoutButton />

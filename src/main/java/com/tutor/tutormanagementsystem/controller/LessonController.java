@@ -54,6 +54,13 @@ public class LessonController {
         return ResponseEntity.ok(lessonService.getLessonsForStudent(caller.id()));
     }
 
+    // teacher views a given student's lessons
+    @PreAuthorize("hasRole('TEACHER')")
+    @GetMapping("/teacher/students/{studentId}/lessons")
+    public ResponseEntity<List<LessonResponse>> getLessonsForStudentAsTeacher(@PathVariable Long studentId) {
+        return ResponseEntity.ok(lessonService.getLessonsForStudent(studentId));
+    }
+
     // both roles can cancel: LessonService enforces that a student may only cancel their own lesson
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     @DeleteMapping("/lessons/{id}")
