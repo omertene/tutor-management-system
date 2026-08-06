@@ -10,6 +10,7 @@ public record StudentResponse(
         String phone,
         BigDecimal hourlyRate,
         String educationLevel,
-        String notes
+        String notes,
+        boolean active
 ) {
 }

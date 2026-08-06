@@ -56,16 +56,7 @@ public class StudentService {
 
         studentRepository.save(student);
 
-        return new StudentResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getPhone(),
-                student.getHourlyRate(),
-                student.getEducationLevel(),
-                student.getNotes()
-        );
+        return toResponse(student);
     }
 
 
@@ -84,31 +75,30 @@ public class StudentService {
         student.setNotes(request.notes());
         studentRepository.save(student);
 
-        return new StudentResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getPhone(),
-                student.getHourlyRate(),
-                student.getEducationLevel(),
-                student.getNotes()
-        );
+        return toResponse(student);
     }
 
+
     public List<StudentResponse> getAllStudents() {
-        return studentRepository.findAll().stream()
-                .map(student -> new StudentResponse(
-                        student.getUser().getId(),
-                        student.getUser().getEmail(),
-                        student.getUser().getFirstName(),
-                        student.getUser().getLastName(),
-                        student.getUser().getPhone(),
-                        student.getHourlyRate(),
-                        student.getEducationLevel(),
-                        student.getNotes()
-                ))
+        return studentRepository.findAllByActive(true).stream()
+                .map(this::toResponse)
                 .toList();
+    }
+
+    public List<StudentResponse> getAllStudentsIncludingInactive() {
+        return studentRepository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+
+    @Transactional
+    public StudentResponse setStudentActive(Long studentId, boolean active) {
+        Student student = getStudentEntity(studentId);
+        student.setActive(active);
+        studentRepository.save(student);
+
+        return toResponse(student);
     }
 
     // returns the raw entity for other services (e.g. LessonService) that need
@@ -120,5 +110,20 @@ public class StudentService {
 
     public List<Student> getAllStudentEntities() {
         return studentRepository.findAll();
+    }
+
+    private StudentResponse toResponse(Student student) {
+        User user = student.getUser();
+        return new StudentResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getPhone(),
+                student.getHourlyRate(),
+                student.getEducationLevel(),
+                student.getNotes(),
+                student.isActive()
+        );
     }
 }

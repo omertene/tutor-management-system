@@ -39,6 +39,53 @@ function TeacherDashboard() {
     setStudents(data);
   }
 
+
+  async function handleLoadAllStudentsIncludingInactive() {
+    setErrorMessage("");
+
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${API_BASE_URL}/teacher/students/all`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      setErrorMessage("Failed to load students");
+      return;
+    }
+
+    const data = await response.json();
+
+    setStudents(data);
+  }
+
+
+  async function handleToggleActive(student: Student) {
+    setErrorMessage("");
+
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${API_BASE_URL}/teacher/students/${student.id}/active`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ active: !student.active }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      setErrorMessage(errorData.message || "Failed to update student status");
+      return;
+    }
+
+    const updatedStudent = await response.json();
+    setStudents(students.map((s) => s.id === student.id ? updatedStudent : s));
+  }
+
   // opens the edit form for a student, pre-filled with their current values
   function handleStartEdit(student: Student) {
     setEditingStudentId(student.id);
@@ -110,7 +157,9 @@ function TeacherDashboard() {
 
       <h2>Your Students:</h2>
 
-      <button onClick={handleLoadStudents}>show all students</button>
+      <button onClick={handleLoadStudents}>show active students</button>
+      {" "}
+      <button onClick={handleLoadAllStudentsIncludingInactive}>show all (including inactive)</button>
 
       <p>{errorMessage}</p>
 
@@ -132,7 +181,13 @@ function TeacherDashboard() {
               <>
                 {student.firstName} {student.lastName} - {student.email} - {student.phone} - ₪{student.hourlyRate}/hr
                 {" "}
+                {student.active ? "(active)" : "(inactive)"}
+                {" "}
                 <button onClick={() => handleStartEdit(student)}>edit</button>
+                {" "}
+                <button onClick={() => handleToggleActive(student)}>
+                  {student.active ? "deactivate" : "reactivate"}
+                </button>
               </>
             )}
           </li>

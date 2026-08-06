@@ -43,4 +43,9 @@ public class Student {
 
     @Column(columnDefinition = "TEXT") // teacher's notes about the student, optional
     private String notes;
+
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean active = true;
 }

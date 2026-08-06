@@ -12,4 +12,5 @@ export type Student = {
     hourlyRate: number;
     educationLevel: string | null;
     notes: string | null;
+    active: boolean;
 }
