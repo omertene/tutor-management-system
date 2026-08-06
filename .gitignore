@@ -4,6 +4,9 @@ target/
 
 # real secrets - .env.example is the template that IS committed
 .env
+
+# local scratch file for manual API testing - not meant to be shared/committed
+src/request.http
 !**/src/main/**/target/
 !**/src/test/**/target/
 
