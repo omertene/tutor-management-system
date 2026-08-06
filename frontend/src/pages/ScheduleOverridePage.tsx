@@ -73,6 +73,28 @@ function ScheduleOverridePage() {
         setNote("");
     }
 
+    // undoes a mistaken override - DELETE /teacher/schedule-overrides/{id}
+    async function handleDeleteOverride(overrideId: number) {
+        setErrorMessage("");
+
+        const token = localStorage.getItem("token");
+
+        const response = await fetch(`${API_BASE_URL}/teacher/schedule-overrides/${overrideId}`, {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            setErrorMessage(errorData.message || "Failed to delete override");
+            return;
+        }
+
+        setScheduleOverrides(scheduleOverrides.filter((override) => override.id !== overrideId));
+    }
+
     return (
         <div>
             <h1>Hello, here are your schedule overrides</h1>
@@ -82,6 +104,8 @@ function ScheduleOverridePage() {
                 {scheduleOverrides.map((override) => (
                     <li key={override.id}>
                         {override.id} {override.date} {override.startTime} {override.endTime} {override.type} {override.note}
+                        {" "}
+                        <button onClick={() => handleDeleteOverride(override.id)}>delete</button>
                     </li>
                 ))}
             </ul>

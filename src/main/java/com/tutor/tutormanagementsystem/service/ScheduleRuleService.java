@@ -4,6 +4,7 @@ import com.tutor.tutormanagementsystem.dto.ScheduleRuleRequest;
 import com.tutor.tutormanagementsystem.dto.ScheduleRuleResponse;
 import com.tutor.tutormanagementsystem.exception.InvalidTimeRangeException;
 import com.tutor.tutormanagementsystem.exception.ScheduleConflictException;
+import com.tutor.tutormanagementsystem.exception.ScheduleRuleNotFoundException;
 import com.tutor.tutormanagementsystem.model.ScheduleRule;
 import com.tutor.tutormanagementsystem.repository.ScheduleRuleRepository;
 import lombok.RequiredArgsConstructor;
@@ -50,5 +51,15 @@ public class ScheduleRuleService {
         return scheduleRuleRepository.findAllByDayOfWeek(day).stream()
                 .map(rule -> new ScheduleRuleResponse(rule.getId(), rule.getDayOfWeek(), rule.getStartTime(), rule.getEndTime()))
                 .toList();
+    }
+
+    // undoes a mistaken or outdated recurring availability rule. nothing else
+    // references a ScheduleRule by FK, so this is a plain delete, no guard needed
+    public void deleteScheduleRule(Long ruleId) {
+        if (!scheduleRuleRepository.existsById(ruleId)) {
+            throw new ScheduleRuleNotFoundException("Schedule rule not found");
+        }
+
+        scheduleRuleRepository.deleteById(ruleId);
     }
 }

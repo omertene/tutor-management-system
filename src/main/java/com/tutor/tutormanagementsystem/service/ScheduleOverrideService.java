@@ -5,6 +5,7 @@ import com.tutor.tutormanagementsystem.dto.ScheduleOverrideResponse;
 import com.tutor.tutormanagementsystem.exception.InvalidTimeRangeException;
 import com.tutor.tutormanagementsystem.exception.PastDateException;
 import com.tutor.tutormanagementsystem.exception.ScheduleConflictException;
+import com.tutor.tutormanagementsystem.exception.ScheduleOverrideNotFoundException;
 import com.tutor.tutormanagementsystem.model.ScheduleOverride;
 import com.tutor.tutormanagementsystem.repository.ScheduleOverrideRepository;
 import lombok.RequiredArgsConstructor;
@@ -64,5 +65,15 @@ public class ScheduleOverrideService {
                 .map(o -> new ScheduleOverrideResponse(o.getId(), o.getDate(), o.getStartTime(),
                         o.getEndTime(), o.getType(), o.getNote()))
                 .toList();
+    }
+
+    // undoes a mistaken override (e.g. blocked the wrong day). nothing else
+    // references a ScheduleOverride by FK, so this is a plain delete, no guard needed
+    public void deleteScheduleOverride(Long overrideId) {
+        if (!scheduleOverrideRepository.existsById(overrideId)) {
+            throw new ScheduleOverrideNotFoundException("Schedule override not found");
+        }
+
+        scheduleOverrideRepository.deleteById(overrideId);
     }
 }

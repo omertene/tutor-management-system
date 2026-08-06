@@ -27,4 +27,11 @@ public class ScheduleOverrideController {
     public ResponseEntity<List<ScheduleOverrideResponse>> getAllScheduleOverrides() {
         return ResponseEntity.ok(scheduleOverrideService.getAllScheduleOverrides());
     }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteScheduleOverride(@PathVariable("id") Long overrideId) {
+        scheduleOverrideService.deleteScheduleOverride(overrideId);
+        return ResponseEntity.noContent().build();
+    }
 }

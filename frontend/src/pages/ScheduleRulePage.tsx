@@ -68,6 +68,28 @@ function ScheduleRulePage() {
         setEndTime("");
     }
 
+    // undoes a mistaken or outdated rule - DELETE /teacher/schedule-rules/{id}
+    async function handleDeleteRule(ruleId: number) {
+        setErrorMessage("");
+
+        const token = localStorage.getItem("token");
+
+        const response = await fetch(`${API_BASE_URL}/teacher/schedule-rules/${ruleId}`, {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            setErrorMessage(errorData.message || "Failed to delete rule");
+            return;
+        }
+
+        setScheduleRules(scheduleRules.filter((rule) => rule.id !== ruleId));
+    }
+
 
     return (
         <div>
@@ -79,6 +101,8 @@ function ScheduleRulePage() {
                     <li key={scheduleRule.id}>
                         {scheduleRule.id} {scheduleRule.dayOfWeek}
                         {scheduleRule.startTime} {scheduleRule.endTime}
+                        {" "}
+                        <button onClick={() => handleDeleteRule(scheduleRule.id)}>delete</button>
                     </li>
                 ))}
             </ul>

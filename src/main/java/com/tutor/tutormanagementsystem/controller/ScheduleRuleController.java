@@ -27,4 +27,11 @@ public class ScheduleRuleController {
     public ResponseEntity<List<ScheduleRuleResponse>> getAllScheduleRules() {
         return ResponseEntity.ok(scheduleRuleService.getAllScheduleRules());
     }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteScheduleRule(@PathVariable("id") Long ruleId) {
+        scheduleRuleService.deleteScheduleRule(ruleId);
+        return ResponseEntity.noContent().build();
+    }
 }

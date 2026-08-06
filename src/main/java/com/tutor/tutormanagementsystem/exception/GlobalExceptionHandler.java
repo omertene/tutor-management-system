@@ -106,4 +106,16 @@ public class GlobalExceptionHandler {
         ErrorResponse body = new ErrorResponse(ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
+
+    @ExceptionHandler(ScheduleRuleNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleScheduleRuleNotFound(ScheduleRuleNotFoundException ex) {
+        ErrorResponse body = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+    }
+
+    @ExceptionHandler(ScheduleOverrideNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleScheduleOverrideNotFound(ScheduleOverrideNotFoundException ex) {
+        ErrorResponse body = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+    }
 }
