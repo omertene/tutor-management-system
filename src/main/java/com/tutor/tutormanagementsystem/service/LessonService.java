@@ -3,6 +3,7 @@ package com.tutor.tutormanagementsystem.service;
 import com.tutor.tutormanagementsystem.dto.LessonRequest;
 import com.tutor.tutormanagementsystem.dto.LessonResponse;
 import com.tutor.tutormanagementsystem.dto.StudentLessonRequest;
+import com.tutor.tutormanagementsystem.exception.InvalidLessonStateException;
 import com.tutor.tutormanagementsystem.exception.InvalidTimeRangeException;
 import com.tutor.tutormanagementsystem.exception.LessonAccessDeniedException;
 import com.tutor.tutormanagementsystem.exception.LessonNotFoundException;
@@ -103,6 +104,21 @@ public class LessonService {
         lessonRepository.save(lesson);
 
         return toResponse(lesson, callerRole == Role.TEACHER);
+    }
+
+
+    public LessonResponse completeLesson(Long lessonId) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
+
+        if (lesson.getStatus() != LessonStatus.SCHEDULED) {
+            throw new InvalidLessonStateException("Only a scheduled lesson can be marked as completed");
+        }
+
+        lesson.setStatus(LessonStatus.COMPLETED);
+        lessonRepository.save(lesson);
+
+        return toResponse(lesson, true);
     }
 
     public List<LessonResponse> getAllLessonsForTeacher() {

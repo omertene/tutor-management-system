@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -68,5 +69,12 @@ public class LessonController {
             @PathVariable("id") Long lessonId,
             @AuthenticationPrincipal AuthenticatedUser caller) {
         return ResponseEntity.ok(lessonService.cancelLesson(lessonId, caller.id(), caller.role()));
+    }
+
+    // teacher marks a lesson as completed, so it counts toward the student's debt
+    @PreAuthorize("hasRole('TEACHER')")
+    @PatchMapping("/teacher/lessons/{id}/complete")
+    public ResponseEntity<LessonResponse> completeLesson(@PathVariable("id") Long lessonId) {
+        return ResponseEntity.ok(lessonService.completeLesson(lessonId));
     }
 }

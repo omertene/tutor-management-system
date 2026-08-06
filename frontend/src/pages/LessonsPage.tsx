@@ -177,6 +177,28 @@ function LessonsPage() {
         setLessons(lessons.map((lesson) => lesson.id == lessonId ? canclledLesson : lesson));
     }
 
+    // teacher marks a lesson as completed, so it counts toward the student's debt -
+    // PATCH /teacher/lessons/{id}/complete
+    async function handleCompleteLesson(lessonId: number) {
+        setErrorMessage("");
+
+        const response = await fetch(`${API_BASE_URL}/teacher/lessons/${lessonId}/complete`, {
+            method: "PATCH",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            setErrorMessage(errorData.message || "Failed to complete lesson");
+            return;
+        }
+
+        const completedLesson = await response.json();
+        setLessons(lessons.map((lesson) => lesson.id == lessonId ? completedLesson : lesson));
+    }
+
     return (
 
         <div>
@@ -255,6 +277,10 @@ function LessonsPage() {
                         {lesson.date} {lesson.startTime}-{lesson.endTime} —{" "}
                         {lesson.subjectName} — {lesson.studentFirstName} {lesson.studentLastName} —{" "}
                         {lesson.status}
+                        {" "}
+                        {role === "TEACHER" && lesson.status === "SCHEDULED" && (
+                            <button onClick={() => handleCompleteLesson(lesson.id)}>mark completed</button>
+                        )}
                         {" "}
                         <button onClick={() => handleCancleLesson(lesson.id)}>cancel</button>
                     </li>

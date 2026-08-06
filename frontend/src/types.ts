@@ -8,4 +8,8 @@ export type Student = {
     email: string;
     firstName: string;
     lastName: string;
+    phone: string | null;
+    hourlyRate: number;
+    educationLevel: string | null;
+    notes: string | null;
 }

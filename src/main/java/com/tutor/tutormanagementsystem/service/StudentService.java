@@ -2,6 +2,7 @@ package com.tutor.tutormanagementsystem.service;
 
 import com.tutor.tutormanagementsystem.dto.CreateStudentRequest;
 import com.tutor.tutormanagementsystem.dto.StudentResponse;
+import com.tutor.tutormanagementsystem.dto.UpdateStudentRequest;
 import com.tutor.tutormanagementsystem.exception.DuplicateEmailException;
 import com.tutor.tutormanagementsystem.exception.StudentNotFoundException;
 import com.tutor.tutormanagementsystem.model.Role;
@@ -67,6 +68,34 @@ public class StudentService {
         );
     }
 
+
+    @Transactional
+    public StudentResponse updateStudent(Long studentId, UpdateStudentRequest request) {
+        Student student = getStudentEntity(studentId);
+        User user = student.getUser();
+
+        user.setFirstName(request.firstName());
+        user.setLastName(request.lastName());
+        user.setPhone(request.phone());
+        userRepository.save(user);
+
+        student.setHourlyRate(request.hourlyRate());
+        student.setEducationLevel(request.educationLevel());
+        student.setNotes(request.notes());
+        studentRepository.save(student);
+
+        return new StudentResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getPhone(),
+                student.getHourlyRate(),
+                student.getEducationLevel(),
+                student.getNotes()
+        );
+    }
+
     public List<StudentResponse> getAllStudents() {
         return studentRepository.findAll().stream()
                 .map(student -> new StudentResponse(
@@ -89,9 +118,6 @@ public class StudentService {
                 .orElseThrow(() -> new StudentNotFoundException("Student not found"));
     }
 
-    // same idea as getStudentEntity, but for every student at once (e.g. PaymentService
-    // building a debt row per student) - keeps other services from injecting
-    // StudentRepository directly just to get entities instead of DTOs
     public List<Student> getAllStudentEntities() {
         return studentRepository.findAll();
     }

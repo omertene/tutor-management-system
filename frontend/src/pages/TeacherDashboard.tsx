@@ -9,6 +9,15 @@ function TeacherDashboard() {
   const [students, setStudents] = useState<Student[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // which student's edit form is currently open, and the form fields for it
+  const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("");
+  const [educationLevel, setEducationLevel] = useState("");
+  const [notes, setNotes] = useState("");
+
   async function handleLoadStudents() {
     setErrorMessage("");
 
@@ -28,6 +37,54 @@ function TeacherDashboard() {
     const data = await response.json();
 
     setStudents(data);
+  }
+
+  // opens the edit form for a student, pre-filled with their current values
+  function handleStartEdit(student: Student) {
+    setEditingStudentId(student.id);
+    setFirstName(student.firstName);
+    setLastName(student.lastName);
+    setPhone(student.phone ?? "");
+    setHourlyRate(String(student.hourlyRate));
+    setEducationLevel(student.educationLevel ?? "");
+    setNotes(student.notes ?? "");
+  }
+
+  function handleCancelEdit() {
+    setEditingStudentId(null);
+  }
+
+  // PUT /teacher/students/{id}
+  async function handleSaveEdit(studentId: number) {
+    setErrorMessage("");
+
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${API_BASE_URL}/teacher/students/${studentId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        firstName,
+        lastName,
+        phone,
+        hourlyRate: Number(hourlyRate),
+        educationLevel,
+        notes,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      setErrorMessage(errorData.message || "Failed to update student");
+      return;
+    }
+
+    const updatedStudent = await response.json();
+    setStudents(students.map((student) => student.id === studentId ? updatedStudent : student));
+    setEditingStudentId(null);
   }
 
   return (
@@ -60,7 +117,24 @@ function TeacherDashboard() {
       <ul>
         {students.map((student) => (
           <li key={student.id}>
-            {student.firstName} {student.lastName} - {student.email}
+            {editingStudentId === student.id ? (
+              <>
+                <input placeholder="first name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                <input placeholder="last name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                <input placeholder="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <input placeholder="hourly rate" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} />
+                <input placeholder="education level" value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)} />
+                <input placeholder="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+                <button onClick={() => handleSaveEdit(student.id)}>save</button>
+                <button onClick={handleCancelEdit}>cancel</button>
+              </>
+            ) : (
+              <>
+                {student.firstName} {student.lastName} - {student.email} - {student.phone} - ₪{student.hourlyRate}/hr
+                {" "}
+                <button onClick={() => handleStartEdit(student)}>edit</button>
+              </>
+            )}
           </li>
         ))}
       </ul>

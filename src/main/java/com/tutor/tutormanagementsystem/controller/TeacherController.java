@@ -2,12 +2,15 @@ package com.tutor.tutormanagementsystem.controller;
 
 import com.tutor.tutormanagementsystem.dto.CreateStudentRequest;
 import com.tutor.tutormanagementsystem.dto.StudentResponse;
+import com.tutor.tutormanagementsystem.dto.UpdateStudentRequest;
 import com.tutor.tutormanagementsystem.service.StudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,5 +34,15 @@ public class TeacherController {
     @GetMapping("/students")
     public ResponseEntity<List<StudentResponse>> getAllStudents() {
         return ResponseEntity.ok(studentService.getAllStudents());
+    }
+
+    // edits an existing student's name/phone/hourlyRate/educationLevel/notes.
+    // email/password aren't editable through this endpoint
+    @PreAuthorize("hasRole('TEACHER')")
+    @PutMapping("/students/{id}")
+    public ResponseEntity<StudentResponse> updateStudent(
+            @PathVariable("id") Long studentId,
+            @RequestBody UpdateStudentRequest request) {
+        return ResponseEntity.ok(studentService.updateStudent(studentId, request));
     }
 }
