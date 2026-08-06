@@ -88,4 +88,11 @@ public class StudentService {
         return studentRepository.findById(studentId)
                 .orElseThrow(() -> new StudentNotFoundException("Student not found"));
     }
+
+    // same idea as getStudentEntity, but for every student at once (e.g. PaymentService
+    // building a debt row per student) - keeps other services from injecting
+    // StudentRepository directly just to get entities instead of DTOs
+    public List<Student> getAllStudentEntities() {
+        return studentRepository.findAll();
+    }
 }

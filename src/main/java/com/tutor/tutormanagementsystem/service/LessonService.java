@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -60,8 +61,7 @@ public class LessonService {
             throw new InvalidTimeRangeException("Start time must be before end time");
         }
 
-        // serializes concurrent booking attempts for this date so the availability/conflict
-        // checks below and the insert further down can't race - see LessonRepository.acquireDateLock
+
         lessonRepository.acquireDateLock(date.toEpochDay());
 
         if (!availabilityService.isTimeAvailable(date, startTime, endTime)) {
@@ -119,6 +119,11 @@ public class LessonService {
         return lessonRepository.findAllByStudentId(studentId).stream()
                 .map(lesson -> toResponse(lesson, false))
                 .toList();
+    }
+
+
+    public BigDecimal sumCompletedLessonPricesForStudent(Long studentId) {
+        return lessonRepository.sumLessonPricesForStudentByStatus(studentId, LessonStatus.COMPLETED);
     }
 
     // includeNotes controls whether the teacher-only notes field is exposed
