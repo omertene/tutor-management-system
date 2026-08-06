@@ -8,6 +8,8 @@ function StudentDashboard() {
       <p>Welcome! Here you will see your booked lessons.</p>
 
       <Link to="/student/lessons">lessons screen</Link>
+      <br />
+      <Link to="/student/payments">payments screen</Link>
 
       <br />
       <LogoutButton />
