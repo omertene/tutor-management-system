@@ -1,6 +1,9 @@
 HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
+
+# real secrets - .env.example is the template that IS committed
+.env
 !**/src/main/**/target/
 !**/src/test/**/target/
 

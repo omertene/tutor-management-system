@@ -1,5 +1,18 @@
+### Log in first (as the seeded teacher) and copy the token from the response into
+### the Authorization header below - don't hardcode a real token here, it becomes
+### stale the moment the secret rotates or the token expires (and shouldn't be committed)
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "teacher@example.com",
+  "password": "temp123"
+}
+
+###
+
 POST http://localhost:8080/teacher/register
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0ZWFjaGVyQGV4YW1wbGUuY29tIiwidXNlcklkIjoxLCJyb2xlIjoiVEVBQ0hFUiIsImlhdCI6MTc4NTQzMDE3NiwiZXhwIjoxNzg1NTE2NTc2fQ.dQvRdWzBOOAMITOeM8e9UXGCuzfqIYA4hPB0Ly6M81HC4kG6FcykdUG_Yp0hyPBFWcptuRdklxuAOG3lXzVVGQ
+Authorization: Bearer PASTE_TOKEN_FROM_LOGIN_RESPONSE_HERE
 Content-Type: application/json
 
 {
