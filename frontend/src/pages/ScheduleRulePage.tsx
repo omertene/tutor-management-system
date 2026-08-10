@@ -1,9 +1,21 @@
 import { useState } from "react";
-import LogoutButton from "../components/LogoutButton";
+import NavBar from "../components/NavBar";
 
 const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
 
 const API_BASE_URL = "http://localhost:8080";
+
+const teacherLinks = [
+    { label: "Home", to: "/teacher" },
+    { label: "Students", to: "/teacher/register" },
+    { label: "Subjects", to: "/teacher/subjects" },
+    { label: "Schedule", to: "/teacher/schedule-rules" },
+    { label: "Overrides", to: "/teacher/schedule-overrides" },
+    { label: "Lessons", to: "/teacher/lessons" },
+    { label: "Payments", to: "/teacher/payments" },
+    { label: "Materials", to: "/teacher/materials" },
+    { label: "Statistics", to: "/teacher/statistics" },
+];
 
 type ScheduleRule = {
     id: number;
@@ -91,37 +103,70 @@ function ScheduleRulePage() {
     }
 
 
+    const inputClass = "rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
+
     return (
-        <div>
-            <h1>Hello, here is your fixed schedule</h1>
-            <button onClick={handleLoadRules}>load rules</button>
+        <div className="min-h-screen bg-slate-50">
+            <NavBar homePath="/teacher" links={teacherLinks} />
 
-            <ul>
-                {scheduleRules.map((scheduleRule) => (
-                    <li key={scheduleRule.id}>
-                        {scheduleRule.id} {scheduleRule.dayOfWeek}
-                        {scheduleRule.startTime} {scheduleRule.endTime}
-                        {" "}
-                        <button onClick={() => handleDeleteRule(scheduleRule.id)}>delete</button>
-                    </li>
-                ))}
-            </ul>
+            <main className="max-w-6xl mx-auto px-4 py-8">
+                <h1 className="text-2xl font-semibold text-slate-900">Weekly schedule</h1>
+                <p className="text-slate-500 mt-1">Your recurring availability, by day of the week.</p>
 
-            <select value={dayOfWeek} onChange={(e) => setDayOfWeek(e.target.value)}>
-                {days.map((day) => (
-                    <option key={day} value={day}>{day}</option>
-                ))}
-            </select>
+                <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                    <h2 className="text-lg font-semibold text-slate-900 mb-4">Add a rule</h2>
+                    <div className="flex flex-wrap gap-3 items-center">
+                        <select value={dayOfWeek} onChange={(e) => setDayOfWeek(e.target.value)} className={inputClass}>
+                            {days.map((day) => (
+                                <option key={day} value={day}>{day}</option>
+                            ))}
+                        </select>
 
-            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                        <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputClass} />
+                        <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputClass} />
 
-            <button onClick={handleAddRule}>add rule</button>
+                        <button
+                            onClick={handleAddRule}
+                            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+                        >
+                            Add rule
+                        </button>
+                    </div>
+                </div>
 
-            {errorMessage && <p>{errorMessage}</p>}
-            <br />
+                {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
-            <LogoutButton />
+                <div className="mt-8">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-slate-900">Your rules</h2>
+                        <button
+                            onClick={handleLoadRules}
+                            className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+                        >
+                            Load rules
+                        </button>
+                    </div>
+
+                    <div className="mt-4 bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+                        {scheduleRules.length === 0 && (
+                            <p className="px-4 py-6 text-sm text-slate-500 text-center">No rules loaded yet.</p>
+                        )}
+                        {scheduleRules.map((scheduleRule) => (
+                            <div key={scheduleRule.id} className="px-4 py-3 flex items-center justify-between">
+                                <span className="text-slate-900">
+                                    {scheduleRule.dayOfWeek} — {scheduleRule.startTime} to {scheduleRule.endTime}
+                                </span>
+                                <button
+                                    onClick={() => handleDeleteRule(scheduleRule.id)}
+                                    className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </main>
         </div>
     );
 }

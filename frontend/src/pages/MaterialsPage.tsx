@@ -1,9 +1,34 @@
 import { useState } from "react";
-import LogoutButton from "../components/LogoutButton";
+import NavBar from "../components/NavBar";
 import { decodeToken } from "../utils/jwt";
 import type { Student } from "../types";
 
 const API_BASE_URL = "http://localhost:8080";
+
+const teacherLinks = [
+    { label: "Home", to: "/teacher" },
+    { label: "Students", to: "/teacher/register" },
+    { label: "Subjects", to: "/teacher/subjects" },
+    { label: "Schedule", to: "/teacher/schedule-rules" },
+    { label: "Overrides", to: "/teacher/schedule-overrides" },
+    { label: "Lessons", to: "/teacher/lessons" },
+    { label: "Payments", to: "/teacher/payments" },
+    { label: "Materials", to: "/teacher/materials" },
+    { label: "Statistics", to: "/teacher/statistics" },
+];
+
+const studentLinks = [
+    { label: "Home", to: "/student" },
+    { label: "Lessons", to: "/student/lessons" },
+    { label: "Payments", to: "/student/payments" },
+    { label: "Materials", to: "/student/materials" },
+];
+
+const typeStyles: Record<string, string> = {
+    FILE: "bg-purple-50 text-purple-700",
+    LINK: "bg-blue-50 text-blue-700",
+    NOTE: "bg-amber-50 text-amber-700",
+};
 
 type MaterialType = "FILE" | "LINK" | "NOTE";
 
@@ -275,137 +300,183 @@ function MaterialsPage() {
         setMaterials(materials.filter((material) => material.id !== materialId));
     }
 
+    const inputClass = "rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
+    const primaryButtonClass = "px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+    const secondaryButtonClass = "px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+    const smallSecondaryButtonClass = "px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors";
+
     return (
+        <div className="min-h-screen bg-slate-50">
+            <NavBar homePath={role === "TEACHER" ? "/teacher" : "/student"} links={role === "TEACHER" ? teacherLinks : studentLinks} />
 
-        <div>
-            <h1>Materials</h1>
+            <main className="max-w-6xl mx-auto px-4 py-8">
+                <h1 className="text-2xl font-semibold text-slate-900">Materials</h1>
 
-            {role === "TEACHER" && (
-                <div>
-                    <h2>Add material</h2>
+                {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
-                    <button onClick={handleLoadStudents}>load students</button>
+                {role === "TEACHER" && (
+                    <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                        <h2 className="text-lg font-semibold text-slate-900 mb-4">Add material</h2>
 
-                    <select
-                        value={selectedStudentId}
-                        onChange={(e) => handleLoadLessonsForStudent(e.target.value)}
-                    >
-                        <option value="">select student</option>
-                        {students.map((student) => (
-                            <option key={student.id} value={student.id}>
-                                {student.firstName} {student.lastName}
-                            </option>
-                        ))}
-                    </select>
+                        <div className="flex flex-wrap gap-3 items-center">
+                            <button onClick={handleLoadStudents} className={secondaryButtonClass}>
+                                Load students
+                            </button>
 
-                    <select
-                        value={lessonId}
-                        onChange={(e) => setLessonId(e.target.value)}
-                        disabled={!selectedStudentId}
-                    >
-                        <option value="">no specific lesson (optional)</option>
-                        {lessons.map((lesson) => (
-                            <option key={lesson.id} value={lesson.id}>
-                                {lesson.date} {lesson.startTime}-{lesson.endTime} — {lesson.subjectName}
-                            </option>
-                        ))}
-                    </select>
+                            <select
+                                value={selectedStudentId}
+                                onChange={(e) => handleLoadLessonsForStudent(e.target.value)}
+                                className={inputClass}
+                            >
+                                <option value="">Select student</option>
+                                {students.map((student) => (
+                                    <option key={student.id} value={student.id}>
+                                        {student.firstName} {student.lastName}
+                                    </option>
+                                ))}
+                            </select>
 
-                    <input
-                        placeholder="title"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                    />
+                            <select
+                                value={lessonId}
+                                onChange={(e) => setLessonId(e.target.value)}
+                                disabled={!selectedStudentId}
+                                className={inputClass}
+                            >
+                                <option value="">No specific lesson (optional)</option>
+                                {lessons.map((lesson) => (
+                                    <option key={lesson.id} value={lesson.id}>
+                                        {lesson.date} {lesson.startTime}-{lesson.endTime} — {lesson.subjectName}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-                    <input
-                        placeholder="description (optional)"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                    />
+                        <div className="flex flex-wrap gap-3 items-center mt-3">
+                            <input
+                                placeholder="Title"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                className={inputClass}
+                            />
 
-                    <h3>As a link</h3>
-                    <input
-                        placeholder="url"
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                    />
-                    <button onClick={handleAddLink}>add link</button>
+                            <input
+                                placeholder="Description (optional)"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                className={`${inputClass} flex-1 min-w-[200px]`}
+                            />
+                        </div>
 
-                    <h3>As a note</h3>
-                    <button onClick={handleAddNote}>add note</button>
-
-                    <h3>As a file</h3>
-                    <input
-                        type="file"
-                        onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
-                    />
-                    <button onClick={handleUploadFile}>upload file</button>
-
-                    <br />
-
-                    <button
-                        onClick={() => handleLoadMaterialsForStudent(Number(selectedStudentId))}
-                        disabled={!selectedStudentId}
-                    >
-                        show materials for selected student
-                    </button>
-                </div>
-            )}
-
-            {role === "STUDENT" && (
-                <div>
-                    <button onClick={handleLoadOwnMaterials}>show my materials</button>
-                </div>
-            )}
-
-            <ul>
-                {materials.map((material) => (
-                    <li key={material.id}>
-                        [{material.type}] {material.title}
-                        {material.description && ` — ${material.description}`}
-
-                        {material.lessonDate && (
-                            <>
-                                {" "}
-                                <em>
-                                    (from lesson: {material.lessonDate} {material.lessonStartTime} — {material.lessonSubject})
-                                </em>
-                            </>
-                        )}
-                        {!material.lessonDate && <> <em>(general material)</em></>}
-
-                        {material.type === "LINK" && material.url && (
-                            <>
-                                {" "}
-                                <a href={material.url} target="_blank" rel="noreferrer">
-                                    open link
-                                </a>
-                            </>
-                        )}
-
-                        {material.type === "FILE" && material.fileName && (
-                            <>
-                                {" "}
-                                <button onClick={() => handleDownload(material.id, material.fileName!)}>
-                                    download {material.fileName}
+                        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="border border-slate-200 rounded-lg p-4">
+                                <h3 className="text-sm font-semibold text-slate-900 mb-2">As a link</h3>
+                                <input
+                                    placeholder="URL"
+                                    value={url}
+                                    onChange={(e) => setUrl(e.target.value)}
+                                    className={`${inputClass} w-full`}
+                                />
+                                <button onClick={handleAddLink} className={`${secondaryButtonClass} w-full mt-2`}>
+                                    Add link
                                 </button>
-                            </>
+                            </div>
+
+                            <div className="border border-slate-200 rounded-lg p-4">
+                                <h3 className="text-sm font-semibold text-slate-900 mb-2">As a note</h3>
+                                <p className="text-xs text-slate-500 mb-2">Uses the description above as the note text.</p>
+                                <button onClick={handleAddNote} className={`${secondaryButtonClass} w-full`}>
+                                    Add note
+                                </button>
+                            </div>
+
+                            <div className="border border-slate-200 rounded-lg p-4">
+                                <h3 className="text-sm font-semibold text-slate-900 mb-2">As a file</h3>
+                                <input
+                                    type="file"
+                                    onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+                                    className="text-sm text-slate-600 w-full"
+                                />
+                                <button onClick={handleUploadFile} className={`${secondaryButtonClass} w-full mt-2`}>
+                                    Upload file
+                                </button>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => handleLoadMaterialsForStudent(Number(selectedStudentId))}
+                            disabled={!selectedStudentId}
+                            className={`${secondaryButtonClass} mt-4`}
+                        >
+                            Show materials for selected student
+                        </button>
+                    </div>
+                )}
+
+                {role === "STUDENT" && (
+                    <div className="mt-6">
+                        <button onClick={handleLoadOwnMaterials} className={secondaryButtonClass}>
+                            Show my materials
+                        </button>
+                    </div>
+                )}
+
+                <div className="mt-8">
+                    <h2 className="text-lg font-semibold text-slate-900 mb-3">Materials</h2>
+
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+                        {materials.length === 0 && (
+                            <p className="px-4 py-6 text-sm text-slate-500 text-center">No materials loaded yet.</p>
                         )}
 
-                        {role === "TEACHER" && (
-                            <>
-                                {" "}
-                                <button onClick={() => handleDeleteMaterial(material.id)}>delete</button>
-                            </>
-                        )}
-                    </li>
-                ))}
-            </ul>
+                        {materials.map((material) => (
+                            <div key={material.id} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${typeStyles[material.type] ?? "bg-slate-100 text-slate-500"}`}>
+                                        {material.type}
+                                    </span>
+                                    <span className="font-medium text-slate-900">{material.title}</span>
+                                    {material.description && (
+                                        <span className="text-slate-500 text-sm">— {material.description}</span>
+                                    )}
+                                    <span className="text-slate-400 text-xs italic">
+                                        {material.lessonDate
+                                            ? `from lesson: ${material.lessonDate} ${material.lessonStartTime} — ${material.lessonSubject}`
+                                            : "general material"}
+                                    </span>
+                                </div>
 
-            {errorMessage && <p>{errorMessage}</p>}
+                                <div className="flex gap-2 items-center">
+                                    {material.type === "LINK" && material.url && (
+                                        <a
+                                            href={material.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className={smallSecondaryButtonClass}
+                                        >
+                                            Open link
+                                        </a>
+                                    )}
 
-            <br />
-            <LogoutButton />
+                                    {material.type === "FILE" && material.fileName && (
+                                        <button onClick={() => handleDownload(material.id, material.fileName!)} className={smallSecondaryButtonClass}>
+                                            Download
+                                        </button>
+                                    )}
+
+                                    {role === "TEACHER" && (
+                                        <button
+                                            onClick={() => handleDeleteMaterial(material.id)}
+                                            className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+                                        >
+                                            Delete
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </main>
         </div>
     )
 }

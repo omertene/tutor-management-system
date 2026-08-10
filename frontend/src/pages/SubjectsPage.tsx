@@ -1,8 +1,20 @@
 import { useState } from "react";
-import LogoutButton from "../components/LogoutButton";
+import NavBar from "../components/NavBar";
 import type { Subject } from "../types";
 
 const API_BASE_URL = "http://localhost:8080";
+
+const teacherLinks = [
+  { label: "Home", to: "/teacher" },
+  { label: "Students", to: "/teacher/register" },
+  { label: "Subjects", to: "/teacher/subjects" },
+  { label: "Schedule", to: "/teacher/schedule-rules" },
+  { label: "Overrides", to: "/teacher/schedule-overrides" },
+  { label: "Lessons", to: "/teacher/lessons" },
+  { label: "Payments", to: "/teacher/payments" },
+  { label: "Materials", to: "/teacher/materials" },
+  { label: "Statistics", to: "/teacher/statistics" },
+];
 
 function SubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -55,30 +67,55 @@ function SubjectsPage() {
   }
 
   return (
-    <div>
-      <h1>hello this is subjects</h1>
+    <div className="min-h-screen bg-slate-50">
+      <NavBar homePath="/teacher" links={teacherLinks} />
 
-      <button onClick={handleLoadSubjects}>show all subjects</button>
+      <main className="max-w-6xl mx-auto px-4 py-8">
+        <h1 className="text-2xl font-semibold text-slate-900">Subjects</h1>
 
-      <ul>
-        {subjects.map((subject) => (
-          <li key={subject.id}>
-            {subject.id} {subject.name}
-          </li>
-        ))}
-      </ul>
+        <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Add a subject</h2>
+          <div className="flex gap-3">
+            <input
+              value={newSubject}
+              onChange={(e) => setNewSubject(e.target.value)}
+              placeholder="Subject name"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            <button
+              onClick={handleAddSubjects}
+              className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+            >
+              Add subject
+            </button>
+          </div>
+        </div>
 
-      <input
-        value={newSubject}
-        onChange={(e) => setNewSubject(e.target.value)}
-      />
-      <button onClick={handleAddSubjects}>add subject</button>
+        {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
-      {errorMessage && <p>{errorMessage}</p>}
+        <div className="mt-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">All subjects</h2>
+            <button
+              onClick={handleLoadSubjects}
+              className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+            >
+              Show all subjects
+            </button>
+          </div>
 
-      <br />
-
-      <LogoutButton />
+          <div className="mt-4 bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+            {subjects.length === 0 && (
+              <p className="px-4 py-6 text-sm text-slate-500 text-center">No subjects loaded yet.</p>
+            )}
+            {subjects.map((subject) => (
+              <div key={subject.id} className="px-4 py-3">
+                <span className="text-slate-900">{subject.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

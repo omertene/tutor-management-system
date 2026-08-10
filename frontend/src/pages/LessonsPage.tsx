@@ -1,9 +1,34 @@
 import { useState } from "react";
-import LogoutButton from "../components/LogoutButton";
+import NavBar from "../components/NavBar";
 import { decodeToken } from "../utils/jwt";
 import type { Subject, Student } from "../types";
 
 const API_BASE_URL = "http://localhost:8080";
+
+const teacherLinks = [
+    { label: "Home", to: "/teacher" },
+    { label: "Students", to: "/teacher/register" },
+    { label: "Subjects", to: "/teacher/subjects" },
+    { label: "Schedule", to: "/teacher/schedule-rules" },
+    { label: "Overrides", to: "/teacher/schedule-overrides" },
+    { label: "Lessons", to: "/teacher/lessons" },
+    { label: "Payments", to: "/teacher/payments" },
+    { label: "Materials", to: "/teacher/materials" },
+    { label: "Statistics", to: "/teacher/statistics" },
+];
+
+const studentLinks = [
+    { label: "Home", to: "/student" },
+    { label: "Lessons", to: "/student/lessons" },
+    { label: "Payments", to: "/student/payments" },
+    { label: "Materials", to: "/student/materials" },
+];
+
+const statusStyles: Record<string, string> = {
+    SCHEDULED: "bg-blue-50 text-blue-700",
+    COMPLETED: "bg-green-50 text-green-700",
+    CANCELLED: "bg-slate-100 text-slate-500",
+};
 
 
 type Lesson = {
@@ -199,98 +224,150 @@ function LessonsPage() {
         setLessons(lessons.map((lesson) => lesson.id == lessonId ? completedLesson : lesson));
     }
 
+    const inputClass = "rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
+    const primaryButtonClass = "px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors";
+    const secondaryButtonClass = "px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors";
+    const smallSecondaryButtonClass = "px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors";
+
     return (
+        <div className="min-h-screen bg-slate-50">
+            <NavBar homePath={role === "TEACHER" ? "/teacher" : "/student"} links={role === "TEACHER" ? teacherLinks : studentLinks} />
 
-        <div>
-            <h1>Lessons</h1>
+            <main className="max-w-6xl mx-auto px-4 py-8">
+                <h1 className="text-2xl font-semibold text-slate-900">Lessons</h1>
 
-            <button onClick={handleLoadSubjects}>load subjects</button>
-            {role === "TEACHER" && (
-                <button onClick={handleLoadStudents}>load students</button>
-            )}
-
-            {role === "TEACHER" && (
-                <div>
-                    <h2>Book a lesson for a student</h2>
-
-                    <select
-                        value={selectedStudentId}
-                        onChange={(e) => setSelectedStudentId(e.target.value)}
-                    >
-                        <option value="">select student</option>
-                        {students.map((student) => (
-                            <option key={student.id} value={student.id}>
-                                {student.firstName} {student.lastName}
-                            </option>
-                        ))}
-                    </select>
-
-                    <select
-                        value={selectedSubjectId}
-                        onChange={(e) => setSelectedSubjectId(e.target.value)}
-                    >
-                        <option value="">select subject</option>
-                        {subjects.map((subject) => (
-                            <option key={subject.id} value={subject.id}>
-                                {subject.name}
-                            </option>
-                        ))}
-                    </select>
-
-                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-                    <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-                    <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
-
-                    <button onClick={handleCreateLessonForStudent}>book lesson</button>
+                <div className="mt-4 flex flex-wrap gap-3">
+                    <button onClick={handleLoadSubjects} className={secondaryButtonClass}>
+                        Load subjects
+                    </button>
+                    {role === "TEACHER" && (
+                        <button onClick={handleLoadStudents} className={secondaryButtonClass}>
+                            Load students
+                        </button>
+                    )}
+                    <button onClick={handleLoadLessons} className={secondaryButtonClass}>
+                        Show all lessons
+                    </button>
                 </div>
-            )}
 
-            {role === "STUDENT" && (
-                <div>
-                    <h2>Book a lesson</h2>
+                {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
-                    <select
-                        value={selectedSubjectId}
-                        onChange={(e) => setSelectedSubjectId(e.target.value)}
-                    >
-                        <option value="">select subject</option>
-                        {subjects.map((subject) => (
-                            <option key={subject.id} value={subject.id}>
-                                {subject.name}
-                            </option>
-                        ))}
-                    </select>
+                {role === "TEACHER" && (
+                    <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                        <h2 className="text-lg font-semibold text-slate-900 mb-4">Book a lesson for a student</h2>
 
-                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-                    <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-                    <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                        <div className="flex flex-wrap gap-3 items-center">
+                            <select
+                                value={selectedStudentId}
+                                onChange={(e) => setSelectedStudentId(e.target.value)}
+                                className={inputClass}
+                            >
+                                <option value="">Select student</option>
+                                {students.map((student) => (
+                                    <option key={student.id} value={student.id}>
+                                        {student.firstName} {student.lastName}
+                                    </option>
+                                ))}
+                            </select>
 
-                    <button onClick={handleCreateLessonAsStudent}>book lesson</button>
-                </div>
-            )}
+                            <select
+                                value={selectedSubjectId}
+                                onChange={(e) => setSelectedSubjectId(e.target.value)}
+                                className={inputClass}
+                            >
+                                <option value="">Select subject</option>
+                                {subjects.map((subject) => (
+                                    <option key={subject.id} value={subject.id}>
+                                        {subject.name}
+                                    </option>
+                                ))}
+                            </select>
 
-            <button onClick={handleLoadLessons}>show all lessons</button>
+                            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
+                            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputClass} />
+                            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputClass} />
 
-            <ul>
-                {lessons.map((lesson) => (
-                    <li key={lesson.id}>
-                        {lesson.date} {lesson.startTime}-{lesson.endTime} —{" "}
-                        {lesson.subjectName} — {lesson.studentFirstName} {lesson.studentLastName} —{" "}
-                        {lesson.status}
-                        {" "}
-                        {role === "TEACHER" && lesson.status === "SCHEDULED" && (
-                            <button onClick={() => handleCompleteLesson(lesson.id)}>mark completed</button>
+                            <button onClick={handleCreateLessonForStudent} className={primaryButtonClass}>
+                                Book lesson
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {role === "STUDENT" && (
+                    <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                        <h2 className="text-lg font-semibold text-slate-900 mb-4">Book a lesson</h2>
+
+                        <div className="flex flex-wrap gap-3 items-center">
+                            <select
+                                value={selectedSubjectId}
+                                onChange={(e) => setSelectedSubjectId(e.target.value)}
+                                className={inputClass}
+                            >
+                                <option value="">Select subject</option>
+                                {subjects.map((subject) => (
+                                    <option key={subject.id} value={subject.id}>
+                                        {subject.name}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
+                            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputClass} />
+                            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputClass} />
+
+                            <button onClick={handleCreateLessonAsStudent} className={primaryButtonClass}>
+                                Book lesson
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <div className="mt-8">
+                    <h2 className="text-lg font-semibold text-slate-900 mb-3">Your lessons</h2>
+
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+                        {lessons.length === 0 && (
+                            <p className="px-4 py-6 text-sm text-slate-500 text-center">
+                                No lessons loaded yet. Click "Show all lessons" above.
+                            </p>
                         )}
-                        {" "}
-                        <button onClick={() => handleCancleLesson(lesson.id)}>cancel</button>
-                    </li>
-                ))}
-            </ul>
 
-            {errorMessage && <p>{errorMessage}</p>}
+                        {lessons.map((lesson) => (
+                            <div key={lesson.id} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-medium text-slate-900">
+                                        {lesson.date} {lesson.startTime}-{lesson.endTime}
+                                    </span>
+                                    <span className="text-slate-500 text-sm">{lesson.subjectName}</span>
+                                    <span className="text-slate-500 text-sm">
+                                        {lesson.studentFirstName} {lesson.studentLastName}
+                                    </span>
+                                    <span
+                                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusStyles[lesson.status] ?? "bg-slate-100 text-slate-500"}`}
+                                    >
+                                        {lesson.status}
+                                    </span>
+                                </div>
 
-            <br/>
-            <LogoutButton/>
+                                <div className="flex gap-2">
+                                    {role === "TEACHER" && lesson.status === "SCHEDULED" && (
+                                        <button onClick={() => handleCompleteLesson(lesson.id)} className={smallSecondaryButtonClass}>
+                                            Mark completed
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => handleCancleLesson(lesson.id)}
+                                        className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </main>
         </div>
     )
 }

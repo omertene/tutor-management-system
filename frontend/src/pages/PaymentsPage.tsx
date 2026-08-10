@@ -1,9 +1,28 @@
 import { useState } from "react";
-import LogoutButton from "../components/LogoutButton";
+import NavBar from "../components/NavBar";
 import { decodeToken } from "../utils/jwt";
 import type { Student } from "../types";
 
 const API_BASE_URL = "http://localhost:8080";
+
+const teacherLinks = [
+    { label: "Home", to: "/teacher" },
+    { label: "Students", to: "/teacher/register" },
+    { label: "Subjects", to: "/teacher/subjects" },
+    { label: "Schedule", to: "/teacher/schedule-rules" },
+    { label: "Overrides", to: "/teacher/schedule-overrides" },
+    { label: "Lessons", to: "/teacher/lessons" },
+    { label: "Payments", to: "/teacher/payments" },
+    { label: "Materials", to: "/teacher/materials" },
+    { label: "Statistics", to: "/teacher/statistics" },
+];
+
+const studentLinks = [
+    { label: "Home", to: "/student" },
+    { label: "Lessons", to: "/student/lessons" },
+    { label: "Payments", to: "/student/payments" },
+    { label: "Materials", to: "/student/materials" },
+];
 
 type PaymentMethod = "CASH" | "BANK_TRANSFER" | "BIT" | "CREDIT_CARD" | "PAYBOX";
 
@@ -194,114 +213,168 @@ function PaymentsPage() {
         setAllDebts(data);
     }
 
+    const inputClass = "rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
+    const primaryButtonClass = "px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+    const secondaryButtonClass = "px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+
     return (
+        <div className="min-h-screen bg-slate-50">
+            <NavBar homePath={role === "TEACHER" ? "/teacher" : "/student"} links={role === "TEACHER" ? teacherLinks : studentLinks} />
 
-        <div>
-            <h1>Payments</h1>
+            <main className="max-w-6xl mx-auto px-4 py-8">
+                <h1 className="text-2xl font-semibold text-slate-900">Payments</h1>
 
-            {role === "TEACHER" && (
-                <div>
-                    <h2>Record a payment</h2>
+                {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
-                    <button onClick={handleLoadStudents}>load students</button>
+                {role === "TEACHER" && (
+                    <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                        <h2 className="text-lg font-semibold text-slate-900 mb-4">Record a payment</h2>
 
-                    <select
-                        value={selectedStudentId}
-                        onChange={(e) => setSelectedStudentId(e.target.value)}
-                    >
-                        <option value="">select student</option>
-                        {students.map((student) => (
-                            <option key={student.id} value={student.id}>
-                                {student.firstName} {student.lastName}
-                            </option>
-                        ))}
-                    </select>
+                        <div className="flex flex-wrap gap-3 items-center">
+                            <button onClick={handleLoadStudents} className={secondaryButtonClass}>
+                                Load students
+                            </button>
 
-                    <input
-                        type="number"
-                        placeholder="amount"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                    />
+                            <select
+                                value={selectedStudentId}
+                                onChange={(e) => setSelectedStudentId(e.target.value)}
+                                className={inputClass}
+                            >
+                                <option value="">Select student</option>
+                                {students.map((student) => (
+                                    <option key={student.id} value={student.id}>
+                                        {student.firstName} {student.lastName}
+                                    </option>
+                                ))}
+                            </select>
 
-                    <select value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}>
-                        <option value="CASH">Cash</option>
-                        <option value="BANK_TRANSFER">Bank transfer</option>
-                        <option value="BIT">Bit</option>
-                        <option value="CREDIT_CARD">Credit card</option>
-                        <option value="PAYBOX">Paybox</option>
-                    </select>
+                            <input
+                                type="number"
+                                placeholder="Amount"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                className={`${inputClass} w-32`}
+                            />
 
-                    <input
-                        placeholder="notes"
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                    />
+                            <select value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)} className={inputClass}>
+                                <option value="CASH">Cash</option>
+                                <option value="BANK_TRANSFER">Bank transfer</option>
+                                <option value="BIT">Bit</option>
+                                <option value="CREDIT_CARD">Credit card</option>
+                                <option value="PAYBOX">Paybox</option>
+                            </select>
 
-                    <button onClick={handleCreatePayment}>record payment</button>
+                            <input
+                                placeholder="Notes"
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                className={inputClass}
+                            />
 
-                    <br />
+                            <button onClick={handleCreatePayment} className={primaryButtonClass}>
+                                Record payment
+                            </button>
+                        </div>
 
-                    <button
-                        onClick={() => handleLoadPaymentsForStudent(Number(selectedStudentId))}
-                        disabled={!selectedStudentId}
-                    >
-                        show payments for selected student
-                    </button>
-                </div>
-            )}
+                        <button
+                            onClick={() => handleLoadPaymentsForStudent(Number(selectedStudentId))}
+                            disabled={!selectedStudentId}
+                            className={`${secondaryButtonClass} mt-4`}
+                        >
+                            Show payments for selected student
+                        </button>
+                    </div>
+                )}
 
-            {role === "STUDENT" && (
-                <div>
-                    <button onClick={handleLoadOwnPayments}>show my payments</button>
-                </div>
-            )}
+                {role === "STUDENT" && (
+                    <div className="mt-6">
+                        <button onClick={handleLoadOwnPayments} className={secondaryButtonClass}>
+                            Show my payments
+                        </button>
+                    </div>
+                )}
 
-            <ul>
-                {payments.map((payment) => (
-                    <li key={payment.id}>
-                        {payment.createdAt} — {payment.amount} ({payment.method})
-                        {payment.notes && ` — ${payment.notes}`}
-                        {role === "TEACHER" && (
-                            <>
-                                {" "}
-                                <button onClick={() => handleCancelPayment(payment.id)}>cancel</button>
-                            </>
+                <div className="mt-8">
+                    <h2 className="text-lg font-semibold text-slate-900 mb-3">Payment history</h2>
+
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+                        {payments.length === 0 && (
+                            <p className="px-4 py-6 text-sm text-slate-500 text-center">No payments loaded yet.</p>
                         )}
-                    </li>
-                ))}
-            </ul>
 
-            <h2>Debt</h2>
+                        {payments.map((payment) => (
+                            <div key={payment.id} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-medium text-slate-900">₪{payment.amount}</span>
+                                    <span className="text-slate-500 text-sm">{payment.method}</span>
+                                    <span className="text-slate-400 text-sm">{payment.createdAt}</span>
+                                    {payment.notes && <span className="text-slate-500 text-sm">— {payment.notes}</span>}
+                                </div>
+                                {role === "TEACHER" && (
+                                    <button
+                                        onClick={() => handleCancelPayment(payment.id)}
+                                        className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
-            {role === "STUDENT" && (
-                <div>
-                    <button onClick={handleLoadOwnDebt}>show my debt</button>
-                    {ownDebt && (
-                        <p>
-                            Owed: {ownDebt.totalOwed} — Paid: {ownDebt.totalPaid} — Balance: {ownDebt.debt}
-                        </p>
+                <div className="mt-8">
+                    <h2 className="text-lg font-semibold text-slate-900 mb-3">Debt</h2>
+
+                    {role === "STUDENT" && (
+                        <div>
+                            <button onClick={handleLoadOwnDebt} className={secondaryButtonClass}>
+                                Show my debt
+                            </button>
+                            {ownDebt && (
+                                <div className="mt-4 bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-sm">
+                                    <p className="text-sm text-slate-500">Current balance</p>
+                                    <p className={`text-3xl font-semibold mt-1 ${ownDebt.debt > 0 ? "text-red-600" : "text-green-600"}`}>
+                                        ₪{ownDebt.debt}
+                                    </p>
+                                    <div className="mt-4 flex gap-6 text-sm text-slate-500">
+                                        <span>Owed: ₪{ownDebt.totalOwed}</span>
+                                        <span>Paid: ₪{ownDebt.totalPaid}</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {role === "TEACHER" && (
+                        <div>
+                            <button onClick={handleLoadAllDebts} className={secondaryButtonClass}>
+                                Show all students' debts
+                            </button>
+
+                            <div className="mt-4 bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+                                {allDebts.length === 0 && (
+                                    <p className="px-4 py-6 text-sm text-slate-500 text-center">No debts loaded yet.</p>
+                                )}
+                                {allDebts.map((debt) => (
+                                    <div key={debt.studentId} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                                        <span className="font-medium text-slate-900">
+                                            {debt.studentFirstName} {debt.studentLastName}
+                                        </span>
+                                        <div className="flex items-center gap-4 text-sm">
+                                            <span className="text-slate-500">Owed: ₪{debt.totalOwed}</span>
+                                            <span className="text-slate-500">Paid: ₪{debt.totalPaid}</span>
+                                            <span className={`font-medium ${debt.debt > 0 ? "text-red-600" : "text-green-600"}`}>
+                                                Balance: ₪{debt.debt}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     )}
                 </div>
-            )}
-
-            {role === "TEACHER" && (
-                <div>
-                    <button onClick={handleLoadAllDebts}>show all students' debts</button>
-                    <ul>
-                        {allDebts.map((debt) => (
-                            <li key={debt.studentId}>
-                                {debt.studentFirstName} {debt.studentLastName} — owed: {debt.totalOwed}, paid: {debt.totalPaid}, balance: {debt.debt}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {errorMessage && <p>{errorMessage}</p>}
-
-            <br />
-            <LogoutButton />
+            </main>
         </div>
     )
 }
