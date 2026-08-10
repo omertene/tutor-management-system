@@ -6,7 +6,6 @@ import type { Student } from "../types";
 const API_BASE_URL = "http://localhost:8080";
 
 const teacherLinks = [
-  { label: "Home", to: "/teacher" },
   { label: "Students", to: "/teacher/register" },
   { label: "Subjects", to: "/teacher/subjects" },
   { label: "Schedule", to: "/teacher/schedule-rules" },

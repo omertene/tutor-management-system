@@ -3,7 +3,6 @@ import NavBar from "../components/NavBar";
 import { Link } from "react-router-dom";
 
 const teacherLinks = [
-  { label: "Home", to: "/teacher" },
   { label: "Students", to: "/teacher/register" },
   { label: "Subjects", to: "/teacher/subjects" },
   { label: "Schedule", to: "/teacher/schedule-rules" },
