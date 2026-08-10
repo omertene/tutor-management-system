@@ -1,7 +1,7 @@
 # Tutor Management System
 
 A full-stack app for a private tutor to manage students, lesson scheduling, payments, and
-study materials. Built as a university workshop (סדנה) final project.
+study materials. 
 
 Stack: Spring Boot (Java 17) + PostgreSQL on the backend, React + TypeScript (Vite) on the
 frontend.
