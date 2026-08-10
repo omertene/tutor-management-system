@@ -153,6 +153,8 @@ function TeacherDashboard() {
       <Link to="/teacher/payments">payments screen</Link>
       <br/>
       <Link to="/teacher/materials">materials screen</Link>
+      <br/>
+      <Link to="/teacher/statistics">statistics screen</Link>
 
 
       <h2>Your Students:</h2>

@@ -1,6 +1,7 @@
 package com.tutor.tutormanagementsystem.service;
 
 import com.tutor.tutormanagementsystem.dto.DebtResponse;
+import com.tutor.tutormanagementsystem.dto.MonthlyAmount;
 import com.tutor.tutormanagementsystem.dto.PaymentRequest;
 import com.tutor.tutormanagementsystem.dto.PaymentResponse;
 import com.tutor.tutormanagementsystem.exception.InvalidPaymentAmountException;
@@ -67,6 +68,24 @@ public class PaymentService {
         return studentService.getAllStudentEntities().stream()
                 .map(this::toDebtResponse)
                 .toList();
+    }
+
+    // used by StatisticsService for the "income per month" table. keeps
+    // StatisticsService from injecting PaymentRepository directly.
+    // row[0]/row[1] (YEAR/MONTH) come back as Integer or Long depending on the DB/
+    // Hibernate version - Number.intValue() handles either without guessing which
+    public List<MonthlyAmount> getIncomeByMonth() {
+        return paymentRepository.sumPaymentsGroupedByMonth().stream()
+                .map(row -> new MonthlyAmount(
+                        ((Number) row[0]).intValue(),
+                        ((Number) row[1]).intValue(),
+                        (BigDecimal) row[2]))
+                .toList();
+    }
+
+    // all-time total income, across every payment ever recorded
+    public BigDecimal getTotalIncome() {
+        return paymentRepository.sumAllPayments();
     }
 
     private DebtResponse toDebtResponse(Student student) {

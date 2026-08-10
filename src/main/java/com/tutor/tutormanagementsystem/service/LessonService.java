@@ -2,7 +2,9 @@ package com.tutor.tutormanagementsystem.service;
 
 import com.tutor.tutormanagementsystem.dto.LessonRequest;
 import com.tutor.tutormanagementsystem.dto.LessonResponse;
+import com.tutor.tutormanagementsystem.dto.MonthlyCount;
 import com.tutor.tutormanagementsystem.dto.StudentLessonRequest;
+import com.tutor.tutormanagementsystem.dto.SubjectStats;
 import com.tutor.tutormanagementsystem.exception.InvalidLessonStateException;
 import com.tutor.tutormanagementsystem.exception.InvalidTimeRangeException;
 import com.tutor.tutormanagementsystem.exception.LessonAccessDeniedException;
@@ -142,6 +144,33 @@ public class LessonService {
     public Lesson getLessonEntity(Long lessonId) {
         return lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
+    }
+
+    // used by StatisticsService for the "lessons per month" table. row[0]/row[1]
+    // (YEAR/MONTH) and row[2] (COUNT) come back as Integer/Long depending on the DB/
+    // Hibernate version - Number.intValue()/.longValue() handles either without guessing
+    public List<MonthlyCount> getCompletedLessonsByMonth() {
+        return lessonRepository.countCompletedLessonsGroupedByMonth(LessonStatus.COMPLETED).stream()
+                .map(row -> new MonthlyCount(
+                        ((Number) row[0]).intValue(),
+                        ((Number) row[1]).intValue(),
+                        ((Number) row[2]).longValue()))
+                .toList();
+    }
+
+    // used by StatisticsService for the "breakdown by subject" table
+    public List<SubjectStats> getCompletedLessonsBySubject() {
+        return lessonRepository.summarizeCompletedLessonsBySubject(LessonStatus.COMPLETED).stream()
+                .map(row -> new SubjectStats(
+                        (String) row[0],
+                        ((Number) row[1]).longValue(),
+                        (BigDecimal) row[2]))
+                .toList();
+    }
+
+    // all-time count of COMPLETED lessons
+    public long getTotalCompletedLessons() {
+        return lessonRepository.countByStatus(LessonStatus.COMPLETED);
     }
 
     // includeNotes controls whether the teacher-only notes field is exposed

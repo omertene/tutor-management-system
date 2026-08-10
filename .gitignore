@@ -5,6 +5,10 @@ target/
 # real secrets - .env.example is the template that IS committed
 .env
 
+# real secrets (DB password, JWT key, seed teacher password) -
+# application.properties.example is the template that IS committed
+src/main/resources/application.properties
+
 # local scratch file for manual API testing - not meant to be shared/committed
 src/request.http
 !**/src/main/**/target/

@@ -10,6 +10,7 @@ import ScheduleOverridePage from "./pages/ScheduleOverridePage"
 import LessonsPage from "./pages/LessonsPage"
 import PaymentsPage from "./pages/PaymentsPage"
 import MaterialsPage from "./pages/MaterialsPage"
+import StatisticsPage from "./pages/StatisticsPage"
 
 function App() {
   return (
@@ -121,6 +122,15 @@ function App() {
           element={
             <ProtectedRoute requiredRole="STUDENT">
               <MaterialsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/teacher/statistics"
+          element={
+            <ProtectedRoute requiredRole="TEACHER">
+              <StatisticsPage />
             </ProtectedRoute>
           }
         />
