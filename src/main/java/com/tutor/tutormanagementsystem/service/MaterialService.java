@@ -4,10 +4,12 @@ import com.tutor.tutormanagementsystem.dto.AddLinkRequest;
 import com.tutor.tutormanagementsystem.dto.AddNoteRequest;
 import com.tutor.tutormanagementsystem.dto.MaterialResponse;
 import com.tutor.tutormanagementsystem.exception.InvalidMaterialException;
+import com.tutor.tutormanagementsystem.exception.LessonAccessDeniedException;
 import com.tutor.tutormanagementsystem.exception.MaterialNotFoundException;
 import com.tutor.tutormanagementsystem.model.Lesson;
 import com.tutor.tutormanagementsystem.model.Material;
 import com.tutor.tutormanagementsystem.model.MaterialType;
+import com.tutor.tutormanagementsystem.model.Role;
 import com.tutor.tutormanagementsystem.model.Student;
 import com.tutor.tutormanagementsystem.repository.MaterialRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +34,19 @@ public class MaterialService {
                 .toList();
     }
 
-    public List<MaterialResponse> getMaterialsForLesson(Long lessonId) {
+    // callerId/callerRole identify who is asking, same pattern as LessonService.cancelLesson.
+    // a teacher may view materials for any lesson; a student may only view materials for
+    // their own lesson - without this check, any logged-in student could see another
+    // student's materials by guessing/trying a different lessonId
+    public List<MaterialResponse> getMaterialsForLesson(Long lessonId, Long callerId, Role callerRole) {
+        Lesson lesson = lessonService.getLessonEntity(lessonId);
+
+        boolean isOwner = lesson.getStudent().getId().equals(callerId);
+
+        if (callerRole == Role.STUDENT && !isOwner) {
+            throw new LessonAccessDeniedException("You can only view materials for your own lessons");
+        }
+
         return materialRepository.findAllByLessonId(lessonId).stream()
                 .map(this::toResponse)
                 .toList();

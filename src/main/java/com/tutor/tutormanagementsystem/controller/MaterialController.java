@@ -69,11 +69,14 @@ public class MaterialController {
         return ResponseEntity.ok(materialService.getMaterialsForStudent(studentId));
     }
 
-    // materials attached to a specific lesson - available to both roles
+    // materials attached to a specific lesson - available to both roles, but a student
+    // may only view materials for their own lesson (enforced in MaterialService)
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     @GetMapping("/lessons/{lessonId}/materials")
-    public ResponseEntity<List<MaterialResponse>> getMaterialsForLesson(@PathVariable Long lessonId) {
-        return ResponseEntity.ok(materialService.getMaterialsForLesson(lessonId));
+    public ResponseEntity<List<MaterialResponse>> getMaterialsForLesson(
+            @PathVariable Long lessonId,
+            @AuthenticationPrincipal AuthenticatedUser caller) {
+        return ResponseEntity.ok(materialService.getMaterialsForLesson(lessonId, caller.id(), caller.role()));
     }
 
     // downloads a FILE-type material's actual bytes. tely excludes the

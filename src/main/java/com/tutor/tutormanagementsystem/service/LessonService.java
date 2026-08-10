@@ -102,6 +102,14 @@ public class LessonService {
             throw new LessonAccessDeniedException("You can only cancel your own lessons");
         }
 
+        // only a still-SCHEDULED lesson can be cancelled - without this, cancelling an
+        // already-CANCELLED lesson silently no-ops (harmless but wrong), and cancelling
+        // a COMPLETED lesson would wrongly remove it from the debt calculation
+        // (getDebtForStudent/getAllDebts only sum COMPLETED lessons)
+        if (lesson.getStatus() != LessonStatus.SCHEDULED) {
+            throw new InvalidLessonStateException("Only a scheduled lesson can be cancelled");
+        }
+
         lesson.setStatus(LessonStatus.CANCELLED);
         lessonRepository.save(lesson);
 
