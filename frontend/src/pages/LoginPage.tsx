@@ -9,6 +9,7 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleLogin() {
     setErrorMessage("");
@@ -92,13 +93,22 @@ function LoginPage() {
                 <label htmlFor="password" className="text-sm font-medium text-slate-700">
                   Password
                 </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 pr-16 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 px-3 text-xs font-medium text-slate-500 hover:text-slate-700"
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
               </div>
 
               {errorMessage && (
@@ -113,6 +123,20 @@ function LoginPage() {
               </button>
             </form>
           </div>
+
+          <p className="text-sm text-slate-500 text-center mt-4">
+            Need help? Contact me: 050-000-0000{" "}
+            (
+            <a
+              href="https://wa.me/972500000000"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-indigo-600 hover:text-indigo-700 font-medium"
+            >
+              WhatsApp
+            </a>
+            )
+          </p>
         </div>
       </div>
     </div>
