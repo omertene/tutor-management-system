@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -102,10 +103,7 @@ public class LessonService {
             throw new LessonAccessDeniedException("You can only cancel your own lessons");
         }
 
-        // only a still-SCHEDULED lesson can be cancelled - without this, cancelling an
-        // already-CANCELLED lesson silently no-ops (harmless but wrong), and cancelling
-        // a COMPLETED lesson would wrongly remove it from the debt calculation
-        // (getDebtForStudent/getAllDebts only sum COMPLETED lessons)
+
         if (lesson.getStatus() != LessonStatus.SCHEDULED) {
             throw new InvalidLessonStateException("Only a scheduled lesson can be cancelled");
         }
@@ -154,9 +152,7 @@ public class LessonService {
                 .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
     }
 
-    // used by StatisticsService for the "lessons per month" table. row[0]/row[1]
-    // (YEAR/MONTH) and row[2] (COUNT) come back as Integer/Long depending on the DB/
-    // Hibernate version - Number.intValue()/.longValue() handles either without guessing
+
     public List<MonthlyCount> getCompletedLessonsByMonth() {
         return lessonRepository.countCompletedLessonsGroupedByMonth(LessonStatus.COMPLETED).stream()
                 .map(row -> new MonthlyCount(
@@ -179,6 +175,25 @@ public class LessonService {
     // all-time count of COMPLETED lessons
     public long getTotalCompletedLessons() {
         return lessonRepository.countByStatus(LessonStatus.COMPLETED);
+    }
+
+
+    public List<Lesson> getLessonsAwaitingReminder(long hoursBefore) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime reminderCutoff = now.plusHours(hoursBefore);
+
+        return lessonRepository.findAllByStatusAndReminderSentFalse(LessonStatus.SCHEDULED).stream()
+                .filter(lesson -> {
+                    LocalDateTime lessonStart = LocalDateTime.of(lesson.getDate(), lesson.getStartTime());
+                    return lessonStart.isAfter(now) && !lessonStart.isAfter(reminderCutoff);
+                })
+                .toList();
+    }
+
+    // marks a lesson as reminded so the next scheduled check doesn't pick it up again
+    public void markReminderSent(Lesson lesson) {
+        lesson.setReminderSent(true);
+        lessonRepository.save(lesson);
     }
 
     // includeNotes controls whether the teacher-only notes field is exposed

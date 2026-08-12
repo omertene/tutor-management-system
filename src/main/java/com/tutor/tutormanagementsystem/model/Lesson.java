@@ -69,4 +69,11 @@ public class Lesson {
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    // true once the "your lesson is coming up" reminder email has been sent for this
+    // lesson - prevents the scheduled reminder job from emailing the same lesson twice.
+    // defaults to false for every new lesson booked from now on
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean reminderSent = false;
 }
