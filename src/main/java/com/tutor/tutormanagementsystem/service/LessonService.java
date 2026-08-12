@@ -178,16 +178,49 @@ public class LessonService {
     }
 
 
+    // quiet hours - reminders that would naturally go out during this window get pushed
+    // to QUIET_HOURS_END instead, so students don't get emailed/pinged in the middle of
+    // the night. e.g. a lesson at 15:00 with a 12h-before reminder would naturally fire
+    // at 03:00 - instead it fires at 08:00 that same morning
+    private static final LocalTime QUIET_HOURS_START = LocalTime.of(22, 0);
+    private static final LocalTime QUIET_HOURS_END = LocalTime.of(8, 0);
+
     public List<Lesson> getLessonsAwaitingReminder(long hoursBefore) {
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime reminderCutoff = now.plusHours(hoursBefore);
 
         return lessonRepository.findAllByStatusAndReminderSentFalse(LessonStatus.SCHEDULED).stream()
                 .filter(lesson -> {
                     LocalDateTime lessonStart = LocalDateTime.of(lesson.getDate(), lesson.getStartTime());
-                    return lessonStart.isAfter(now) && !lessonStart.isAfter(reminderCutoff);
+                    if (!lessonStart.isAfter(now)) {
+                        return false; // lesson already started/passed - never remind
+                    }
+
+                    LocalDateTime reminderTime = clampOutOfQuietHours(lessonStart.minusHours(hoursBefore));
+
+                    // due once "now" has reached the (possibly clamped) reminder time,
+                    // but only if the lesson hasn't started yet by then
+                    return !now.isBefore(reminderTime);
                 })
                 .toList();
+    }
+
+    // if the given time falls inside quiet hours (22:00-08:00), pushes it forward to
+    // 08:00 the same morning (or the next morning, if it was already past midnight)
+    private LocalDateTime clampOutOfQuietHours(LocalDateTime time) {
+        LocalTime timeOfDay = time.toLocalTime();
+
+        boolean isDuringQuietHours = timeOfDay.isAfter(QUIET_HOURS_START) || timeOfDay.isBefore(QUIET_HOURS_END);
+
+        if (!isDuringQuietHours) {
+            return time;
+        }
+
+        // if it's already past midnight (e.g. 03:00), 08:00 the same day is later and correct.
+        // if it's still evening (e.g. 23:00), 08:00 the same day has already passed, so it
+        // needs to roll over to 08:00 the next day instead
+        LocalDate clampedDate = timeOfDay.isBefore(QUIET_HOURS_END) ? time.toLocalDate() : time.toLocalDate().plusDays(1);
+
+        return LocalDateTime.of(clampedDate, QUIET_HOURS_END);
     }
 
     // marks a lesson as reminded so the next scheduled check doesn't pick it up again
