@@ -98,7 +98,7 @@ function RegisterPage() {
 
             <div className="flex flex-col gap-1">
               <label className={labelClass}>Password *</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} />
+              <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} />
             </div>
 
             <div className="flex flex-col gap-1">

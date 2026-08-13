@@ -63,6 +63,14 @@ function LessonsPage() {
     // only used by the teacher's form
     const [selectedStudentId, setSelectedStudentId] = useState("");
 
+    function handleStartTimeChange(value: string) {
+        setStartTime(value);
+        if (!value) return;
+        const [hours, minutes] = value.split(":").map(Number);
+        const endHours = (hours + 1) % 24;
+        setEndTime(`${String(endHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`);
+    }
+
     async function handleLoadLessons() {
 
         setErrorMessage("");
@@ -282,7 +290,7 @@ function LessonsPage() {
                             </select>
 
                             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
-                            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputClass} />
+                            <input type="time" value={startTime} onChange={(e) => handleStartTimeChange(e.target.value)} className={inputClass} />
                             <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputClass} />
 
                             <button onClick={handleCreateLessonForStudent} className={primaryButtonClass}>
@@ -311,7 +319,7 @@ function LessonsPage() {
                             </select>
 
                             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
-                            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputClass} />
+                            <input type="time" value={startTime} onChange={(e) => handleStartTimeChange(e.target.value)} className={inputClass} />
                             <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputClass} />
 
                             <button onClick={handleCreateLessonAsStudent} className={primaryButtonClass}>

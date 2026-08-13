@@ -23,6 +23,20 @@ type ScheduleRule = {
     endTime: string;
 };
 
+
+function formatTime(time: string): string {
+    return time.slice(0, 5);
+}
+
+
+function sortRules(rules: ScheduleRule[]): ScheduleRule[] {
+    return [...rules].sort((a, b) => {
+        const dayDiff = days.indexOf(a.dayOfWeek) - days.indexOf(b.dayOfWeek);
+        if (dayDiff !== 0) return dayDiff;
+        return a.startTime.localeCompare(b.startTime);
+    });
+}
+
 function ScheduleRulePage() {
 
     const [scheduleRules, setScheduleRules] = useState<ScheduleRule[]>([]);
@@ -47,8 +61,8 @@ function ScheduleRulePage() {
             return;
         }
 
-        const data = await response.json();
-        setScheduleRules(data);
+        const data: ScheduleRule[] = await response.json();
+        setScheduleRules(sortRules(data));
     }
 
     async function handleAddRule() {
@@ -74,7 +88,7 @@ function ScheduleRulePage() {
         }
 
         const createdRule = await response.json();
-        setScheduleRules([...scheduleRules, createdRule]);
+        setScheduleRules(sortRules([...scheduleRules, createdRule]));
         setStartTime("");
         setEndTime("");
     }
@@ -153,7 +167,7 @@ function ScheduleRulePage() {
                         {scheduleRules.map((scheduleRule) => (
                             <div key={scheduleRule.id} className="px-4 py-3 flex items-center justify-between">
                                 <span className="text-slate-900">
-                                    {scheduleRule.dayOfWeek} — {scheduleRule.startTime} to {scheduleRule.endTime}
+                                    {scheduleRule.dayOfWeek} — {formatTime(scheduleRule.startTime)} to {formatTime(scheduleRule.endTime)}
                                 </span>
                                 <button
                                     onClick={() => handleDeleteRule(scheduleRule.id)}
