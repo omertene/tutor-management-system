@@ -8,7 +8,6 @@ const teacherLinks = [
   { label: "Students", to: "/teacher/register" },
   { label: "Subjects", to: "/teacher/subjects" },
   { label: "Schedule", to: "/teacher/schedule-rules" },
-  { label: "Overrides", to: "/teacher/schedule-overrides" },
   { label: "Lessons", to: "/teacher/lessons" },
   { label: "Payments", to: "/teacher/payments" },
   { label: "Materials", to: "/teacher/materials" },

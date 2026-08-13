@@ -6,8 +6,10 @@ import com.tutor.tutormanagementsystem.exception.InvalidTimeRangeException;
 import com.tutor.tutormanagementsystem.exception.PastDateException;
 import com.tutor.tutormanagementsystem.exception.ScheduleConflictException;
 import com.tutor.tutormanagementsystem.exception.ScheduleOverrideNotFoundException;
+import com.tutor.tutormanagementsystem.model.OverrideType;
 import com.tutor.tutormanagementsystem.model.ScheduleOverride;
 import com.tutor.tutormanagementsystem.repository.ScheduleOverrideRepository;
+import com.tutor.tutormanagementsystem.repository.ScheduleRuleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,8 @@ import java.util.List;
 public class ScheduleOverrideService {
 
     private final ScheduleOverrideRepository scheduleOverrideRepository;
+    private final ScheduleRuleRepository scheduleRuleRepository;
+    private final LessonService lessonService;
 
     public ScheduleOverrideResponse createScheduleOverride(ScheduleOverrideRequest request) {
 
@@ -38,6 +42,29 @@ public class ScheduleOverrideService {
             throw new ScheduleConflictException("This time overlaps an existing override");
         }
 
+        // a BLOCK only makes sense where the weekly rule would otherwise make this
+        // time available, and an ADD only makes sense where it wouldn't - otherwise
+        // the override does nothing and just clutters the schedule
+        boolean coveredByRule = !scheduleRuleRepository
+                .findAllByDayOfWeekAndStartTimeLessThanAndEndTimeGreaterThan(
+                        request.date().getDayOfWeek(), request.endTime(), request.startTime())
+                .isEmpty();
+
+        if (request.type() == OverrideType.BLOCK && !coveredByRule) {
+            throw new ScheduleConflictException("This time is already unavailable - no need to block it");
+        }
+
+        if (request.type() == OverrideType.ADD && coveredByRule) {
+            throw new ScheduleConflictException("This time is already available - no need to add it");
+        }
+
+        // a BLOCK can't be placed on top of a real booked lesson - cancel the
+        // lesson first if this time genuinely needs to be freed up
+        if (request.type() == OverrideType.BLOCK
+                && lessonService.hasScheduledLessonInRange(request.date(), request.startTime(), request.endTime())) {
+            throw new ScheduleConflictException("This time has a scheduled lesson - cancel it before blocking this time");
+        }
+
         ScheduleOverride scheduleOverride = ScheduleOverride.builder()
                 .date(request.date())
                 .startTime(request.startTime())
@@ -45,6 +72,59 @@ public class ScheduleOverrideService {
                 .type(request.type())
                 .note(request.note())
                 .build();
+
+        scheduleOverrideRepository.save(scheduleOverride);
+
+        return new ScheduleOverrideResponse(scheduleOverride.getId(), scheduleOverride.getDate(),
+                scheduleOverride.getStartTime(), scheduleOverride.getEndTime(),
+                scheduleOverride.getType(), scheduleOverride.getNote());
+    }
+
+    public ScheduleOverrideResponse updateScheduleOverride(Long overrideId, ScheduleOverrideRequest request) {
+        ScheduleOverride scheduleOverride = scheduleOverrideRepository.findById(overrideId)
+                .orElseThrow(() -> new ScheduleOverrideNotFoundException("Schedule override not found"));
+
+        if (request.date().isBefore(LocalDate.now())) {
+            throw new PastDateException("Cannot move an override to a past date");
+        }
+
+        if (request.startTime().isAfter(request.endTime())) {
+            throw new InvalidTimeRangeException("Start time must be before end time");
+        }
+
+        boolean overlapping = scheduleOverrideRepository
+                .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThan(
+                        request.date(), request.endTime(), request.startTime())
+                .stream()
+                .anyMatch(other -> !other.getId().equals(overrideId));
+
+        if (overlapping) {
+            throw new ScheduleConflictException("This time overlaps an existing override");
+        }
+
+        boolean coveredByRule = !scheduleRuleRepository
+                .findAllByDayOfWeekAndStartTimeLessThanAndEndTimeGreaterThan(
+                        request.date().getDayOfWeek(), request.endTime(), request.startTime())
+                .isEmpty();
+
+        if (request.type() == OverrideType.BLOCK && !coveredByRule) {
+            throw new ScheduleConflictException("This time is already unavailable - no need to block it");
+        }
+
+        if (request.type() == OverrideType.ADD && coveredByRule) {
+            throw new ScheduleConflictException("This time is already available - no need to add it");
+        }
+
+        if (request.type() == OverrideType.BLOCK
+                && lessonService.hasScheduledLessonInRange(request.date(), request.startTime(), request.endTime())) {
+            throw new ScheduleConflictException("This time has a scheduled lesson - cancel it before blocking this time");
+        }
+
+        scheduleOverride.setDate(request.date());
+        scheduleOverride.setStartTime(request.startTime());
+        scheduleOverride.setEndTime(request.endTime());
+        scheduleOverride.setType(request.type());
+        scheduleOverride.setNote(request.note());
 
         scheduleOverrideRepository.save(scheduleOverride);
 

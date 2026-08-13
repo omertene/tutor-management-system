@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import type { Subject } from "../types";
 
@@ -8,7 +8,6 @@ const teacherLinks = [
   { label: "Students", to: "/teacher/register" },
   { label: "Subjects", to: "/teacher/subjects" },
   { label: "Schedule", to: "/teacher/schedule-rules" },
-  { label: "Overrides", to: "/teacher/schedule-overrides" },
   { label: "Lessons", to: "/teacher/lessons" },
   { label: "Payments", to: "/teacher/payments" },
   { label: "Materials", to: "/teacher/materials" },
@@ -39,6 +38,10 @@ function SubjectsPage() {
     const data = await response.json();
     setSubjects(data);
   }
+
+  useEffect(() => {
+    handleLoadSubjects();
+  }, []);
 
   async function handleAddSubjects() {
     setErrorMessage("");
@@ -93,19 +96,11 @@ function SubjectsPage() {
         {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
         <div className="mt-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">All subjects</h2>
-            <button
-              onClick={handleLoadSubjects}
-              className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-            >
-              Show all subjects
-            </button>
-          </div>
+          <h2 className="text-lg font-semibold text-slate-900">All subjects</h2>
 
           <div className="mt-4 bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
             {subjects.length === 0 && (
-              <p className="px-4 py-6 text-sm text-slate-500 text-center">No subjects loaded yet.</p>
+              <p className="px-4 py-6 text-sm text-slate-500 text-center">No subjects yet.</p>
             )}
             {subjects.map((subject) => (
               <div key={subject.id} className="px-4 py-3">

@@ -9,7 +9,6 @@ const teacherLinks = [
   { label: "Students", to: "/teacher/register" },
   { label: "Subjects", to: "/teacher/subjects" },
   { label: "Schedule", to: "/teacher/schedule-rules" },
-  { label: "Overrides", to: "/teacher/schedule-overrides" },
   { label: "Lessons", to: "/teacher/lessons" },
   { label: "Payments", to: "/teacher/payments" },
   { label: "Materials", to: "/teacher/materials" },
@@ -41,6 +40,15 @@ function formatTime(time: string): string {
 function formatDate(date: string): string {
   const [, month, day] = date.split("-");
   return `${day}/${month}`;
+}
+
+// formats using the browser's local date fields (not toISOString, which converts
+// to UTC first and can shift the date by a day depending on timezone)
+function toLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function TeacherDashboard() {
@@ -101,7 +109,7 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     if (!response.ok) return null;
 
     const data: Lesson[] = await response.json();
-    const todayDate = new Date().toISOString().slice(0, 10);
+    const todayDate = toLocalDateString(new Date());
     const scheduled = data.filter((lesson) => lesson.status === "SCHEDULED");
 
     const upcoming = scheduled
@@ -117,8 +125,8 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
-    const startOfWeekDate = startOfWeek.toISOString().slice(0, 10);
-    const endOfWeekDate = endOfWeek.toISOString().slice(0, 10);
+    const startOfWeekDate = toLocalDateString(startOfWeek);
+    const endOfWeekDate = toLocalDateString(endOfWeek);
 
     const thisWeekCount = data.filter(
       (lesson) => lesson.status !== "CANCELLED" && lesson.date >= startOfWeekDate && lesson.date <= endOfWeekDate
@@ -290,7 +298,7 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     refreshDashboard();
   }
 
-  const todayDate = new Date().toISOString().slice(0, 10);
+  const todayDate = toLocalDateString(new Date());
   const todaysLessons = upcomingLessons.filter((lesson) => lesson.date === todayDate);
   const restOfWeekLessons = upcomingLessons.filter((lesson) => lesson.date !== todayDate);
 

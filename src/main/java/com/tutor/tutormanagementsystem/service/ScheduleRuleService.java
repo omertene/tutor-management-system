@@ -18,6 +18,7 @@ import java.util.List;
 public class ScheduleRuleService {
 
     private final ScheduleRuleRepository scheduleRuleRepository;
+    private final LessonService lessonService;
 
     public ScheduleRuleResponse createScheduleRule(ScheduleRuleRequest request) {
 
@@ -53,8 +54,15 @@ public class ScheduleRuleService {
                 .toList();
     }
 
-    // undoes a mistaken or outdated recurring availability rule. nothing else
-    // references a ScheduleRule by FK, so this is a plain delete, no guard needed
+
+    public long countUpcomingLessonsAffectedByDeletion(Long ruleId) {
+        ScheduleRule rule = scheduleRuleRepository.findById(ruleId)
+                .orElseThrow(() -> new ScheduleRuleNotFoundException("Schedule rule not found"));
+
+        return lessonService.countUpcomingLessonsInWeeklySlot(rule.getDayOfWeek(), rule.getStartTime(), rule.getEndTime());
+    }
+
+
     public void deleteScheduleRule(Long ruleId) {
         if (!scheduleRuleRepository.existsById(ruleId)) {
             throw new ScheduleRuleNotFoundException("Schedule rule not found");

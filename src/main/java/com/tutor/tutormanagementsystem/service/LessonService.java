@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -91,6 +92,51 @@ public class LessonService {
         return toResponse(lesson, true);
     }
 
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public LessonResponse updateLesson(Long lessonId, LessonRequest request) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
+
+        if (lesson.getStatus() != LessonStatus.SCHEDULED) {
+            throw new InvalidLessonStateException("Only a scheduled lesson can be edited");
+        }
+
+        if (request.startTime().isAfter(request.endTime())) {
+            throw new InvalidTimeRangeException("Start time must be before end time");
+        }
+
+        Student student = studentService.getStudentEntity(request.studentId());
+        Subject subject = subjectService.getSubjectEntity(request.subjectId());
+
+        lessonRepository.acquireDateLock(request.date().toEpochDay());
+
+        if (!availabilityService.isTimeAvailable(request.date(), request.startTime(), request.endTime())) {
+            throw new SlotNotAvailableException("This time is not available");
+        }
+
+        boolean alreadyBooked = lessonRepository
+                .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThanAndStatus(
+                        request.date(), request.endTime(), request.startTime(), LessonStatus.SCHEDULED)
+                .stream()
+                .anyMatch(other -> !other.getId().equals(lessonId));
+
+        if (alreadyBooked) {
+            throw new SlotNotAvailableException("This time is already booked");
+        }
+
+        lesson.setStudent(student);
+        lesson.setSubject(subject);
+        lesson.setDate(request.date());
+        lesson.setStartTime(request.startTime());
+        lesson.setEndTime(request.endTime());
+        lesson.setPriceAtBooking(student.getHourlyRate());
+
+        lessonRepository.save(lesson);
+
+        return toResponse(lesson, true);
+    }
+
     // callerId/callerRole identify who is asking - a student may only cancel their own lesson,
     // a teacher may cancel any lesson
     public LessonResponse cancelLesson(Long lessonId, Long callerId, Role callerRole) {
@@ -104,8 +150,12 @@ public class LessonService {
         }
 
 
-        if (lesson.getStatus() != LessonStatus.SCHEDULED) {
-            throw new InvalidLessonStateException("Only a scheduled lesson can be cancelled");
+        if (lesson.getStatus() == LessonStatus.COMPLETED && callerRole != Role.TEACHER) {
+            throw new LessonAccessDeniedException("Only a teacher can cancel a completed lesson");
+        }
+
+        if (lesson.getStatus() != LessonStatus.SCHEDULED && lesson.getStatus() != LessonStatus.COMPLETED) {
+            throw new InvalidLessonStateException("This lesson can't be cancelled");
         }
 
         lesson.setStatus(LessonStatus.CANCELLED);
@@ -121,6 +171,11 @@ public class LessonService {
 
         if (lesson.getStatus() != LessonStatus.SCHEDULED) {
             throw new InvalidLessonStateException("Only a scheduled lesson can be marked as completed");
+        }
+
+        LocalDateTime lessonStart = LocalDateTime.of(lesson.getDate(), lesson.getStartTime());
+        if (lessonStart.isAfter(LocalDateTime.now())) {
+            throw new InvalidLessonStateException("Cannot mark a lesson as completed before it has started");
         }
 
         lesson.setStatus(LessonStatus.COMPLETED);
@@ -150,6 +205,29 @@ public class LessonService {
     public Lesson getLessonEntity(Long lessonId) {
         return lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
+    }
+
+    // is there a SCHEDULED lesson overlapping this date/time range - used by
+    // ScheduleOverrideService to stop a BLOCK override from being created on top
+    // of a real booked lesson
+    public boolean hasScheduledLessonInRange(LocalDate date, LocalTime startTime, LocalTime endTime) {
+        return !lessonRepository
+                .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThanAndStatus(date, endTime, startTime, LessonStatus.SCHEDULED)
+                .isEmpty();
+    }
+
+    // count of upcoming SCHEDULED lessons that fall on the given day-of-week and
+    // overlap the given time range - used by ScheduleRuleService to warn a teacher
+    // before deleting a rule that still has future lessons sitting inside it
+    public long countUpcomingLessonsInWeeklySlot(DayOfWeek dayOfWeek, LocalTime startTime, LocalTime endTime) {
+        LocalDate today = LocalDate.now();
+
+        return lessonRepository.findAll().stream()
+                .filter(lesson -> lesson.getStatus() == LessonStatus.SCHEDULED)
+                .filter(lesson -> !lesson.getDate().isBefore(today))
+                .filter(lesson -> lesson.getDate().getDayOfWeek() == dayOfWeek)
+                .filter(lesson -> lesson.getStartTime().isBefore(endTime) && lesson.getEndTime().isAfter(startTime))
+                .count();
     }
 
 
@@ -188,10 +266,7 @@ public class LessonService {
     }
 
 
-    // quiet hours - reminders that would naturally go out during this window get pushed
-    // to QUIET_HOURS_END instead, so students don't get emailed/pinged in the middle of
-    // the night. e.g. a lesson at 15:00 with a 12h-before reminder would naturally fire
-    // at 03:00 - instead it fires at 08:00 that same morning
+
     private static final LocalTime QUIET_HOURS_START = LocalTime.of(22, 0);
     private static final LocalTime QUIET_HOURS_END = LocalTime.of(8, 0);
 
@@ -225,9 +300,7 @@ public class LessonService {
             return time;
         }
 
-        // if it's already past midnight (e.g. 03:00), 08:00 the same day is later and correct.
-        // if it's still evening (e.g. 23:00), 08:00 the same day has already passed, so it
-        // needs to roll over to 08:00 the next day instead
+
         LocalDate clampedDate = timeOfDay.isBefore(QUIET_HOURS_END) ? time.toLocalDate() : time.toLocalDate().plusDays(1);
 
         return LocalDateTime.of(clampedDate, QUIET_HOURS_END);
@@ -243,6 +316,7 @@ public class LessonService {
     private LessonResponse toResponse(Lesson lesson, boolean includeNotes) {
         return new LessonResponse(
                 lesson.getId(),
+                lesson.getStudent().getId(),
                 lesson.getStudent().getUser().getFirstName(),
                 lesson.getStudent().getUser().getLastName(),
                 lesson.getSubject().getName(),

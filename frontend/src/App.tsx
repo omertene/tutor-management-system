@@ -5,8 +5,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SubjectsPage from "./pages/SubjectsPage";
-import ScheduleRulePage from "./pages/ScheduleRulePage"
-import ScheduleOverridePage from "./pages/ScheduleOverridePage"
+import SchedulePage from "./pages/SchedulePage"
 import LessonsPage from "./pages/LessonsPage"
 import PaymentsPage from "./pages/PaymentsPage"
 import MaterialsPage from "./pages/MaterialsPage"
@@ -58,16 +57,7 @@ function App() {
           path="/teacher/schedule-rules"
           element={
             <ProtectedRoute requiredRole="TEACHER">
-              <ScheduleRulePage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/teacher/schedule-overrides"
-          element={
-            <ProtectedRoute requiredRole="TEACHER">
-              <ScheduleOverridePage />
+              <SchedulePage />
             </ProtectedRoute>
           }
         />

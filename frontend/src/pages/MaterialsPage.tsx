@@ -9,7 +9,6 @@ const teacherLinks = [
     { label: "Students", to: "/teacher/register" },
     { label: "Subjects", to: "/teacher/subjects" },
     { label: "Schedule", to: "/teacher/schedule-rules" },
-    { label: "Overrides", to: "/teacher/schedule-overrides" },
     { label: "Lessons", to: "/teacher/lessons" },
     { label: "Payments", to: "/teacher/payments" },
     { label: "Materials", to: "/teacher/materials" },
@@ -299,7 +298,6 @@ function MaterialsPage() {
     }
 
     const inputClass = "rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
-    const primaryButtonClass = "px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
     const secondaryButtonClass = "px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
     const smallSecondaryButtonClass = "px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors";
 

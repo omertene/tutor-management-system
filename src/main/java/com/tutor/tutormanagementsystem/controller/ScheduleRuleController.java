@@ -28,6 +28,14 @@ public class ScheduleRuleController {
         return ResponseEntity.ok(scheduleRuleService.getAllScheduleRules());
     }
 
+    // count of upcoming lessons that would be left on an unavailable slot if this
+    // rule were deleted - the frontend calls this before showing a delete confirmation
+    @PreAuthorize("hasRole('TEACHER')")
+    @GetMapping("/{id}/affected-lessons-count")
+    public ResponseEntity<Long> countUpcomingLessonsAffectedByDeletion(@PathVariable("id") Long ruleId) {
+        return ResponseEntity.ok(scheduleRuleService.countUpcomingLessonsAffectedByDeletion(ruleId));
+    }
+
     @PreAuthorize("hasRole('TEACHER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteScheduleRule(@PathVariable("id") Long ruleId) {

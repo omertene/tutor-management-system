@@ -9,7 +9,6 @@ const teacherLinks = [
     { label: "Students", to: "/teacher/register" },
     { label: "Subjects", to: "/teacher/subjects" },
     { label: "Schedule", to: "/teacher/schedule-rules" },
-    { label: "Overrides", to: "/teacher/schedule-overrides" },
     { label: "Lessons", to: "/teacher/lessons" },
     { label: "Payments", to: "/teacher/payments" },
     { label: "Materials", to: "/teacher/materials" },
@@ -168,8 +167,7 @@ function PaymentsPage() {
 
         setPayments(payments.filter((payment) => payment.id !== paymentId));
 
-        // the debt list is a separate snapshot that doesn't know a payment just
-        // changed - refetch it so it doesn't silently go stale after a cancel
+
         handleLoadAllDebts();
     }
 
