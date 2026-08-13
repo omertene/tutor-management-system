@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { Link } from "react-router-dom";
+import Modal from "../components/Modal";
 import type { Student } from "../types";
 
 const teacherLinks = [
@@ -33,6 +34,14 @@ function RegisterPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [listErrorMessage, setListErrorMessage] = useState("");
   const [showingInactive, setShowingInactive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [activeCount, setActiveCount] = useState(0);
+  const [inactiveCount, setInactiveCount] = useState(0);
+
+  const [debtByStudentId, setDebtByStudentId] = useState<Record<number, number>>({});
+
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
 
   const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
   const [editFirstName, setEditFirstName] = useState("");
@@ -42,12 +51,12 @@ function RegisterPage() {
   const [editEducationLevel, setEditEducationLevel] = useState("");
   const [editNotes, setEditNotes] = useState("");
 
-  async function loadStudents(includeInactive: boolean) {
+  async function loadStudents(inactiveOnly: boolean) {
     setListErrorMessage("");
-    setShowingInactive(includeInactive);
+    setShowingInactive(inactiveOnly);
 
     const token = localStorage.getItem("token");
-    const endpoint = includeInactive ? "/teacher/students/all" : "/teacher/students";
+    const endpoint = inactiveOnly ? "/teacher/students/all" : "/teacher/students";
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -58,11 +67,43 @@ function RegisterPage() {
       return;
     }
 
-    setStudents(await response.json());
+    const data: Student[] = await response.json();
+    setStudents(inactiveOnly ? data.filter((student) => !student.active) : data);
+  }
+
+  async function loadDebts() {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${API_BASE_URL}/teacher/debts`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return;
+
+    const data: { studentId: number; debt: number }[] = await response.json();
+    const map: Record<number, number> = {};
+    data.forEach((entry) => {
+      map[entry.studentId] = entry.debt;
+    });
+    setDebtByStudentId(map);
+  }
+
+  async function loadCounts() {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${API_BASE_URL}/teacher/students/all`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return;
+
+    const data: Student[] = await response.json();
+    setActiveCount(data.filter((student) => student.active).length);
+    setInactiveCount(data.filter((student) => !student.active).length);
   }
 
   useEffect(() => {
     loadStudents(false);
+    loadDebts();
+    loadCounts();
   }, []);
 
   async function handleToggleActive(student: Student) {
@@ -85,8 +126,9 @@ function RegisterPage() {
       return;
     }
 
-    const updatedStudent = await response.json();
-    setStudents(students.map((s) => (s.id === student.id ? updatedStudent : s)));
+    loadStudents(showingInactive);
+    loadDebts();
+    loadCounts();
   }
 
   // opens the edit form for a student, pre-filled with their current values
@@ -182,10 +224,17 @@ function RegisterPage() {
     setEducationLevel("");
     setNotes("");
     loadStudents(showingInactive);
+    loadDebts();
+    loadCounts();
+    setShowAddStudentModal(false);
   }
 
   const inputClass = "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
   const labelClass = "text-sm font-medium text-slate-700";
+
+  const filteredStudents = students.filter((student) =>
+    `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -198,64 +247,27 @@ function RegisterPage() {
 
         <h1 className="text-2xl font-semibold text-slate-900 mt-2">Students</h1>
 
-        <h2 className="text-lg font-semibold text-slate-900 mt-6 mb-1">Add student</h2>
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-xl">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>Email *</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
+        <div className="mt-6">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3 flex-wrap">
+              <input
+                type="text"
+                placeholder="Search by name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64"
+              />
+              <button
+                onClick={() => {
+                  setErrorMessage("");
+                  setSuccessMessage("");
+                  setShowAddStudentModal(true);
+                }}
+                className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+              >
+                + Add student
+              </button>
             </div>
-
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>Password *</label>
-              <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>First name *</label>
-              <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputClass} />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>Last name *</label>
-              <input value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputClass} />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>Phone *</label>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>Hourly rate *</label>
-              <input value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} className={inputClass} />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>Education level *</label>
-              <input value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)} className={inputClass} />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>Notes (optional)</label>
-              <input value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} />
-            </div>
-          </div>
-
-          {errorMessage && <p className="text-sm text-red-600 mt-4">{errorMessage}</p>}
-          {successMessage && <p className="text-sm text-green-600 mt-4">{successMessage}</p>}
-
-          <button
-            onClick={handleRegister}
-            className="w-full mt-6 rounded-lg bg-indigo-600 text-white text-sm font-medium py-2.5 hover:bg-indigo-700 transition-colors"
-          >
-            Add student
-          </button>
-        </div>
-
-        <div className="mt-10">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">Your students</h2>
             <div className="flex gap-2">
               <button
                 onClick={() => loadStudents(false)}
@@ -275,21 +287,30 @@ function RegisterPage() {
                     : "bg-white border-slate-300 text-slate-700 hover:bg-slate-50"
                 }`}
               >
-                Show all (incl. inactive)
+                Show inactive
               </button>
             </div>
           </div>
 
           {listErrorMessage && <p className="text-sm text-red-600 mt-2">{listErrorMessage}</p>}
 
-          <div className="mt-4 bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+          <p className="text-sm text-slate-500 mt-4">
+            {showingInactive ? inactiveCount : activeCount} {showingInactive ? "inactive" : "active"} student
+            {(showingInactive ? inactiveCount : activeCount) === 1 ? "" : "s"}
+          </p>
+
+          <div className="mt-2 bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
             {students.length === 0 && (
               <p className="px-4 py-6 text-sm text-slate-500 text-center">
-                {showingInactive ? "No students yet." : "You have no active students yet."}
+                {showingInactive ? "No inactive students." : "You have no active students yet."}
               </p>
             )}
 
-            {students.map((student) => (
+            {students.length > 0 && filteredStudents.length === 0 && (
+              <p className="px-4 py-6 text-sm text-slate-500 text-center">No students match "{searchQuery}".</p>
+            )}
+
+            {filteredStudents.map((student) => (
               <div key={student.id} className="px-4 py-3">
                 {editingStudentId === student.id ? (
                   <div className="flex flex-wrap gap-2 items-center">
@@ -351,6 +372,11 @@ function RegisterPage() {
                       <span className="text-slate-500 text-sm">{student.email}</span>
                       <span className="text-slate-500 text-sm">{student.phone}</span>
                       <span className="text-slate-500 text-sm">₪{student.hourlyRate}/hr</span>
+                      {(debtByStudentId[student.id] ?? 0) > 0 && (
+                        <span className="text-sm font-medium text-red-600">
+                          Debt: ₪{debtByStudentId[student.id]}
+                        </span>
+                      )}
                       <span
                         className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                           student.active
@@ -382,6 +408,64 @@ function RegisterPage() {
           </div>
         </div>
       </main>
+
+      {showAddStudentModal && (
+        <Modal title="Add student" onClose={() => setShowAddStudentModal(false)}>
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>Email *</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>Password *</label>
+                <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>First name *</label>
+                <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputClass} />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>Last name *</label>
+                <input value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputClass} />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>Phone *</label>
+                <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>Hourly rate *</label>
+                <input value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} className={inputClass} />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>Education level *</label>
+                <input value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)} className={inputClass} />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>Notes (optional)</label>
+                <input value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} />
+              </div>
+            </div>
+
+            {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
+            {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
+
+            <button
+              onClick={handleRegister}
+              className="w-full mt-2 rounded-lg bg-indigo-600 text-white text-sm font-medium py-2.5 hover:bg-indigo-700 transition-colors"
+            >
+              Add student
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
