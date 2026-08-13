@@ -41,6 +41,13 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     // total count of COMPLETED lessons, all-time
     long countByStatus(LessonStatus status);
 
+    // total price of every lesson of the given status whose date falls within the range -
+    // used for "revenue this month", counted by when the lesson happened, not when it was paid
+    @Query("SELECT COALESCE(SUM(l.priceAtBooking), 0) FROM Lesson l " +
+            "WHERE l.status = :status AND l.date BETWEEN :startDate AND :endDate")
+    BigDecimal sumLessonPricesByStatusAndDateRange(
+            @Param("status") LessonStatus status, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
 
     List<Lesson> findAllByStatusAndReminderSentFalse(LessonStatus status);
 }

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -76,5 +77,13 @@ public class LessonController {
     @PatchMapping("/teacher/lessons/{id}/complete")
     public ResponseEntity<LessonResponse> completeLesson(@PathVariable("id") Long lessonId) {
         return ResponseEntity.ok(lessonService.completeLesson(lessonId));
+    }
+
+    // total price of lessons completed so far this calendar month - "revenue this month"
+    // means work actually done this month, not payments received this month
+    @PreAuthorize("hasRole('TEACHER')")
+    @GetMapping("/teacher/revenue/current-month")
+    public ResponseEntity<BigDecimal> getCurrentMonthRevenue() {
+        return ResponseEntity.ok(lessonService.getCompletedLessonRevenueForCurrentMonth());
     }
 }

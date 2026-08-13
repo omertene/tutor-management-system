@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import Modal from "../components/Modal";
 import type { Student, Subject } from "../types";
@@ -46,19 +45,14 @@ function formatDate(date: string): string {
 
 function TeacherDashboard() {
   const [students, setStudents] = useState<Student[]>([]);
-  const [errorMessage, setErrorMessage] = useState("");
 
   const [upcomingLessons, setUpcomingLessons] = useState<Lesson[]>([]);
+  const [needsCompletionLessons, setNeedsCompletionLessons] = useState<Lesson[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
 
-  // which student's edit form is currently open, and the form fields for it
-  const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [hourlyRate, setHourlyRate] = useState("");
-  const [educationLevel, setEducationLevel] = useState("");
-  const [notes, setNotes] = useState("");
+  const [activeStudentCount, setActiveStudentCount] = useState(0);
+  const [lessonsThisWeekCount, setLessonsThisWeekCount] = useState(0);
+  const [revenueThisMonth, setRevenueThisMonth] = useState(0);
 
   // "add student" modal
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
@@ -100,17 +94,37 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     return response.json();
   }
 
-  async function loadUpcomingLessonsList(token: string | null): Promise<Lesson[] | null> {
+  async function loadLessonsData(token: string | null): Promise<{ upcoming: Lesson[]; needsCompletion: Lesson[]; thisWeekCount: number } | null> {
     const response = await fetch(`${API_BASE_URL}/teacher/lessons`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!response.ok) return null;
 
     const data: Lesson[] = await response.json();
-    return data
-      .filter((lesson) => lesson.status === "SCHEDULED")
+    const todayDate = new Date().toISOString().slice(0, 10);
+    const scheduled = data.filter((lesson) => lesson.status === "SCHEDULED");
+
+    const upcoming = scheduled
+      .filter((lesson) => lesson.date >= todayDate)
       .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime))
       .slice(0, 5);
+
+    const needsCompletion = scheduled
+      .filter((lesson) => lesson.date < todayDate)
+      .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
+
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    const startOfWeekDate = startOfWeek.toISOString().slice(0, 10);
+    const endOfWeekDate = endOfWeek.toISOString().slice(0, 10);
+
+    const thisWeekCount = data.filter(
+      (lesson) => lesson.status !== "CANCELLED" && lesson.date >= startOfWeekDate && lesson.date <= endOfWeekDate
+    ).length;
+
+    return { upcoming, needsCompletion, thisWeekCount };
   }
 
   async function loadDebtsList(token: string | null): Promise<Debt[] | null> {
@@ -123,140 +137,40 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     return data.filter((debt) => debt.debt > 0);
   }
 
+  async function loadRevenueThisMonth(token: string | null): Promise<number | null> {
+    const response = await fetch(`${API_BASE_URL}/teacher/revenue/current-month`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return null;
+    return response.json();
+  }
 
   async function refreshDashboard() {
     const token = localStorage.getItem("token");
 
-    const [studentsData, lessonsData, debtsData] = await Promise.all([
+    const [studentsData, lessonsData, debtsData, revenueData] = await Promise.all([
       loadStudentsList(token),
-      loadUpcomingLessonsList(token),
+      loadLessonsData(token),
       loadDebtsList(token),
+      loadRevenueThisMonth(token),
     ]);
 
-    if (studentsData) setStudents(studentsData);
-    if (lessonsData) setUpcomingLessons(lessonsData);
+    if (studentsData) {
+      setStudents(studentsData);
+      setActiveStudentCount(studentsData.filter((student) => student.active).length);
+    }
+    if (lessonsData) {
+      setUpcomingLessons(lessonsData.upcoming);
+      setNeedsCompletionLessons(lessonsData.needsCompletion);
+      setLessonsThisWeekCount(lessonsData.thisWeekCount);
+    }
     if (debtsData) setDebts(debtsData);
+    if (revenueData !== null) setRevenueThisMonth(revenueData);
   }
 
   useEffect(() => {
     refreshDashboard();
   }, []);
-
-  async function handleLoadStudents() {
-    setErrorMessage("");
-
-    const token = localStorage.getItem("token");
-
-    const response = await fetch(`${API_BASE_URL}/teacher/students`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      setErrorMessage("Failed to load students");
-      return;
-    }
-
-    const data = await response.json();
-
-    setStudents(data);
-  }
-
-
-  async function handleLoadAllStudentsIncludingInactive() {
-    setErrorMessage("");
-
-    const token = localStorage.getItem("token");
-
-    const response = await fetch(`${API_BASE_URL}/teacher/students/all`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      setErrorMessage("Failed to load students");
-      return;
-    }
-
-    const data = await response.json();
-
-    setStudents(data);
-  }
-
-
-  async function handleToggleActive(student: Student) {
-    setErrorMessage("");
-
-    const token = localStorage.getItem("token");
-
-    const response = await fetch(`${API_BASE_URL}/teacher/students/${student.id}/active`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ active: !student.active }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      setErrorMessage(errorData.message || "Failed to update student status");
-      return;
-    }
-
-    const updatedStudent = await response.json();
-    setStudents(students.map((s) => s.id === student.id ? updatedStudent : s));
-  }
-
-  // opens the edit form for a student, pre-filled with their current values
-  function handleStartEdit(student: Student) {
-    setEditingStudentId(student.id);
-    setFirstName(student.firstName);
-    setLastName(student.lastName);
-    setPhone(student.phone ?? "");
-    setHourlyRate(String(student.hourlyRate));
-    setEducationLevel(student.educationLevel ?? "");
-    setNotes(student.notes ?? "");
-  }
-
-  function handleCancelEdit() {
-    setEditingStudentId(null);
-  }
-
-  // PUT /teacher/students/{id}
-  async function handleSaveEdit(studentId: number) {
-    setErrorMessage("");
-
-    const token = localStorage.getItem("token");
-
-    const response = await fetch(`${API_BASE_URL}/teacher/students/${studentId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        firstName,
-        lastName,
-        phone,
-        hourlyRate: Number(hourlyRate),
-        educationLevel,
-        notes,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      setErrorMessage(errorData.message || "Failed to update student");
-      return;
-    }
-
-    const updatedStudent = await response.json();
-    setStudents(students.map((student) => student.id === studentId ? updatedStudent : student));
-    setEditingStudentId(null);
-  }
 
   // POST /teacher/register - used by the "add student" modal
   async function handleCreateStudent() {
@@ -364,6 +278,22 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     refreshDashboard();
   }
 
+  async function handleCompleteLesson(lessonId: number) {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${API_BASE_URL}/teacher/lessons/${lessonId}/complete`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) return;
+    refreshDashboard();
+  }
+
+  const todayDate = new Date().toISOString().slice(0, 10);
+  const todaysLessons = upcomingLessons.filter((lesson) => lesson.date === todayDate);
+  const restOfWeekLessons = upcomingLessons.filter((lesson) => lesson.date !== todayDate);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <NavBar homePath="/teacher" links={teacherLinks} />
@@ -389,30 +319,53 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
           >
             + Add lesson
           </button>
-          <Link
-            to="/teacher/lessons"
-            className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-          >
-            View lessons
-          </Link>
-          <Link
-            to="/teacher/statistics"
-            className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-          >
-            View statistics
-          </Link>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-4">
+            <p className="text-sm text-slate-500">Active students</p>
+            <p className="text-2xl font-semibold text-slate-900 mt-1">{activeStudentCount}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-4">
+            <p className="text-sm text-slate-500">Lessons this week</p>
+            <p className="text-2xl font-semibold text-slate-900 mt-1">{lessonsThisWeekCount}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-4">
+            <p className="text-sm text-slate-500">Revenue this month</p>
+            <p className="text-2xl font-semibold text-slate-900 mt-1">₪{revenueThisMonth}</p>
+          </div>
         </div>
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm">
             <div className="px-6 py-4 border-b border-slate-100">
-              <h2 className="text-lg font-semibold text-slate-900">Upcoming lessons</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Today</h2>
             </div>
             <div className="divide-y divide-slate-100">
-              {upcomingLessons.length === 0 && (
-                <p className="px-6 py-6 text-sm text-slate-500 text-center">No upcoming lessons.</p>
+              {todaysLessons.length === 0 && (
+                <p className="px-6 py-6 text-sm text-slate-500 text-center">No lessons today.</p>
               )}
-              {upcomingLessons.map((lesson) => (
+              {todaysLessons.map((lesson) => (
+                <div key={lesson.id} className="px-6 py-3 flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium text-slate-900">
+                    {formatTime(lesson.startTime)}-{formatTime(lesson.endTime)}
+                  </span>
+                  <span className="text-slate-500 text-sm">{lesson.subjectName}</span>
+                  <span className="text-slate-500 text-sm">
+                    {lesson.studentFirstName} {lesson.studentLastName}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="px-6 py-4 border-b border-t border-slate-100">
+              <h2 className="text-lg font-semibold text-slate-900">Upcoming this week</h2>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {restOfWeekLessons.length === 0 && (
+                <p className="px-6 py-6 text-sm text-slate-500 text-center">No other upcoming lessons.</p>
+              )}
+              {restOfWeekLessons.map((lesson) => (
                 <div key={lesson.id} className="px-6 py-3 flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium text-slate-900">
                     {formatDate(lesson.date)} {formatTime(lesson.startTime)}-{formatTime(lesson.endTime)}
@@ -426,144 +379,54 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-            <div className="px-6 py-4 border-b border-slate-100">
-              <h2 className="text-lg font-semibold text-slate-900">Outstanding debt</h2>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {debts.length === 0 && (
-                <p className="px-6 py-6 text-sm text-slate-500 text-center">No outstanding debt.</p>
-              )}
-              {debts.map((debt) => (
-                <div key={debt.studentId} className="px-6 py-3 flex items-center justify-between gap-2">
-                  <span className="text-slate-900 text-sm">
-                    {debt.studentFirstName} {debt.studentLastName}
-                  </span>
-                  <span className="font-medium text-red-600 text-sm">₪{debt.debt}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-10">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">Your students</h2>
-            <div className="flex gap-2">
-              <button
-                onClick={handleLoadStudents}
-                className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-              >
-                Show active
-              </button>
-              <button
-                onClick={handleLoadAllStudentsIncludingInactive}
-                className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-              >
-                Show all (incl. inactive)
-              </button>
-            </div>
-          </div>
-
-          {errorMessage && <p className="text-sm text-red-600 mt-2">{errorMessage}</p>}
-
-          <div className="mt-4 bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
-            {students.length === 0 && (
-              <p className="px-4 py-6 text-sm text-slate-500 text-center">
-                You have no active students yet.
-              </p>
-            )}
-
-            {students.map((student) => (
-              <div key={student.id} className="px-4 py-3">
-                {editingStudentId === student.id ? (
-                  <div className="flex flex-wrap gap-2 items-center">
-                    <input
-                      placeholder="first name"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      className="rounded-md border border-slate-300 px-2 py-1 text-sm w-32"
-                    />
-                    <input
-                      placeholder="last name"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      className="rounded-md border border-slate-300 px-2 py-1 text-sm w-32"
-                    />
-                    <input
-                      placeholder="phone"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="rounded-md border border-slate-300 px-2 py-1 text-sm w-32"
-                    />
-                    <input
-                      placeholder="hourly rate"
-                      value={hourlyRate}
-                      onChange={(e) => setHourlyRate(e.target.value)}
-                      className="rounded-md border border-slate-300 px-2 py-1 text-sm w-24"
-                    />
-                    <input
-                      placeholder="education level"
-                      value={educationLevel}
-                      onChange={(e) => setEducationLevel(e.target.value)}
-                      className="rounded-md border border-slate-300 px-2 py-1 text-sm w-32"
-                    />
-                    <input
-                      placeholder="notes"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      className="rounded-md border border-slate-300 px-2 py-1 text-sm w-40"
-                    />
-                    <button
-                      onClick={() => handleSaveEdit(student.id)}
-                      className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-slate-900">
-                        {student.firstName} {student.lastName}
-                      </span>
-                      <span className="text-slate-500 text-sm">{student.email}</span>
-                      <span className="text-slate-500 text-sm">{student.phone}</span>
-                      <span className="text-slate-500 text-sm">₪{student.hourlyRate}/hr</span>
-                      <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          student.active
-                            ? "bg-green-50 text-green-700"
-                            : "bg-slate-100 text-slate-500"
-                        }`}
-                      >
-                        {student.active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleStartEdit(student)}
-                        className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleToggleActive(student)}
-                        className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-                      >
-                        {student.active ? "Deactivate" : "Reactivate"}
-                      </button>
-                    </div>
-                  </div>
-                )}
+          <div className="flex flex-col gap-6">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+              <div className="px-6 py-4 border-b border-slate-100">
+                <h2 className="text-lg font-semibold text-slate-900">Outstanding debt</h2>
               </div>
-            ))}
+              <div className="divide-y divide-slate-100">
+                {debts.length === 0 && (
+                  <p className="px-6 py-6 text-sm text-slate-500 text-center">No outstanding debt.</p>
+                )}
+                {debts.map((debt) => (
+                  <div key={debt.studentId} className="px-6 py-3 flex items-center justify-between gap-2">
+                    <span className="text-slate-900 text-sm">
+                      {debt.studentFirstName} {debt.studentLastName}
+                    </span>
+                    <span className="font-medium text-red-600 text-sm">₪{debt.debt}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+              <div className="px-6 py-4 border-b border-slate-100">
+                <h2 className="text-lg font-semibold text-slate-900">Needs completion</h2>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {needsCompletionLessons.length === 0 && (
+                  <p className="px-6 py-6 text-sm text-slate-500 text-center">Nothing to mark.</p>
+                )}
+                {needsCompletionLessons.map((lesson) => (
+                  <div key={lesson.id} className="px-6 py-3 flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-slate-900 text-sm font-medium">
+                        {formatDate(lesson.date)} {formatTime(lesson.startTime)}
+                      </span>
+                      <span className="text-slate-500 text-xs">
+                        {lesson.studentFirstName} {lesson.studentLastName}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleCompleteLesson(lesson.id)}
+                      className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors self-start"
+                    >
+                      Mark completed
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </main>

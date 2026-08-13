@@ -177,6 +177,16 @@ public class LessonService {
         return lessonRepository.countByStatus(LessonStatus.COMPLETED);
     }
 
+    // total price of COMPLETED lessons that happened this calendar month - "revenue this
+    // month" means work actually done this month, not payments received this month
+    public BigDecimal getCompletedLessonRevenueForCurrentMonth() {
+        LocalDate today = LocalDate.now();
+        LocalDate startOfMonth = today.withDayOfMonth(1);
+        LocalDate endOfMonth = today.withDayOfMonth(today.lengthOfMonth());
+
+        return lessonRepository.sumLessonPricesByStatusAndDateRange(LessonStatus.COMPLETED, startOfMonth, endOfMonth);
+    }
+
 
     // quiet hours - reminders that would naturally go out during this window get pushed
     // to QUIET_HOURS_END instead, so students don't get emailed/pinged in the middle of
