@@ -16,6 +16,7 @@ const teacherLinks = [
 ];
 
 const studentLinks = [
+    { label: "Schedule", to: "/student/schedule" },
     { label: "Lessons", to: "/student/lessons" },
     { label: "Payments", to: "/student/payments" },
     { label: "Materials", to: "/student/materials" },
@@ -125,7 +126,7 @@ function LessonsPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("ALL");
     const [currentPage, setCurrentPage] = useState(1);
-    const LESSONS_PER_PAGE = 20;
+    const LESSONS_PER_PAGE = 10;
 
     function handleStartTimeChange(value: string) {
         setStartTime(value);

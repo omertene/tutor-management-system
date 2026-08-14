@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { decodeToken } from "../utils/jwt";
-import type { Student } from "../types";
+import type { Student, Subject } from "../types";
 
 const API_BASE_URL = "http://localhost:8080";
 
@@ -16,6 +16,7 @@ const teacherLinks = [
 ];
 
 const studentLinks = [
+    { label: "Schedule", to: "/student/schedule" },
     { label: "Lessons", to: "/student/lessons" },
     { label: "Payments", to: "/student/payments" },
     { label: "Materials", to: "/student/materials" },
@@ -82,6 +83,7 @@ function MaterialsPage() {
 
     const [students, setStudents] = useState<Student[]>([]);
     const [lessons, setLessons] = useState<Lesson[]>([]);
+    const [subjects, setSubjects] = useState<Subject[]>([]);
 
     // shared "which student / which lesson" fields for all three add forms
     const [selectedStudentId, setSelectedStudentId] = useState("");
@@ -98,11 +100,12 @@ function MaterialsPage() {
     // search + pagination for the materials list below
     const [searchQuery, setSearchQuery] = useState("");
     const [typeFilter, setTypeFilter] = useState("ALL");
+    const [subjectFilter, setSubjectFilter] = useState("ALL");
     // lets you jump straight to "materials for this lesson" - matches against the
     // lesson's date/subject text shown in each row (e.g. "7/10/26" or "Math")
     const [lessonFilterQuery, setLessonFilterQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const MATERIALS_PER_PAGE = 20;
+    const MATERIALS_PER_PAGE = 10;
 
     async function handleLoadStudents() {
         setErrorMessage("");
@@ -192,7 +195,16 @@ function MaterialsPage() {
         setMaterials(data);
     }
 
+    async function handleLoadSubjects() {
+        const response = await fetch(`${API_BASE_URL}/subjects`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) return;
+        setSubjects(await response.json());
+    }
+
     useEffect(() => {
+        handleLoadSubjects();
         if (role === "TEACHER") {
             handleLoadStudents();
             handleLoadAllMaterials();
@@ -204,7 +216,7 @@ function MaterialsPage() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, typeFilter, lessonFilterQuery]);
+    }, [searchQuery, typeFilter, subjectFilter, lessonFilterQuery]);
 
     // teacher adds a link
     async function handleAddLink() {
@@ -364,6 +376,7 @@ function MaterialsPage() {
 
     const filteredMaterials = materials
         .filter((material) => typeFilter === "ALL" || material.type === typeFilter)
+        .filter((material) => subjectFilter === "ALL" || material.lessonSubject === subjectFilter)
         .filter((material) => {
             if (!searchQuery.trim()) return true;
             const query = searchQuery.trim().toLowerCase();
@@ -507,15 +520,13 @@ function MaterialsPage() {
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                         <h2 className="text-lg font-semibold text-slate-900">Materials</h2>
                         <div className="flex flex-wrap gap-2">
-                            {role === "TEACHER" && (
-                                <input
-                                    type="text"
-                                    placeholder="Search by student or title..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className={inputClass}
-                                />
-                            )}
+                            <input
+                                type="text"
+                                placeholder={role === "TEACHER" ? "Search by student or title..." : "Search by title..."}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className={inputClass}
+                            />
                             <input
                                 type="text"
                                 placeholder="Filter by lesson..."
@@ -524,6 +535,12 @@ function MaterialsPage() {
                                 onChange={(e) => setLessonFilterQuery(e.target.value)}
                                 className={`${inputClass} w-32`}
                             />
+                            <select value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)} className={inputClass}>
+                                <option value="ALL">All subjects</option>
+                                {subjects.map((subject) => (
+                                    <option key={subject.id} value={subject.name}>{subject.name}</option>
+                                ))}
+                            </select>
                             {role === "TEACHER" && (
                                 <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className={inputClass}>
                                     <option value="ALL">All types</option>

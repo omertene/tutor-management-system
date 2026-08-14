@@ -1,5 +1,6 @@
 package com.tutor.tutormanagementsystem.service;
 
+import com.tutor.tutormanagementsystem.dto.BusySlotResponse;
 import com.tutor.tutormanagementsystem.dto.LessonRequest;
 import com.tutor.tutormanagementsystem.dto.LessonResponse;
 import com.tutor.tutormanagementsystem.dto.MonthlyCount;
@@ -185,6 +186,17 @@ public class LessonService {
     public List<LessonResponse> getLessonsForStudent(Long studentId) {
         return lessonRepository.findAllByStudentId(studentId).stream()
                 .map(lesson -> toResponse(lesson, false))
+                .toList();
+    }
+
+    // every booked (SCHEDULED or COMPLETED) lesson's date/time across every student,
+    // with no student-identifying info - lets a student see which slots are already
+    // taken by someone else (grayed out on their own schedule view) without exposing
+    // whose lesson it is or what subject it's for
+    public List<BusySlotResponse> getBusySlots() {
+        return lessonRepository.findAll().stream()
+                .filter(lesson -> lesson.getStatus() != LessonStatus.CANCELLED)
+                .map(lesson -> new BusySlotResponse(lesson.getDate(), lesson.getStartTime(), lesson.getEndTime()))
                 .toList();
     }
 

@@ -16,6 +16,7 @@ const teacherLinks = [
 ];
 
 const studentLinks = [
+    { label: "Schedule", to: "/student/schedule" },
     { label: "Lessons", to: "/student/lessons" },
     { label: "Payments", to: "/student/payments" },
     { label: "Materials", to: "/student/materials" },
@@ -84,10 +85,10 @@ function PaymentsPage() {
     const [studentSearchQuery, setStudentSearchQuery] = useState("");
 
     const [currentPage, setCurrentPage] = useState(1);
-    const PAYMENTS_PER_PAGE = 20;
+    const PAYMENTS_PER_PAGE = 10;
 
     const [debtPage, setDebtPage] = useState(1);
-    const DEBTS_PER_PAGE = 20;
+    const DEBTS_PER_PAGE = 10;
 
     async function handleLoadStudents() {
         setErrorMessage("");

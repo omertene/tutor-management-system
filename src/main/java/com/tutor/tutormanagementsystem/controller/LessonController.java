@@ -1,5 +1,6 @@
 package com.tutor.tutormanagementsystem.controller;
 
+import com.tutor.tutormanagementsystem.dto.BusySlotResponse;
 import com.tutor.tutormanagementsystem.dto.LessonRequest;
 import com.tutor.tutormanagementsystem.dto.LessonResponse;
 import com.tutor.tutormanagementsystem.dto.ScheduleOverrideRequest;
@@ -67,6 +68,14 @@ public class LessonController {
     @GetMapping("/student/lessons")
     public ResponseEntity<List<LessonResponse>> getLessonsForStudent(@AuthenticationPrincipal AuthenticatedUser caller) {
         return ResponseEntity.ok(lessonService.getLessonsForStudent(caller.id()));
+    }
+
+    // every booked slot across all students, with no student-identifying info - lets
+    // a student's schedule view gray out times already taken by someone else
+    @PreAuthorize("hasRole('STUDENT')")
+    @GetMapping("/student/busy-slots")
+    public ResponseEntity<List<BusySlotResponse>> getBusySlots() {
+        return ResponseEntity.ok(lessonService.getBusySlots());
     }
 
     // teacher views a given student's lessons
