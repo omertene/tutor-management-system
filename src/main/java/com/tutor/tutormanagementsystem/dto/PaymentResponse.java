@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 public record PaymentResponse(
         Long id,
         Long studentId,
+        String studentFirstName,
+        String studentLastName,
         BigDecimal amount,
         PaymentMethod method,
         String notes,

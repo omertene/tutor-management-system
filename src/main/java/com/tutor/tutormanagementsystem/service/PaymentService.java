@@ -59,6 +59,14 @@ public class PaymentService {
                 .map(payment -> toResponse(payment)).toList();
     }
 
+    // teacher views every payment across every student at once - the default
+    // "payment history" view, instead of requiring a student to be picked first
+    public List<PaymentResponse> getAllPayments() {
+        return paymentRepository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     public DebtResponse getDebtForStudent(Long studentId) {
         Student student = studentService.getStudentEntity(studentId);
         return toDebtResponse(student);
@@ -108,6 +116,8 @@ public class PaymentService {
         return new PaymentResponse(
                 payment.getId(),
                 payment.getStudent().getId(),
+                payment.getStudent().getUser().getFirstName(),
+                payment.getStudent().getUser().getLastName(),
                 payment.getAmount(),
                 payment.getMethod(),
                 payment.getNotes(),

@@ -39,6 +39,14 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getPaymentsForStudent(studentId));
     }
 
+    // teacher views every payment across every student - the default payment
+    // history view
+    @PreAuthorize("hasRole('TEACHER')")
+    @GetMapping("/teacher/payments")
+    public ResponseEntity<List<PaymentResponse>> getAllPayments() {
+        return ResponseEntity.ok(paymentService.getAllPayments());
+    }
+
     @PreAuthorize("hasRole('TEACHER')")
     @DeleteMapping("/teacher/payments/{id}")
     public ResponseEntity<Void> cancelPayment(@PathVariable("id") Long paymentId) {
