@@ -2,7 +2,6 @@ package com.tutor.tutormanagementsystem.service;
 
 import com.tutor.tutormanagementsystem.dto.ScheduleOverrideRequest;
 import com.tutor.tutormanagementsystem.dto.ScheduleOverrideResponse;
-import com.tutor.tutormanagementsystem.exception.InvalidTimeRangeException;
 import com.tutor.tutormanagementsystem.exception.PastDateException;
 import com.tutor.tutormanagementsystem.exception.ScheduleConflictException;
 import com.tutor.tutormanagementsystem.exception.ScheduleOverrideNotFoundException;
@@ -30,9 +29,7 @@ public class ScheduleOverrideService {
             throw new PastDateException("Cannot create an override for a past date");
         }
 
-        if (request.startTime().isAfter(request.endTime())) {
-            throw new InvalidTimeRangeException("Start time must be before end time");
-        }
+        TimeValidation.requireValidRange(request.startTime(), request.endTime());
 
         List<ScheduleOverride> overlapping = scheduleOverrideRepository
                 .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThan(
@@ -42,9 +39,6 @@ public class ScheduleOverrideService {
             throw new ScheduleConflictException("This time overlaps an existing override");
         }
 
-        // a BLOCK only makes sense where the weekly rule would otherwise make this
-        // time available, and an ADD only makes sense where it wouldn't - otherwise
-        // the override does nothing and just clutters the schedule
         boolean coveredByRule = !scheduleRuleRepository
                 .findAllByDayOfWeekAndStartTimeLessThanAndEndTimeGreaterThan(
                         request.date().getDayOfWeek(), request.endTime(), request.startTime())
@@ -58,8 +52,6 @@ public class ScheduleOverrideService {
             throw new ScheduleConflictException("This time is already available - no need to add it");
         }
 
-        // a BLOCK can't be placed on top of a real booked lesson - cancel the
-        // lesson first if this time genuinely needs to be freed up
         if (request.type() == OverrideType.BLOCK
                 && lessonService.hasScheduledLessonInRange(request.date(), request.startTime(), request.endTime())) {
             throw new ScheduleConflictException("This time has a scheduled lesson - cancel it before blocking this time");
@@ -88,9 +80,7 @@ public class ScheduleOverrideService {
             throw new PastDateException("Cannot move an override to a past date");
         }
 
-        if (request.startTime().isAfter(request.endTime())) {
-            throw new InvalidTimeRangeException("Start time must be before end time");
-        }
+        TimeValidation.requireValidRange(request.startTime(), request.endTime());
 
         boolean overlapping = scheduleOverrideRepository
                 .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThan(

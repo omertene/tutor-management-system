@@ -24,6 +24,54 @@ const MIN_HOUR = 0;
 const MAX_HOUR = 24;
 const ROW_HEIGHT = 48; // px, must match the h-12 cell height below
 
+const HOUR_OPTIONS: string[] = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, "0"));
+const MINUTE_OPTIONS: string[] = ["00", "15", "30", "45"];
+
+// adds 1 hour to a "HH:MM" time, wrapping past midnight if needed
+function addOneHour(time: string): string {
+    const [hours, minutes] = time.split(":").map(Number);
+    const nextHour = (hours + 1) % 24;
+    return `${String(nextHour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+type TimeSelectProps = {
+    value: string;
+    onChange: (value: string) => void;
+    className: string;
+};
+
+// hour + minute picked independently via two small dropdowns, instead of one long
+// scrolling list of all 96 quarter-hour times - value/onChange still work as a single
+// "HH:MM" string so nothing else in the file needs to know this is two selects
+function TimeSelect({ value, onChange, className }: TimeSelectProps) {
+    const [hour, minute] = value ? value.split(":") : ["", ""];
+
+    function updateHour(newHour: string) {
+        onChange(`${newHour}:${minute || "00"}`);
+    }
+
+    function updateMinute(newMinute: string) {
+        onChange(`${hour || "00"}:${newMinute}`);
+    }
+
+    return (
+        <div className="flex gap-1">
+            <select value={hour} onChange={(e) => updateHour(e.target.value)} className={className}>
+                <option value="">--</option>
+                {HOUR_OPTIONS.map((h) => (
+                    <option key={h} value={h}>{h}</option>
+                ))}
+            </select>
+            <select value={minute} onChange={(e) => updateMinute(e.target.value)} className={className}>
+                <option value="">--</option>
+                {MINUTE_OPTIONS.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                ))}
+            </select>
+        </div>
+    );
+}
+
 type ScheduleRule = {
     id: number;
     dayOfWeek: string;
@@ -171,7 +219,8 @@ function SchedulePage() {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) return;
-        setScheduleRules(await response.json());
+        const data: ScheduleRule[] = await response.json();
+        setScheduleRules(sortRules(data));
     }
 
     async function loadOverrides() {
@@ -244,18 +293,39 @@ function SchedulePage() {
         return result;
     }, [hourStart, hourEnd]);
 
-    // for a given day-of-week + hour, is this cell covered by a weekly rule -
-    // used only for background color when no override sits on top of it
-    function isCellCoveredByRule(dayIndex: number, hour: number) {
-        const cellStart = hour * 60;
-        const cellEnd = cellStart + 60;
 
-        return scheduleRules.some(
-            (rule) =>
-                rule.dayOfWeek === days[dayIndex] &&
-                timeToMinutes(rule.startTime) < cellEnd &&
-                timeToMinutes(rule.endTime) > cellStart
-        );
+    // which of the 4 quarter-hour slots within this cell are covered by a rule -
+    // rule times always land on 15-minute marks, so this is exact, not approximated.
+    // used to shade a cell that's only partially available (e.g. rule starts at 07:15)
+    // instead of showing the whole hour as available or unavailable
+    function getRuleCoverageQuartersForCell(dayIndex: number, hour: number): boolean[] {
+        const cellStart = hour * 60;
+
+        return [0, 1, 2, 3].map((quarter) => {
+            const quarterStart = cellStart + quarter * 15;
+            const quarterEnd = quarterStart + 15;
+
+            return scheduleRules.some(
+                (rule) =>
+                    rule.dayOfWeek === days[dayIndex] &&
+                    timeToMinutes(rule.startTime) <= quarterStart &&
+                    timeToMinutes(rule.endTime) >= quarterEnd
+            );
+        });
+    }
+
+    // builds a CSS background for a cell from its 4 quarter-coverage flags - each
+    // covered quarter is white, each uncovered quarter is gray, stacked top to bottom
+    function ruleCoverageBackground(quarters: boolean[]): string {
+        const stops = quarters
+            .map((covered, i) => {
+                const from = i * 25;
+                const to = from + 25;
+                const color = covered ? "#ffffff" : "#e2e8f0";
+                return `${color} ${from}%, ${color} ${to}%`;
+            })
+            .join(", ");
+        return `linear-gradient(to bottom, ${stops})`;
     }
 
     // overrides for this day that fall (at least partly) within the visible hour
@@ -325,34 +395,47 @@ function SchedulePage() {
     }
 
     // opens the right popup for a resolved [startHour, endHour) range on a given day,
-    // based on the availability of the range's starting cell (shared by click and drag)
+    // based on the availability of the range's starting cell (shared by click and drag).
+    // a cell that's only partially covered by a rule (e.g. rule starts at 07:15) is
+    // treated as "unavailable" here too, since assuming the whole hour is bookable
+    // would be misleading - the teacher picks the exact time in the form that follows
     function openPopupForRange(dayIndex: number, startHour: number, endHour: number) {
         const dateStr = toDateString(weekDates[dayIndex]);
         const startTime = `${String(startHour).padStart(2, "0")}:00`;
         const endTime = `${String(endHour).padStart(2, "0")}:00`;
 
+        const quarters = getRuleCoverageQuartersForCell(dayIndex, startHour);
+        const fullyAvailable = quarters.every(Boolean);
+
         setChooseActionDate(dateStr);
         setChooseActionStartTime(startTime);
         setChooseActionEndTime(endTime);
-        setChooseActionIsUnavailable(!isCellCoveredByRule(dayIndex, startHour));
+        setChooseActionIsUnavailable(!fullyAvailable);
+    }
+
+    // a cell counts as "fully available" only if all 4 of its quarter-hours are
+    // covered by a rule - a partially-covered cell is treated as unavailable for
+    // uniformity purposes, same as openPopupForRange
+    function isCellFullyAvailable(dayIndex: number, hour: number): boolean {
+        return getRuleCoverageQuartersForCell(dayIndex, hour).every(Boolean);
     }
 
     // extends [startHour, hour] to the widest contiguous run of cells that share the
     // same availability as the starting cell, so a drag across mixed cells doesn't
     // silently include time the teacher didn't intend to select
     function clampRangeToUniformAvailability(dayIndex: number, startHour: number, hour: number): [number, number] {
-        const startAvailable = isCellCoveredByRule(dayIndex, startHour);
+        const startAvailable = isCellFullyAvailable(dayIndex, startHour);
         const lo = Math.min(startHour, hour);
         const hi = Math.max(startHour, hour);
 
         let rangeStart = startHour;
         let rangeEnd = startHour;
         for (let h = startHour; h >= lo; h--) {
-            if (isCellCoveredByRule(dayIndex, h) !== startAvailable || isCellCoveredByOverride(dayIndex, h)) break;
+            if (isCellFullyAvailable(dayIndex, h) !== startAvailable || isCellCoveredByOverride(dayIndex, h)) break;
             rangeStart = h;
         }
         for (let h = startHour; h <= hi; h++) {
-            if (isCellCoveredByRule(dayIndex, h) !== startAvailable || isCellCoveredByOverride(dayIndex, h)) break;
+            if (isCellFullyAvailable(dayIndex, h) !== startAvailable || isCellCoveredByOverride(dayIndex, h)) break;
             rangeEnd = h;
         }
         return [rangeStart, rangeEnd + 1];
@@ -391,6 +474,11 @@ function SchedulePage() {
         const lo = Math.min(dragStartHour, dragCurrentHour);
         const hi = Math.max(dragStartHour, dragCurrentHour);
         return hour >= lo && hour <= hi;
+    }
+
+    function handleAddLessonStartTimeChange(value: string) {
+        setAddLessonStartTime(value);
+        if (value) setAddLessonEndTime(addOneHour(value));
     }
 
     function openBookLessonForm(date: string, startTime: string, endTime: string, outsideHours = false) {
@@ -631,7 +719,7 @@ function SchedulePage() {
                 <div className="flex items-center justify-between flex-wrap gap-3">
                     <div>
                         <h1 className="text-2xl font-semibold text-slate-900">Schedule</h1>
-                        <p className="text-slate-500 mt-1">White = available, gray = unavailable, red = blocked, green = added, blue = upcoming lesson, slate = completed lesson.</p>
+                        <p className="text-slate-500 mt-1">White = available, gray = unavailable, split = partly available within the hour, red = blocked, green = added, blue = upcoming lesson, slate = completed lesson.</p>
                     </div>
                     <button
                         onClick={() => setShowRulesModal(true)}
@@ -722,19 +810,38 @@ function SchedulePage() {
 
                         {dayLabels.map((_, dayIndex) => (
                             <div key={dayIndex} className="relative border-l border-slate-100">
-                                {hours.map((hour) => (
-                                    <button
-                                        key={hour}
-                                        onMouseDown={() => handleCellMouseDown(dayIndex, hour)}
-                                        onMouseEnter={() => handleCellMouseEnter(dayIndex, hour)}
-                                        style={{ height: `${ROW_HEIGHT}px`, boxSizing: "border-box" }}
-                                        className={`block w-full border-b border-slate-300 transition-colors select-none ${
-                                            isCellInDragSelection(dayIndex, hour)
-                                                ? "bg-indigo-200"
-                                                : isCellCoveredByRule(dayIndex, hour) ? "bg-white hover:bg-slate-50" : "bg-slate-200 hover:bg-slate-300"
-                                        }`}
-                                    />
-                                ))}
+                                {hours.map((hour) => {
+                                    const quarters = getRuleCoverageQuartersForCell(dayIndex, hour);
+                                    const allCovered = quarters.every(Boolean);
+                                    const noneCovered = quarters.every((covered) => !covered);
+                                    const inDragSelection = isCellInDragSelection(dayIndex, hour);
+
+                                    return (
+                                        <button
+                                            key={hour}
+                                            onMouseDown={() => handleCellMouseDown(dayIndex, hour)}
+                                            onMouseEnter={() => handleCellMouseEnter(dayIndex, hour)}
+                                            style={{
+                                                height: `${ROW_HEIGHT}px`,
+                                                boxSizing: "border-box",
+                                                background: inDragSelection
+                                                    ? undefined
+                                                    : allCovered || noneCovered
+                                                        ? undefined
+                                                        : ruleCoverageBackground(quarters),
+                                            }}
+                                            className={`block w-full border-b border-slate-300 transition-colors select-none ${
+                                                inDragSelection
+                                                    ? "bg-indigo-200"
+                                                    : allCovered
+                                                        ? "bg-white hover:bg-slate-50"
+                                                        : noneCovered
+                                                            ? "bg-slate-200 hover:bg-slate-300"
+                                                            : ""
+                                            }`}
+                                        />
+                                    );
+                                })}
 
                                 {getOverridesForDay(dayIndex).map(({ override, top, height }) => (
                                     <button
@@ -851,11 +958,11 @@ function SchedulePage() {
                         <div className="grid grid-cols-2 gap-3">
                             <div className="flex flex-col gap-1">
                                 <label className={labelClass}>Start time</label>
-                                <input type="time" value={addLessonStartTime} onChange={(e) => setAddLessonStartTime(e.target.value)} className={inputClass} />
+                                <TimeSelect value={addLessonStartTime} onChange={handleAddLessonStartTimeChange} className={inputClass} />
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className={labelClass}>End time</label>
-                                <input type="time" value={addLessonEndTime} onChange={(e) => setAddLessonEndTime(e.target.value)} className={inputClass} />
+                                <TimeSelect value={addLessonEndTime} onChange={setAddLessonEndTime} className={inputClass} />
                             </div>
                         </div>
 
@@ -882,11 +989,11 @@ function SchedulePage() {
                         <div className="grid grid-cols-2 gap-3">
                             <div className="flex flex-col gap-1">
                                 <label className={labelClass}>Start time</label>
-                                <input type="time" value={addOverrideStartTime} onChange={(e) => setAddOverrideStartTime(e.target.value)} className={inputClass} />
+                                <TimeSelect value={addOverrideStartTime} onChange={setAddOverrideStartTime} className={inputClass} />
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className={labelClass}>End time</label>
-                                <input type="time" value={addOverrideEndTime} onChange={(e) => setAddOverrideEndTime(e.target.value)} className={inputClass} />
+                                <TimeSelect value={addOverrideEndTime} onChange={setAddOverrideEndTime} className={inputClass} />
                             </div>
                         </div>
 
@@ -1053,37 +1160,124 @@ function formatTime(time: string): string {
 
 // the recurring weekly availability template - separate from the calendar since
 // rules are day-of-week based, not tied to a specific date
+type TimeRangeDraft = { startTime: string; endTime: string };
+
+// most teaching hours fall in this window, so a new/blank range starts here instead
+// of empty - saves a click in the common case, still fully editable
+const DEFAULT_RULE_RANGE: TimeRangeDraft = { startTime: "08:00", endTime: "16:00" };
+
 function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: ScheduleRulesModalProps) {
     const [dayOfWeek, setDayOfWeek] = useState(days[0]);
-    const [startTime, setStartTime] = useState("");
-    const [endTime, setEndTime] = useState("");
+    const [ranges, setRanges] = useState<TimeRangeDraft[]>([{ ...DEFAULT_RULE_RANGE }]);
     const [errorMessage, setErrorMessage] = useState("");
+    const [editingRuleId, setEditingRuleId] = useState<number | null>(null);
 
     const inputClass = "rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
 
-    async function handleAddRule() {
+    function resetForm() {
+        setEditingRuleId(null);
+        setDayOfWeek(days[0]);
+        setRanges([{ ...DEFAULT_RULE_RANGE }]);
+    }
+
+    function startEditRule(rule: ScheduleRule) {
+        setErrorMessage("");
+        setEditingRuleId(rule.id);
+        setDayOfWeek(rule.dayOfWeek);
+        setRanges([{ startTime: formatTime(rule.startTime), endTime: formatTime(rule.endTime) }]);
+    }
+
+    function updateRange(index: number, field: "startTime" | "endTime", value: string) {
+        setRanges(ranges.map((range, i) => (i === index ? { ...range, [field]: value } : range)));
+    }
+
+    function addRange() {
+        setRanges([...ranges, { ...DEFAULT_RULE_RANGE }]);
+    }
+
+    function removeRange(index: number) {
+        setRanges(ranges.filter((_, i) => i !== index));
+    }
+
+    async function handleSaveRule() {
         setErrorMessage("");
         const token = localStorage.getItem("token");
+        const isEditing = editingRuleId !== null;
 
-        const response = await fetch(`${API_BASE_URL}/teacher/schedule-rules`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ dayOfWeek, startTime, endTime }),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to add rule");
+        if (ranges.some((range) => !range.startTime || !range.endTime)) {
+            setErrorMessage("Please fill in every time range, or remove the empty one");
             return;
         }
 
-        const createdRule = await response.json();
-        onRulesChanged(sortRules([...scheduleRules, createdRule]));
-        setStartTime("");
-        setEndTime("");
+        if (isEditing) {
+            const { startTime, endTime } = ranges[0];
+            const countResponse = await fetch(`${API_BASE_URL}/teacher/schedule-rules/${editingRuleId}/affected-lessons-count-for-edit`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ dayOfWeek, startTime, endTime }),
+            });
+            const affectedCount = countResponse.ok ? await countResponse.json() : 0;
+
+            if (affectedCount > 0) {
+                const confirmed = window.confirm(
+                    `${affectedCount} upcoming lesson${affectedCount === 1 ? "" : "s"} would no longer fall inside this slot. ` +
+                    `${affectedCount === 1 ? "It" : "They"} will stay scheduled, just outside your regular hours. Save anyway?`
+                );
+                if (!confirmed) return;
+            }
+
+            const response = await fetch(`${API_BASE_URL}/teacher/schedule-rules/${editingRuleId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ dayOfWeek, startTime, endTime }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                setErrorMessage(errorData.message || "Failed to save rule");
+                return;
+            }
+
+            const savedRule = await response.json();
+            onRulesChanged(sortRules(scheduleRules.map((rule) => (rule.id === savedRule.id ? savedRule : rule))));
+            resetForm();
+            return;
+        }
+
+        // create mode - each range in the list is saved as its own rule, one request
+        // at a time, so a conflict on one range doesn't silently drop the others
+        const createdRules: ScheduleRule[] = [];
+        for (const range of ranges) {
+            const response = await fetch(`${API_BASE_URL}/teacher/schedule-rules`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ dayOfWeek, startTime: range.startTime, endTime: range.endTime }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                setErrorMessage(
+                    (errorData.message || "Failed to add rule") +
+                    (createdRules.length > 0 ? ` (${createdRules.length} of ${ranges.length} range(s) were saved before this one failed)` : "")
+                );
+                if (createdRules.length > 0) onRulesChanged(sortRules([...scheduleRules, ...createdRules]));
+                return;
+            }
+
+            createdRules.push(await response.json());
+        }
+
+        onRulesChanged(sortRules([...scheduleRules, ...createdRules]));
+        resetForm();
     }
 
     async function handleDeleteRule(ruleId: number) {
@@ -1120,20 +1314,61 @@ function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: Schedule
     return (
         <Modal title="Weekly availability" onClose={onClose}>
             <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap gap-2 items-center">
+                <div className="flex flex-col gap-2">
                     <select value={dayOfWeek} onChange={(e) => setDayOfWeek(e.target.value)} className={inputClass}>
                         {days.map((day) => (
                             <option key={day} value={day}>{day}</option>
                         ))}
                     </select>
-                    <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputClass} />
-                    <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputClass} />
-                    <button
-                        onClick={handleAddRule}
-                        className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
-                    >
-                        Add rule
-                    </button>
+
+                    {ranges.map((range, index) => (
+                        <div key={index} className="flex flex-wrap gap-2 items-center">
+                            <TimeSelect
+                                value={range.startTime}
+                                onChange={(value) => updateRange(index, "startTime", value)}
+                                className={inputClass}
+                            />
+                            <TimeSelect
+                                value={range.endTime}
+                                onChange={(value) => updateRange(index, "endTime", value)}
+                                className={inputClass}
+                            />
+                            {!editingRuleId && ranges.length > 1 && (
+                                <button
+                                    onClick={() => removeRange(index)}
+                                    className="px-2 py-1 rounded-md bg-white border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors"
+                                >
+                                    Remove
+                                </button>
+                            )}
+                        </div>
+                    ))}
+
+                    {!editingRuleId && (
+                        <button
+                            onClick={addRange}
+                            className="self-start text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                        >
+                            + Add another time range for {dayOfWeek}
+                        </button>
+                    )}
+
+                    <div className="flex flex-wrap gap-2 items-center mt-1">
+                        <button
+                            onClick={handleSaveRule}
+                            className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+                        >
+                            {editingRuleId !== null ? "Save changes" : ranges.length > 1 ? `Add ${ranges.length} rules` : "Add rule"}
+                        </button>
+                        {editingRuleId !== null && (
+                            <button
+                                onClick={resetForm}
+                                className="px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
@@ -1142,19 +1377,38 @@ function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: Schedule
                     {scheduleRules.length === 0 && (
                         <p className="px-4 py-6 text-sm text-slate-500 text-center">No rules yet.</p>
                     )}
-                    {scheduleRules.map((rule) => (
-                        <div key={rule.id} className="px-4 py-2 flex items-center justify-between">
-                            <span className="text-sm text-slate-900">
-                                {rule.dayOfWeek} &mdash; {formatTime(rule.startTime)} to {formatTime(rule.endTime)}
-                            </span>
-                            <button
-                                onClick={() => handleDeleteRule(rule.id)}
-                                className="px-2 py-1 rounded-md bg-white border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    ))}
+                    {days
+                        .filter((day) => scheduleRules.some((rule) => rule.dayOfWeek === day))
+                        .map((day) => (
+                            <div key={day} className="px-4 py-2">
+                                <p className="text-xs font-semibold text-slate-500 mb-1">{day}</p>
+                                <div className="flex flex-col gap-1">
+                                    {scheduleRules
+                                        .filter((rule) => rule.dayOfWeek === day)
+                                        .map((rule) => (
+                                            <div key={rule.id} className="flex items-center justify-between">
+                                                <span className="text-sm text-slate-900">
+                                                    {formatTime(rule.startTime)} to {formatTime(rule.endTime)}
+                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => startEditRule(rule)}
+                                                        className="px-2 py-1 rounded-md bg-white border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteRule(rule.id)}
+                                                        className="px-2 py-1 rounded-md bg-white border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                </div>
+                            </div>
+                        ))}
                 </div>
             </div>
         </Modal>

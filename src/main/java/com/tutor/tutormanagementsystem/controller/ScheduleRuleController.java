@@ -37,6 +37,20 @@ public class ScheduleRuleController {
     }
 
     @PreAuthorize("hasRole('TEACHER')")
+    @PostMapping("/{id}/affected-lessons-count-for-edit")
+    public ResponseEntity<Long> countUpcomingLessonsAffectedByEdit(
+            @PathVariable("id") Long ruleId, @RequestBody ScheduleRuleRequest request) {
+        return ResponseEntity.ok(scheduleRuleService.countUpcomingLessonsAffectedByEdit(ruleId, request));
+    }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    @PutMapping("/{id}")
+    public ResponseEntity<ScheduleRuleResponse> updateScheduleRule(
+            @PathVariable("id") Long ruleId, @RequestBody ScheduleRuleRequest request) {
+        return ResponseEntity.ok(scheduleRuleService.updateScheduleRule(ruleId, request));
+    }
+
+    @PreAuthorize("hasRole('TEACHER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteScheduleRule(@PathVariable("id") Long ruleId) {
         scheduleRuleService.deleteScheduleRule(ruleId);

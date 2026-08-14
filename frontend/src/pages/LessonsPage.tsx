@@ -42,6 +42,43 @@ type Lesson = {
     notes: string;
 }
 
+const HOUR_OPTIONS: string[] = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, "0"));
+const MINUTE_OPTIONS: string[] = ["00", "15", "30", "45"];
+
+type TimeSelectProps = {
+    value: string;
+    onChange: (value: string) => void;
+    className: string;
+};
+
+function TimeSelect({ value, onChange, className }: TimeSelectProps) {
+    const [hour, minute] = value ? value.split(":") : ["", ""];
+
+    function updateHour(newHour: string) {
+        onChange(`${newHour}:${minute || "00"}`);
+    }
+
+    function updateMinute(newMinute: string) {
+        onChange(`${hour || "00"}:${newMinute}`);
+    }
+
+    return (
+        <div className="flex gap-1">
+            <select value={hour} onChange={(e) => updateHour(e.target.value)} className={className}>
+                <option value="">--</option>
+                {HOUR_OPTIONS.map((h) => (
+                    <option key={h} value={h}>{h}</option>
+                ))}
+            </select>
+            <select value={minute} onChange={(e) => updateMinute(e.target.value)} className={className}>
+                <option value="">--</option>
+                {MINUTE_OPTIONS.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                ))}
+            </select>
+        </div>
+    );
+}
 
 function LessonsPage() {
 
@@ -289,8 +326,8 @@ function LessonsPage() {
                             </select>
 
                             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
-                            <input type="time" value={startTime} onChange={(e) => handleStartTimeChange(e.target.value)} className={inputClass} />
-                            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputClass} />
+                            <TimeSelect value={startTime} onChange={handleStartTimeChange} className={inputClass} />
+                            <TimeSelect value={endTime} onChange={setEndTime} className={inputClass} />
 
                             <button onClick={handleCreateLessonForStudent} className={primaryButtonClass}>
                                 Book lesson
@@ -318,8 +355,8 @@ function LessonsPage() {
                             </select>
 
                             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
-                            <input type="time" value={startTime} onChange={(e) => handleStartTimeChange(e.target.value)} className={inputClass} />
-                            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputClass} />
+                            <TimeSelect value={startTime} onChange={handleStartTimeChange} className={inputClass} />
+                            <TimeSelect value={endTime} onChange={setEndTime} className={inputClass} />
 
                             <button onClick={handleCreateLessonAsStudent} className={primaryButtonClass}>
                                 Book lesson

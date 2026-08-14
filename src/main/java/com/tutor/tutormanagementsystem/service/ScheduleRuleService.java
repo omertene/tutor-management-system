@@ -2,7 +2,6 @@ package com.tutor.tutormanagementsystem.service;
 
 import com.tutor.tutormanagementsystem.dto.ScheduleRuleRequest;
 import com.tutor.tutormanagementsystem.dto.ScheduleRuleResponse;
-import com.tutor.tutormanagementsystem.exception.InvalidTimeRangeException;
 import com.tutor.tutormanagementsystem.exception.ScheduleConflictException;
 import com.tutor.tutormanagementsystem.exception.ScheduleRuleNotFoundException;
 import com.tutor.tutormanagementsystem.model.ScheduleRule;
@@ -22,9 +21,7 @@ public class ScheduleRuleService {
 
     public ScheduleRuleResponse createScheduleRule(ScheduleRuleRequest request) {
 
-        if (request.startTime().isAfter(request.endTime())) {
-            throw new InvalidTimeRangeException("Start time must be before end time");
-        }
+        TimeValidation.requireValidRange(request.startTime(), request.endTime());
         List<ScheduleRule> overlapping = scheduleRuleRepository
                 .findAllByDayOfWeekAndStartTimeLessThanAndEndTimeGreaterThan(
                         request.dayOfWeek(), request.endTime(), request.startTime());
@@ -62,6 +59,39 @@ public class ScheduleRuleService {
         return lessonService.countUpcomingLessonsInWeeklySlot(rule.getDayOfWeek(), rule.getStartTime(), rule.getEndTime());
     }
 
+    public long countUpcomingLessonsAffectedByEdit(Long ruleId, ScheduleRuleRequest newRequest) {
+        ScheduleRule rule = scheduleRuleRepository.findById(ruleId)
+                .orElseThrow(() -> new ScheduleRuleNotFoundException("Schedule rule not found"));
+
+        return lessonService.countUpcomingLessonsLosingCoverage(
+                rule.getDayOfWeek(), rule.getStartTime(), rule.getEndTime(),
+                newRequest.dayOfWeek(), newRequest.startTime(), newRequest.endTime());
+    }
+
+    public ScheduleRuleResponse updateScheduleRule(Long ruleId, ScheduleRuleRequest request) {
+        ScheduleRule rule = scheduleRuleRepository.findById(ruleId)
+                .orElseThrow(() -> new ScheduleRuleNotFoundException("Schedule rule not found"));
+
+        TimeValidation.requireValidRange(request.startTime(), request.endTime());
+
+        boolean overlapping = scheduleRuleRepository
+                .findAllByDayOfWeekAndStartTimeLessThanAndEndTimeGreaterThan(
+                        request.dayOfWeek(), request.endTime(), request.startTime())
+                .stream()
+                .anyMatch(other -> !other.getId().equals(ruleId));
+
+        if (overlapping) {
+            throw new ScheduleConflictException("This time overlaps an existing rule");
+        }
+
+        rule.setDayOfWeek(request.dayOfWeek());
+        rule.setStartTime(request.startTime());
+        rule.setEndTime(request.endTime());
+
+        scheduleRuleRepository.save(rule);
+
+        return new ScheduleRuleResponse(rule.getId(), rule.getDayOfWeek(), rule.getStartTime(), rule.getEndTime());
+    }
 
     public void deleteScheduleRule(Long ruleId) {
         if (!scheduleRuleRepository.existsById(ruleId)) {

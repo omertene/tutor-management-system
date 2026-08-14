@@ -6,7 +6,6 @@ import com.tutor.tutormanagementsystem.dto.MonthlyCount;
 import com.tutor.tutormanagementsystem.dto.StudentLessonRequest;
 import com.tutor.tutormanagementsystem.dto.SubjectStats;
 import com.tutor.tutormanagementsystem.exception.InvalidLessonStateException;
-import com.tutor.tutormanagementsystem.exception.InvalidTimeRangeException;
 import com.tutor.tutormanagementsystem.exception.LessonAccessDeniedException;
 import com.tutor.tutormanagementsystem.exception.LessonNotFoundException;
 import com.tutor.tutormanagementsystem.exception.SlotNotAvailableException;
@@ -58,10 +57,7 @@ public class LessonService {
 
         Subject subject = subjectService.getSubjectEntity(subjectId);
 
-        if (startTime.isAfter(endTime)) {
-            throw new InvalidTimeRangeException("Start time must be before end time");
-        }
-
+        TimeValidation.requireValidRange(startTime, endTime);
 
         lessonRepository.acquireDateLock(date.toEpochDay());
 
@@ -102,9 +98,7 @@ public class LessonService {
             throw new InvalidLessonStateException("Only a scheduled lesson can be edited");
         }
 
-        if (request.startTime().isAfter(request.endTime())) {
-            throw new InvalidTimeRangeException("Start time must be before end time");
-        }
+        TimeValidation.requireValidRange(request.startTime(), request.endTime());
 
         Student student = studentService.getStudentEntity(request.studentId());
         Subject subject = subjectService.getSubjectEntity(request.subjectId());
@@ -137,8 +131,6 @@ public class LessonService {
         return toResponse(lesson, true);
     }
 
-    // callerId/callerRole identify who is asking - a student may only cancel their own lesson,
-    // a teacher may cancel any lesson
     public LessonResponse cancelLesson(Long lessonId, Long callerId, Role callerRole) {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
@@ -207,18 +199,12 @@ public class LessonService {
                 .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
     }
 
-    // is there a SCHEDULED lesson overlapping this date/time range - used by
-    // ScheduleOverrideService to stop a BLOCK override from being created on top
-    // of a real booked lesson
     public boolean hasScheduledLessonInRange(LocalDate date, LocalTime startTime, LocalTime endTime) {
         return !lessonRepository
                 .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThanAndStatus(date, endTime, startTime, LessonStatus.SCHEDULED)
                 .isEmpty();
     }
 
-    // count of upcoming SCHEDULED lessons that fall on the given day-of-week and
-    // overlap the given time range - used by ScheduleRuleService to warn a teacher
-    // before deleting a rule that still has future lessons sitting inside it
     public long countUpcomingLessonsInWeeklySlot(DayOfWeek dayOfWeek, LocalTime startTime, LocalTime endTime) {
         LocalDate today = LocalDate.now();
 
@@ -227,6 +213,24 @@ public class LessonService {
                 .filter(lesson -> !lesson.getDate().isBefore(today))
                 .filter(lesson -> lesson.getDate().getDayOfWeek() == dayOfWeek)
                 .filter(lesson -> lesson.getStartTime().isBefore(endTime) && lesson.getEndTime().isAfter(startTime))
+                .count();
+    }
+
+    public long countUpcomingLessonsLosingCoverage(
+            DayOfWeek dayOfWeek, LocalTime oldStartTime, LocalTime oldEndTime,
+            DayOfWeek newDayOfWeek, LocalTime newStartTime, LocalTime newEndTime) {
+        LocalDate today = LocalDate.now();
+
+        return lessonRepository.findAll().stream()
+                .filter(lesson -> lesson.getStatus() == LessonStatus.SCHEDULED)
+                .filter(lesson -> !lesson.getDate().isBefore(today))
+                .filter(lesson -> lesson.getDate().getDayOfWeek() == dayOfWeek)
+                .filter(lesson -> lesson.getStartTime().isBefore(oldEndTime) && lesson.getEndTime().isAfter(oldStartTime))
+                .filter(lesson -> {
+                    boolean stillCovered = lesson.getDate().getDayOfWeek() == newDayOfWeek
+                            && lesson.getStartTime().isBefore(newEndTime) && lesson.getEndTime().isAfter(newStartTime);
+                    return !stillCovered;
+                })
                 .count();
     }
 
