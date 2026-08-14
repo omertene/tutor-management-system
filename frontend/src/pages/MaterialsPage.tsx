@@ -52,7 +52,11 @@ type Lesson = {
     date: string;
     startTime: string;
     endTime: string;
+    status: "SCHEDULED" | "COMPLETED" | "CANCELLED";
 }
+
+// how many of the student's most recent lessons to offer in the "attach to lesson" dropdown
+const LESSON_PICKER_LIMIT = 50;
 
 // "2026-10-07T18:00:00" -> "7/10/26 18:00"
 function formatUploadedAt(dateTime: string): string {
@@ -94,6 +98,9 @@ function MaterialsPage() {
     // search + pagination for the materials list below
     const [searchQuery, setSearchQuery] = useState("");
     const [typeFilter, setTypeFilter] = useState("ALL");
+    // lets you jump straight to "materials for this lesson" - matches against the
+    // lesson's date/subject text shown in each row (e.g. "7/10/26" or "Math")
+    const [lessonFilterQuery, setLessonFilterQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const MATERIALS_PER_PAGE = 20;
 
@@ -138,8 +145,13 @@ function MaterialsPage() {
             return;
         }
 
-        const data = await response.json();
-        setLessons(data);
+        const data: Lesson[] = await response.json();
+        const sorted = data
+            .filter((lesson) => lesson.status !== "CANCELLED")
+            .sort((a, b) => (b.date + b.startTime).localeCompare(a.date + a.startTime));
+        // cap the dropdown to the most recent lessons so it stays scrollable for
+        // long-running students - older ones can still be found via the material search
+        setLessons(sorted.slice(0, LESSON_PICKER_LIMIT));
     }
 
     // teacher views every material across every student - GET /teacher/materials
@@ -192,7 +204,7 @@ function MaterialsPage() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, typeFilter]);
+    }, [searchQuery, typeFilter, lessonFilterQuery]);
 
     // teacher adds a link
     async function handleAddLink() {
@@ -358,6 +370,13 @@ function MaterialsPage() {
             const fullName = `${material.studentFirstName} ${material.studentLastName}`.toLowerCase();
             return fullName.includes(query) || material.title.toLowerCase().includes(query);
         })
+        .filter((material) => {
+            if (!lessonFilterQuery.trim()) return true;
+            const query = lessonFilterQuery.trim().toLowerCase();
+            if (!material.lessonDate) return false;
+            const lessonLabel = `${formatLessonDateTime(material.lessonDate, material.lessonStartTime!)} ${material.lessonSubject}`.toLowerCase();
+            return lessonLabel.includes(query);
+        })
         .sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
 
     const totalPages = Math.max(1, Math.ceil(filteredMaterials.length / MATERIALS_PER_PAGE));
@@ -487,8 +506,8 @@ function MaterialsPage() {
                 <div className="mt-8">
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                         <h2 className="text-lg font-semibold text-slate-900">Materials</h2>
-                        {role === "TEACHER" && (
-                            <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2">
+                            {role === "TEACHER" && (
                                 <input
                                     type="text"
                                     placeholder="Search by student or title..."
@@ -496,14 +515,24 @@ function MaterialsPage() {
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className={inputClass}
                                 />
+                            )}
+                            <input
+                                type="text"
+                                placeholder="Filter by lesson..."
+                                title="Filter by lesson date or subject"
+                                value={lessonFilterQuery}
+                                onChange={(e) => setLessonFilterQuery(e.target.value)}
+                                className={`${inputClass} w-32`}
+                            />
+                            {role === "TEACHER" && (
                                 <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className={inputClass}>
                                     <option value="ALL">All types</option>
                                     <option value="FILE">File</option>
                                     <option value="LINK">Link</option>
                                     <option value="NOTE">Note</option>
                                 </select>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
 
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">

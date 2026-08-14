@@ -7,6 +7,7 @@ import com.tutor.tutormanagementsystem.exception.InvalidMaterialException;
 import com.tutor.tutormanagementsystem.exception.LessonAccessDeniedException;
 import com.tutor.tutormanagementsystem.exception.MaterialNotFoundException;
 import com.tutor.tutormanagementsystem.model.Lesson;
+import com.tutor.tutormanagementsystem.model.LessonStatus;
 import com.tutor.tutormanagementsystem.model.Material;
 import com.tutor.tutormanagementsystem.model.MaterialType;
 import com.tutor.tutormanagementsystem.model.Role;
@@ -143,6 +144,10 @@ public class MaterialService {
         Lesson lesson = lessonId != null
                 ? lessonService.getLessonEntity(lessonId)
                 : null;
+
+        if (lesson != null && lesson.getStatus() == LessonStatus.CANCELLED) {
+            throw new InvalidMaterialException("Can't attach a material to a cancelled lesson");
+        }
 
         return Material.builder()
                 .student(student)
