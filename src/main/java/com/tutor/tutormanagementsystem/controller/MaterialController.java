@@ -69,6 +69,13 @@ public class MaterialController {
         return ResponseEntity.ok(materialService.getMaterialsForStudent(studentId));
     }
 
+    // teacher views every material across every student - the default materials view
+    @PreAuthorize("hasRole('TEACHER')")
+    @GetMapping("/teacher/materials")
+    public ResponseEntity<List<MaterialResponse>> getAllMaterials() {
+        return ResponseEntity.ok(materialService.getAllMaterials());
+    }
+
     // materials attached to a specific lesson - available to both roles, but a student
     // may only view materials for their own lesson (enforced in MaterialService)
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")

@@ -34,6 +34,14 @@ public class MaterialService {
                 .toList();
     }
 
+    // teacher views every material across every student at once - the default
+    // "materials" view, instead of requiring a student to be picked first
+    public List<MaterialResponse> getAllMaterials() {
+        return materialRepository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     // callerId/callerRole identify who is asking, same pattern as LessonService.cancelLesson.
     // a teacher may view materials for any lesson; a student may only view materials for
     // their own lesson - without this check, any logged-in student could see another
@@ -149,6 +157,8 @@ public class MaterialService {
         return new MaterialResponse(
                 material.getId(),
                 material.getStudent().getId(),
+                material.getStudent().getUser().getFirstName(),
+                material.getStudent().getUser().getLastName(),
                 lesson != null ? lesson.getId() : null,
                 lesson != null ? lesson.getDate() : null,
                 lesson != null ? lesson.getStartTime() : null,
