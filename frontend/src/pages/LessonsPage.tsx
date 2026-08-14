@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { decodeToken } from "../utils/jwt";
 import type { Subject, Student } from "../types";
@@ -26,6 +26,27 @@ const statusStyles: Record<string, string> = {
     COMPLETED: "bg-green-50 text-green-700",
     CANCELLED: "bg-slate-100 text-slate-500",
 };
+
+// "2026-10-07" -> "7/10/26"
+function formatLessonDate(date: string): string {
+    const [year, month, day] = date.split("-");
+    return `${Number(day)}/${Number(month)}/${year.slice(2)}`;
+}
+
+// "18:00:00" -> "18:00"
+function formatLessonTime(time: string): string {
+    return time.slice(0, 5);
+}
+
+// today's date as "YYYY-MM-DD" using local date fields, not toISOString (which
+// converts through UTC first and can shift the date by a day near midnight)
+function todayDateString(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
 
 
 type Lesson = {
@@ -90,14 +111,21 @@ function LessonsPage() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
 
-    // form fields shared by both roles
+    // form fields shared by both roles - date/time default to today 08:00-09:00
+    // instead of blank, since most bookings only need the student/subject changed
     const [selectedSubjectId, setSelectedSubjectId] = useState("");
-    const [date, setDate] = useState("");
-    const [startTime, setStartTime] = useState("");
-    const [endTime, setEndTime] = useState("");
+    const [date, setDate] = useState(todayDateString());
+    const [startTime, setStartTime] = useState("08:00");
+    const [endTime, setEndTime] = useState("09:00");
 
     // only used by the teacher's form
     const [selectedStudentId, setSelectedStudentId] = useState("");
+
+    // filters for the lesson list below
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState("ALL");
+    const [currentPage, setCurrentPage] = useState(1);
+    const LESSONS_PER_PAGE = 20;
 
     function handleStartTimeChange(value: string) {
         setStartTime(value);
@@ -166,6 +194,17 @@ function LessonsPage() {
         setStudents(data);
     }
 
+    useEffect(() => {
+        handleLoadLessons();
+        handleLoadSubjects();
+        if (role === "TEACHER") handleLoadStudents();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, statusFilter]);
+
     // student books a lesson for themselves - POST /student/lessons
     async function handleCreateLessonAsStudent() {
         setErrorMessage("");
@@ -224,10 +263,26 @@ function LessonsPage() {
     }
 
 
-    async function handleCancleLesson(lessonId: number) {
+    // a lesson can only be cancelled while SCHEDULED or (teacher-only) COMPLETED -
+    // mirrors the backend rule in LessonService.cancelLesson, used to decide whether
+    // to show the Cancel button at all
+    function canCancelLesson(lesson: Lesson): boolean {
+        if (lesson.status === "SCHEDULED") return true;
+        if (lesson.status === "COMPLETED") return role === "TEACHER";
+        return false;
+    }
+
+    async function handleCancelLesson(lesson: Lesson) {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
+        if (lesson.status === "COMPLETED") {
+            const confirmed = window.confirm(
+                "Cancel this completed lesson? This will reverse its effect on debt and revenue."
+            );
+            if (!confirmed) return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/lessons/${lesson.id}`, {
             method: "DELETE",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -236,12 +291,12 @@ function LessonsPage() {
 
         if (!response.ok) {
             const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to cancle lesson");
+            setErrorMessage(errorData.message || "Failed to cancel lesson");
             return;
         }
 
-        const canclledLesson = await response.json();
-        setLessons(lessons.map((lesson) => lesson.id == lessonId ? canclledLesson : lesson));
+        const cancelledLesson = await response.json();
+        setLessons(lessons.map((l) => l.id === lesson.id ? cancelledLesson : l));
     }
 
     // teacher marks a lesson as completed, so it counts toward the student's debt -
@@ -267,9 +322,26 @@ function LessonsPage() {
     }
 
     const inputClass = "rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
+    const labelClass = "text-sm font-medium text-slate-700";
     const primaryButtonClass = "px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors";
-    const secondaryButtonClass = "px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors";
     const smallSecondaryButtonClass = "px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors";
+
+    const filteredLessons = lessons
+        .filter((lesson) => statusFilter === "ALL" || lesson.status === statusFilter)
+        .filter((lesson) => {
+            if (!searchQuery.trim()) return true;
+            const fullName = `${lesson.studentFirstName} ${lesson.studentLastName}`.toLowerCase();
+            return fullName.includes(searchQuery.trim().toLowerCase())
+                || lesson.subjectName.toLowerCase().includes(searchQuery.trim().toLowerCase());
+        })
+        .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
+
+    const totalPages = Math.max(1, Math.ceil(filteredLessons.length / LESSONS_PER_PAGE));
+    const safePage = Math.min(currentPage, totalPages);
+    const visibleLessons = filteredLessons.slice(
+        (safePage - 1) * LESSONS_PER_PAGE,
+        safePage * LESSONS_PER_PAGE
+    );
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -278,56 +350,59 @@ function LessonsPage() {
             <main className="max-w-6xl mx-auto px-4 py-8">
                 <h1 className="text-2xl font-semibold text-slate-900">Lessons</h1>
 
-                <div className="mt-4 flex flex-wrap gap-3">
-                    <button onClick={handleLoadSubjects} className={secondaryButtonClass}>
-                        Load subjects
-                    </button>
-                    {role === "TEACHER" && (
-                        <button onClick={handleLoadStudents} className={secondaryButtonClass}>
-                            Load students
-                        </button>
-                    )}
-                    <button onClick={handleLoadLessons} className={secondaryButtonClass}>
-                        Show all lessons
-                    </button>
-                </div>
-
                 {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
                 {role === "TEACHER" && (
                     <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                         <h2 className="text-lg font-semibold text-slate-900 mb-4">Book a lesson for a student</h2>
 
-                        <div className="flex flex-wrap gap-3 items-center">
-                            <select
-                                value={selectedStudentId}
-                                onChange={(e) => setSelectedStudentId(e.target.value)}
-                                className={inputClass}
-                            >
-                                <option value="">Select student</option>
-                                {students.map((student) => (
-                                    <option key={student.id} value={student.id}>
-                                        {student.firstName} {student.lastName}
-                                    </option>
-                                ))}
-                            </select>
+                        <div className="flex flex-wrap gap-3 items-end">
+                            <div className="flex flex-col gap-1">
+                                <label className={labelClass}>Student</label>
+                                <select
+                                    value={selectedStudentId}
+                                    onChange={(e) => setSelectedStudentId(e.target.value)}
+                                    className={inputClass}
+                                >
+                                    <option value="">Select student</option>
+                                    {students.map((student) => (
+                                        <option key={student.id} value={student.id}>
+                                            {student.firstName} {student.lastName}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
-                            <select
-                                value={selectedSubjectId}
-                                onChange={(e) => setSelectedSubjectId(e.target.value)}
-                                className={inputClass}
-                            >
-                                <option value="">Select subject</option>
-                                {subjects.map((subject) => (
-                                    <option key={subject.id} value={subject.id}>
-                                        {subject.name}
-                                    </option>
-                                ))}
-                            </select>
+                            <div className="flex flex-col gap-1">
+                                <label className={labelClass}>Subject</label>
+                                <select
+                                    value={selectedSubjectId}
+                                    onChange={(e) => setSelectedSubjectId(e.target.value)}
+                                    className={inputClass}
+                                >
+                                    <option value="">Select subject</option>
+                                    {subjects.map((subject) => (
+                                        <option key={subject.id} value={subject.id}>
+                                            {subject.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
-                            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
-                            <TimeSelect value={startTime} onChange={handleStartTimeChange} className={inputClass} />
-                            <TimeSelect value={endTime} onChange={setEndTime} className={inputClass} />
+                            <div className="flex flex-col gap-1">
+                                <label className={labelClass}>Date</label>
+                                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
+                            </div>
+
+                            <div className="flex flex-col gap-1">
+                                <label className={labelClass}>Start time</label>
+                                <TimeSelect value={startTime} onChange={handleStartTimeChange} className={inputClass} />
+                            </div>
+
+                            <div className="flex flex-col gap-1">
+                                <label className={labelClass}>End time</label>
+                                <TimeSelect value={endTime} onChange={setEndTime} className={inputClass} />
+                            </div>
 
                             <button onClick={handleCreateLessonForStudent} className={primaryButtonClass}>
                                 Book lesson
@@ -340,23 +415,37 @@ function LessonsPage() {
                     <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                         <h2 className="text-lg font-semibold text-slate-900 mb-4">Book a lesson</h2>
 
-                        <div className="flex flex-wrap gap-3 items-center">
-                            <select
-                                value={selectedSubjectId}
-                                onChange={(e) => setSelectedSubjectId(e.target.value)}
-                                className={inputClass}
-                            >
-                                <option value="">Select subject</option>
-                                {subjects.map((subject) => (
-                                    <option key={subject.id} value={subject.id}>
-                                        {subject.name}
-                                    </option>
-                                ))}
-                            </select>
+                        <div className="flex flex-wrap gap-3 items-end">
+                            <div className="flex flex-col gap-1">
+                                <label className={labelClass}>Subject</label>
+                                <select
+                                    value={selectedSubjectId}
+                                    onChange={(e) => setSelectedSubjectId(e.target.value)}
+                                    className={inputClass}
+                                >
+                                    <option value="">Select subject</option>
+                                    {subjects.map((subject) => (
+                                        <option key={subject.id} value={subject.id}>
+                                            {subject.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
-                            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
-                            <TimeSelect value={startTime} onChange={handleStartTimeChange} className={inputClass} />
-                            <TimeSelect value={endTime} onChange={setEndTime} className={inputClass} />
+                            <div className="flex flex-col gap-1">
+                                <label className={labelClass}>Date</label>
+                                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
+                            </div>
+
+                            <div className="flex flex-col gap-1">
+                                <label className={labelClass}>Start time</label>
+                                <TimeSelect value={startTime} onChange={handleStartTimeChange} className={inputClass} />
+                            </div>
+
+                            <div className="flex flex-col gap-1">
+                                <label className={labelClass}>End time</label>
+                                <TimeSelect value={endTime} onChange={setEndTime} className={inputClass} />
+                            </div>
 
                             <button onClick={handleCreateLessonAsStudent} className={primaryButtonClass}>
                                 Book lesson
@@ -366,24 +455,44 @@ function LessonsPage() {
                 )}
 
                 <div className="mt-8">
-                    <h2 className="text-lg font-semibold text-slate-900 mb-3">Your lessons</h2>
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                        <h2 className="text-lg font-semibold text-slate-900">Your lessons</h2>
+                        <div className="flex flex-wrap gap-2">
+                            <input
+                                type="text"
+                                placeholder="Search by student or subject..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className={inputClass}
+                            />
+                            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={inputClass}>
+                                <option value="ALL">All statuses</option>
+                                <option value="SCHEDULED">Scheduled</option>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="CANCELLED">Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
 
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
-                        {lessons.length === 0 && (
+                        {visibleLessons.length === 0 && (
                             <p className="px-4 py-6 text-sm text-slate-500 text-center">
-                                No lessons loaded yet. Click "Show all lessons" above.
+                                {lessons.length === 0 ? "No lessons yet." : "No lessons match your search."}
                             </p>
                         )}
 
-                        {lessons.map((lesson) => (
+                        {visibleLessons.map((lesson) => (
                             <div key={lesson.id} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <span className="font-medium text-slate-900">
-                                        {lesson.date} {lesson.startTime}-{lesson.endTime}
+                                        {formatLessonDate(lesson.date)} {formatLessonTime(lesson.startTime)}-{formatLessonTime(lesson.endTime)}
                                     </span>
                                     <span className="text-slate-500 text-sm">{lesson.subjectName}</span>
                                     <span className="text-slate-500 text-sm">
                                         {lesson.studentFirstName} {lesson.studentLastName}
+                                    </span>
+                                    <span className="text-slate-500 text-sm">
+                                        ₪{lesson.priceAtBooking}
                                     </span>
                                     <span
                                         className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusStyles[lesson.status] ?? "bg-slate-100 text-slate-500"}`}
@@ -398,16 +507,43 @@ function LessonsPage() {
                                             Mark completed
                                         </button>
                                     )}
-                                    <button
-                                        onClick={() => handleCancleLesson(lesson.id)}
-                                        className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
+                                    {canCancelLesson(lesson) && (
+                                        <button
+                                            onClick={() => handleCancelLesson(lesson)}
+                                            className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}
                     </div>
+
+                    {filteredLessons.length > 0 && (
+                        <div className="mt-3 flex items-center justify-between">
+                            <p className="text-sm text-slate-500">
+                                Showing {(safePage - 1) * LESSONS_PER_PAGE + 1}-{Math.min(safePage * LESSONS_PER_PAGE, filteredLessons.length)} of {filteredLessons.length}
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                    disabled={safePage === 1}
+                                    className={`${smallSecondaryButtonClass} disabled:opacity-40 disabled:cursor-not-allowed`}
+                                >
+                                    &larr; Previous
+                                </button>
+                                <span className="text-sm text-slate-500">Page {safePage} of {totalPages}</span>
+                                <button
+                                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                    disabled={safePage === totalPages}
+                                    className={`${smallSecondaryButtonClass} disabled:opacity-40 disabled:cursor-not-allowed`}
+                                >
+                                    Next &rarr;
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>
