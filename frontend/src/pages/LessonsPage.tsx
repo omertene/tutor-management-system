@@ -27,6 +27,26 @@ const statusStyles: Record<string, string> = {
     CANCELLED: "bg-slate-100 text-slate-500",
 };
 
+const studentStatusLabels: Record<string, string> = {
+    SCHEDULED: "Upcoming",
+    COMPLETED: "Done",
+    CANCELLED: "Cancelled",
+};
+
+// "2026-08-17" -> "Today" / "Tomorrow" / "7/10/26", relative to the given today string
+function formatRelativeLessonDate(date: string, todayStr: string): string {
+    if (date === todayStr) return "Today";
+
+    const today = new Date(`${todayStr}T00:00:00`);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    if (date === `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`) {
+        return "Tomorrow";
+    }
+
+    return formatLessonDate(date);
+}
+
 // "2026-10-07" -> "7/10/26"
 function formatLessonDate(date: string): string {
     const [year, month, day] = date.split("-");
@@ -47,6 +67,9 @@ function todayDateString(): string {
     const day = String(now.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
 }
+
+const STUDENT_MIN_BOOKING_NOTICE_HOURS = 2;
+const STUDENT_MIN_CANCEL_NOTICE_HOURS = 6;
 
 
 type Lesson = {
@@ -110,6 +133,8 @@ function LessonsPage() {
 
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
+
+    const [showCancelledLessons, setShowCancelledLessons] = useState(false);
 
     // form fields shared by both roles - date/time default to today 08:00-09:00
     // instead of blank, since most bookings only need the student/subject changed
@@ -212,8 +237,10 @@ function LessonsPage() {
         const [bookHour, bookMinute] = startTime.split(":").map(Number);
         const requestedStart = new Date(date);
         requestedStart.setHours(bookHour, bookMinute, 0, 0);
-        if (requestedStart <= new Date()) {
-            setErrorMessage("Can't book a lesson in the past");
+        const minBookingTime = new Date();
+        minBookingTime.setHours(minBookingTime.getHours() + STUDENT_MIN_BOOKING_NOTICE_HOURS);
+        if (requestedStart < minBookingTime) {
+            setErrorMessage(`Lessons must be booked at least ${STUDENT_MIN_BOOKING_NOTICE_HOURS} hours in advance`);
             return;
         }
 
@@ -275,7 +302,15 @@ function LessonsPage() {
     // mirrors the backend rule in LessonService.cancelLesson, used to decide whether
     // to show the Cancel button at all
     function canCancelLesson(lesson: Lesson): boolean {
-        if (lesson.status === "SCHEDULED") return true;
+        if (lesson.status === "SCHEDULED") {
+            if (role === "STUDENT") {
+                const lessonStart = new Date(`${lesson.date}T${lesson.startTime}`);
+                const minCancelTime = new Date();
+                minCancelTime.setHours(minCancelTime.getHours() + STUDENT_MIN_CANCEL_NOTICE_HOURS);
+                if (lessonStart < minCancelTime) return false;
+            }
+            return true;
+        }
         if (lesson.status === "COMPLETED") return role === "TEACHER";
         return false;
     }
@@ -350,6 +385,19 @@ function LessonsPage() {
         (safePage - 1) * LESSONS_PER_PAGE,
         safePage * LESSONS_PER_PAGE
     );
+
+    const today = todayDateString();
+    const nowTimeString = new Date().toTimeString().slice(0, 8);
+    const upcomingLessons = lessons
+        .filter((lesson) => lesson.status === "SCHEDULED")
+        .filter((lesson) => lesson.date > today || (lesson.date === today && lesson.startTime > nowTimeString))
+        .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
+    const completedLessons = lessons
+        .filter((lesson) => lesson.status === "COMPLETED")
+        .sort((a, b) => (b.date + b.startTime).localeCompare(a.date + a.startTime));
+    const cancelledLessons = lessons
+        .filter((lesson) => lesson.status === "CANCELLED")
+        .sort((a, b) => (b.date + b.startTime).localeCompare(a.date + a.startTime));
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -462,97 +510,183 @@ function LessonsPage() {
                     </div>
                 )}
 
-                <div className="mt-8">
-                    <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                        <h2 className="text-lg font-semibold text-slate-900">Your lessons</h2>
-                        <div className="flex flex-wrap gap-2">
-                            <input
-                                type="text"
-                                placeholder="Search by student or subject..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className={inputClass}
-                            />
-                            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={inputClass}>
-                                <option value="ALL">All statuses</option>
-                                <option value="SCHEDULED">Scheduled</option>
-                                <option value="COMPLETED">Completed</option>
-                                <option value="CANCELLED">Cancelled</option>
-                            </select>
+                {role === "TEACHER" && (
+                    <div className="mt-8">
+                        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                            <h2 className="text-lg font-semibold text-slate-900">Your lessons</h2>
+                            <div className="flex flex-wrap gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Search by student or subject..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className={inputClass}
+                                />
+                                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={inputClass}>
+                                    <option value="ALL">All statuses</option>
+                                    <option value="SCHEDULED">Scheduled</option>
+                                    <option value="COMPLETED">Completed</option>
+                                    <option value="CANCELLED">Cancelled</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
-                        {visibleLessons.length === 0 && (
-                            <p className="px-4 py-6 text-sm text-slate-500 text-center">
-                                {lessons.length === 0 ? "No lessons yet." : "No lessons match your search."}
-                            </p>
-                        )}
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+                            {visibleLessons.length === 0 && (
+                                <p className="px-4 py-6 text-sm text-slate-500 text-center">
+                                    {lessons.length === 0 ? "No lessons yet." : "No lessons match your search."}
+                                </p>
+                            )}
 
-                        {visibleLessons.map((lesson) => (
-                            <div key={lesson.id} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-medium text-slate-900">
-                                        {formatLessonDate(lesson.date)} {formatLessonTime(lesson.startTime)}-{formatLessonTime(lesson.endTime)}
-                                    </span>
-                                    <span className="text-slate-500 text-sm">{lesson.subjectName}</span>
-                                    <span className="text-slate-500 text-sm">
-                                        {lesson.studentFirstName} {lesson.studentLastName}
-                                    </span>
-                                    <span className="text-slate-500 text-sm">
-                                        ₪{lesson.priceAtBooking}
-                                    </span>
-                                    <span
-                                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusStyles[lesson.status] ?? "bg-slate-100 text-slate-500"}`}
-                                    >
-                                        {lesson.status}
-                                    </span>
-                                </div>
-
-                                <div className="flex gap-2">
-                                    {role === "TEACHER" && lesson.status === "SCHEDULED" && (
-                                        <button onClick={() => handleCompleteLesson(lesson.id)} className={smallSecondaryButtonClass}>
-                                            Mark completed
-                                        </button>
-                                    )}
-                                    {canCancelLesson(lesson) && (
-                                        <button
-                                            onClick={() => handleCancelLesson(lesson)}
-                                            className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+                            {visibleLessons.map((lesson) => (
+                                <div key={lesson.id} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-medium text-slate-900">
+                                            {formatLessonDate(lesson.date)} {formatLessonTime(lesson.startTime)}-{formatLessonTime(lesson.endTime)}
+                                        </span>
+                                        <span className="text-slate-500 text-sm">{lesson.subjectName}</span>
+                                        <span className="text-slate-500 text-sm">
+                                            {lesson.studentFirstName} {lesson.studentLastName}
+                                        </span>
+                                        <span className="text-slate-500 text-sm">
+                                            ₪{lesson.priceAtBooking}
+                                        </span>
+                                        <span
+                                            className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusStyles[lesson.status] ?? "bg-slate-100 text-slate-500"}`}
                                         >
-                                            Cancel
-                                        </button>
-                                    )}
+                                            {lesson.status}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        {lesson.status === "SCHEDULED" && (
+                                            <button onClick={() => handleCompleteLesson(lesson.id)} className={smallSecondaryButtonClass}>
+                                                Mark completed
+                                            </button>
+                                        )}
+                                        {canCancelLesson(lesson) && (
+                                            <button
+                                                onClick={() => handleCancelLesson(lesson)}
+                                                className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {filteredLessons.length > 0 && (
+                            <div className="mt-3 flex items-center justify-between">
+                                <p className="text-sm text-slate-500">
+                                    Showing {(safePage - 1) * LESSONS_PER_PAGE + 1}-{Math.min(safePage * LESSONS_PER_PAGE, filteredLessons.length)} of {filteredLessons.length}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                        disabled={safePage === 1}
+                                        className={`${smallSecondaryButtonClass} disabled:opacity-40 disabled:cursor-not-allowed`}
+                                    >
+                                        &larr; Previous
+                                    </button>
+                                    <span className="text-sm text-slate-500">Page {safePage} of {totalPages}</span>
+                                    <button
+                                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                        disabled={safePage === totalPages}
+                                        className={`${smallSecondaryButtonClass} disabled:opacity-40 disabled:cursor-not-allowed`}
+                                    >
+                                        Next &rarr;
+                                    </button>
                                 </div>
                             </div>
-                        ))}
+                        )}
                     </div>
+                )}
 
-                    {filteredLessons.length > 0 && (
-                        <div className="mt-3 flex items-center justify-between">
-                            <p className="text-sm text-slate-500">
-                                Showing {(safePage - 1) * LESSONS_PER_PAGE + 1}-{Math.min(safePage * LESSONS_PER_PAGE, filteredLessons.length)} of {filteredLessons.length}
-                            </p>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                    disabled={safePage === 1}
-                                    className={`${smallSecondaryButtonClass} disabled:opacity-40 disabled:cursor-not-allowed`}
-                                >
-                                    &larr; Previous
-                                </button>
-                                <span className="text-sm text-slate-500">Page {safePage} of {totalPages}</span>
-                                <button
-                                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                    disabled={safePage === totalPages}
-                                    className={`${smallSecondaryButtonClass} disabled:opacity-40 disabled:cursor-not-allowed`}
-                                >
-                                    Next &rarr;
-                                </button>
+                {role === "STUDENT" && (
+                    <div className="mt-8 flex flex-col gap-8">
+                        <div>
+                            <h2 className="text-lg font-semibold text-slate-900 mb-3">Upcoming</h2>
+                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+                                {upcomingLessons.length === 0 && (
+                                    <p className="px-4 py-6 text-sm text-slate-500 text-center">No upcoming lessons. Book one above!</p>
+                                )}
+                                {upcomingLessons.map((lesson) => (
+                                    <div key={lesson.id} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="font-medium text-slate-900">
+                                                {formatRelativeLessonDate(lesson.date, today)} {formatLessonTime(lesson.startTime)}-{formatLessonTime(lesson.endTime)}
+                                            </span>
+                                            <span className="text-slate-500 text-sm">{lesson.subjectName}</span>
+                                            <span className="text-slate-500 text-sm">₪{lesson.priceAtBooking}</span>
+                                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusStyles[lesson.status]}`}>
+                                                {studentStatusLabels[lesson.status]}
+                                            </span>
+                                        </div>
+
+                                        {canCancelLesson(lesson) ? (
+                                            <button
+                                                onClick={() => handleCancelLesson(lesson)}
+                                                className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        ) : (
+                                            <span className="text-xs text-slate-400">Too close to cancel</span>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                    )}
-                </div>
+
+                        <div>
+                            <h2 className="text-lg font-semibold text-slate-900 mb-3">Completed</h2>
+                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+                                {completedLessons.length === 0 && (
+                                    <p className="px-4 py-6 text-sm text-slate-500 text-center">No completed lessons yet.</p>
+                                )}
+                                {completedLessons.map((lesson) => (
+                                    <div key={lesson.id} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="font-medium text-slate-900">
+                                                {formatLessonDate(lesson.date)} {formatLessonTime(lesson.startTime)}-{formatLessonTime(lesson.endTime)}
+                                            </span>
+                                            <span className="text-slate-500 text-sm">{lesson.subjectName}</span>
+                                            <span className="text-slate-500 text-sm">₪{lesson.priceAtBooking}</span>
+                                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusStyles[lesson.status]}`}>
+                                                {studentStatusLabels[lesson.status]}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {cancelledLessons.length > 0 && (
+                            <div>
+                                <button
+                                    onClick={() => setShowCancelledLessons((v) => !v)}
+                                    className="text-sm text-slate-400 hover:text-slate-600"
+                                >
+                                    {showCancelledLessons ? "Hide" : "Show"} {cancelledLessons.length} cancelled
+                                </button>
+                                {showCancelledLessons && (
+                                    <div className="mt-3 bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
+                                        {cancelledLessons.map((lesson) => (
+                                            <div key={lesson.id} className="px-4 py-2 flex flex-wrap items-center gap-2 text-sm text-slate-400">
+                                                <span>
+                                                    {formatLessonDate(lesson.date)} {formatLessonTime(lesson.startTime)}-{formatLessonTime(lesson.endTime)}
+                                                </span>
+                                                <span>{lesson.subjectName}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
             </main>
         </div>
     )

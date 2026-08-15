@@ -16,6 +16,9 @@ const ROW_HEIGHT = 48; // px, must match the h-12 cell height below
 const HOUR_OPTIONS: string[] = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, "0"));
 const MINUTE_OPTIONS: string[] = ["00", "15", "30", "45"];
 
+const STUDENT_MIN_BOOKING_NOTICE_HOURS = 2;
+const STUDENT_MIN_CANCEL_NOTICE_HOURS = 6;
+
 // adds 1 hour to a "HH:MM" time, wrapping past midnight if needed
 function addOneHour(time: string): string {
     const [hours, minutes] = time.split(":").map(Number);
@@ -370,10 +373,19 @@ function StudentScheduleGrid() {
         return getRuleCoverageQuartersForCell(dayIndex, hour).every(Boolean);
     }
 
-    function isCellInPast(dayIndex: number, hour: number): boolean {
+    function isCellTooSoonToBook(dayIndex: number, hour: number): boolean {
         const cellStart = new Date(weekDates[dayIndex]);
         cellStart.setHours(hour, 0, 0, 0);
-        return cellStart <= now;
+        const minBookingTime = new Date(now);
+        minBookingTime.setHours(minBookingTime.getHours() + STUDENT_MIN_BOOKING_NOTICE_HOURS);
+        return cellStart < minBookingTime;
+    }
+
+    function canCancelLesson(lesson: Lesson): boolean {
+        const lessonStart = new Date(`${lesson.date}T${lesson.startTime}`);
+        const minCancelTime = new Date(now);
+        minCancelTime.setHours(minCancelTime.getHours() + STUDENT_MIN_CANCEL_NOTICE_HOURS);
+        return lessonStart >= minCancelTime;
     }
 
     // clicking a cell only opens the booking form when the slot is actually bookable -
@@ -382,7 +394,7 @@ function StudentScheduleGrid() {
     function handleCellClick(dayIndex: number, hour: number) {
         if (isCellCoveredByOverrideOrLesson(dayIndex, hour)) return;
         if (!isCellFullyAvailable(dayIndex, hour)) return;
-        if (isCellInPast(dayIndex, hour)) return;
+        if (isCellTooSoonToBook(dayIndex, hour)) return;
 
         const dateStr = toDateString(weekDates[dayIndex]);
         const startTime = `${String(hour).padStart(2, "0")}:00`;
@@ -411,8 +423,10 @@ function StudentScheduleGrid() {
         const [bookHour, bookMinute] = bookStartTime.split(":").map(Number);
         const requestedStart = new Date(bookDate);
         requestedStart.setHours(bookHour, bookMinute, 0, 0);
-        if (requestedStart <= new Date()) {
-            setBookError("Can't book a lesson in the past");
+        const minBookingTime = new Date();
+        minBookingTime.setHours(minBookingTime.getHours() + STUDENT_MIN_BOOKING_NOTICE_HOURS);
+        if (requestedStart < minBookingTime) {
+            setBookError(`Lessons must be booked at least ${STUDENT_MIN_BOOKING_NOTICE_HOURS} hours in advance`);
             return;
         }
 
@@ -573,7 +587,7 @@ function StudentScheduleGrid() {
                                 const quarters = getRuleCoverageQuartersForCell(dayIndex, hour);
                                 const allCovered = quarters.every(Boolean);
                                 const noneCovered = quarters.every((covered) => !covered);
-                                const isPast = isCellInPast(dayIndex, hour);
+                                const isTooSoon = isCellTooSoonToBook(dayIndex, hour);
 
                                 return (
                                     <button
@@ -582,16 +596,14 @@ function StudentScheduleGrid() {
                                         style={{
                                             height: `${ROW_HEIGHT}px`,
                                             boxSizing: "border-box",
-                                            background: !isPast && !allCovered && !noneCovered ? ruleCoverageBackground(quarters) : undefined,
+                                            background: allCovered || noneCovered ? undefined : ruleCoverageBackground(quarters),
                                         }}
                                         className={`block w-full border-b border-slate-300 transition-colors select-none ${
-                                            isPast
-                                                ? "bg-slate-100 cursor-default"
-                                                : allCovered
-                                                    ? "bg-white hover:bg-slate-50 cursor-pointer"
-                                                    : noneCovered
-                                                        ? "bg-slate-200 cursor-default"
-                                                        : "cursor-default"
+                                            allCovered
+                                                ? `bg-white ${isTooSoon ? "cursor-default" : "hover:bg-slate-50 cursor-pointer"}`
+                                                : noneCovered
+                                                    ? "bg-slate-200 cursor-default"
+                                                    : "cursor-default"
                                         }`}
                                     />
                                 );
@@ -709,12 +721,18 @@ function StudentScheduleGrid() {
 
                         {viewingLesson.status === "SCHEDULED" && (
                             <div className="flex flex-col gap-2 mt-2">
-                                <button
-                                    onClick={() => handleCancelLesson(viewingLesson.id)}
-                                    className="w-full rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium py-2.5 hover:bg-red-50 transition-colors"
-                                >
-                                    Cancel lesson
-                                </button>
+                                {canCancelLesson(viewingLesson) ? (
+                                    <button
+                                        onClick={() => handleCancelLesson(viewingLesson.id)}
+                                        className="w-full rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium py-2.5 hover:bg-red-50 transition-colors"
+                                    >
+                                        Cancel lesson
+                                    </button>
+                                ) : (
+                                    <p className="text-xs text-slate-400">
+                                        Can't be cancelled within {STUDENT_MIN_CANCEL_NOTICE_HOURS} hours of the start time.
+                                    </p>
+                                )}
                             </div>
                         )}
                     </div>

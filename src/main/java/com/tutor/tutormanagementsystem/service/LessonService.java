@@ -45,13 +45,17 @@ public class LessonService {
         return createLesson(student, request.subjectId(), request.date(), request.startTime(), request.endTime());
     }
 
+    private static final long STUDENT_MIN_BOOKING_NOTICE_HOURS = 2;
+    private static final long STUDENT_MIN_CANCEL_NOTICE_HOURS = 6;
+
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public LessonResponse createLessonAsStudent(Long studentId, StudentLessonRequest request) {
         Student student = studentService.getStudentEntity(studentId);
 
         LocalDateTime requestedStart = LocalDateTime.of(request.date(), request.startTime());
-        if (requestedStart.isBefore(LocalDateTime.now())) {
-            throw new SlotNotAvailableException("This time is not available");
+        if (requestedStart.isBefore(LocalDateTime.now().plusHours(STUDENT_MIN_BOOKING_NOTICE_HOURS))) {
+            throw new SlotNotAvailableException(
+                    "Lessons must be booked at least " + STUDENT_MIN_BOOKING_NOTICE_HOURS + " hours in advance");
         }
 
         return createLesson(student, request.subjectId(), request.date(), request.startTime(), request.endTime());
@@ -153,6 +157,14 @@ public class LessonService {
 
         if (lesson.getStatus() != LessonStatus.SCHEDULED && lesson.getStatus() != LessonStatus.COMPLETED) {
             throw new InvalidLessonStateException("This lesson can't be cancelled");
+        }
+
+        if (callerRole == Role.STUDENT) {
+            LocalDateTime lessonStart = LocalDateTime.of(lesson.getDate(), lesson.getStartTime());
+            if (lessonStart.isBefore(LocalDateTime.now().plusHours(STUDENT_MIN_CANCEL_NOTICE_HOURS))) {
+                throw new InvalidLessonStateException(
+                        "Lessons can only be cancelled at least " + STUDENT_MIN_CANCEL_NOTICE_HOURS + " hours in advance");
+            }
         }
 
         lesson.setStatus(LessonStatus.CANCELLED);

@@ -63,12 +63,6 @@ function StudentDashboard() {
             View lessons
           </Link>
           <Link
-            to="/student/payments"
-            className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-          >
-            View balance
-          </Link>
-          <Link
             to="/student/materials"
             className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
           >
