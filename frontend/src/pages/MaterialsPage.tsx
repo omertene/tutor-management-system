@@ -16,7 +16,6 @@ const teacherLinks = [
 ];
 
 const studentLinks = [
-    { label: "Schedule", to: "/student/schedule" },
     { label: "Lessons", to: "/student/lessons" },
     { label: "Payments", to: "/student/payments" },
     { label: "Materials", to: "/student/materials" },

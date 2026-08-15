@@ -6,7 +6,6 @@ import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SubjectsPage from "./pages/SubjectsPage";
 import SchedulePage from "./pages/SchedulePage"
-import StudentSchedulePage from "./pages/StudentSchedulePage"
 import LessonsPage from "./pages/LessonsPage"
 import PaymentsPage from "./pages/PaymentsPage"
 import MaterialsPage from "./pages/MaterialsPage"
@@ -59,15 +58,6 @@ function App() {
           element={
             <ProtectedRoute requiredRole="TEACHER">
               <SchedulePage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/student/schedule"
-          element={
-            <ProtectedRoute requiredRole="STUDENT">
-              <StudentSchedulePage />
             </ProtectedRoute>
           }
         />

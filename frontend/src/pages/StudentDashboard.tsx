@@ -6,7 +6,6 @@ import StudentScheduleGrid from "../components/StudentScheduleGrid";
 const API_BASE_URL = "http://localhost:8080";
 
 const studentLinks = [
-  { label: "Schedule", to: "/student/schedule" },
   { label: "Lessons", to: "/student/lessons" },
   { label: "Payments", to: "/student/payments" },
   { label: "Materials", to: "/student/materials" },

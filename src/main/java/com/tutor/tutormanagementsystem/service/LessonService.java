@@ -45,10 +45,14 @@ public class LessonService {
         return createLesson(student, request.subjectId(), request.date(), request.startTime(), request.endTime());
     }
 
-    // student books a lesson for themselves
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public LessonResponse createLessonAsStudent(Long studentId, StudentLessonRequest request) {
         Student student = studentService.getStudentEntity(studentId);
+
+        LocalDateTime requestedStart = LocalDateTime.of(request.date(), request.startTime());
+        if (requestedStart.isBefore(LocalDateTime.now())) {
+            throw new SlotNotAvailableException("This time is not available");
+        }
 
         return createLesson(student, request.subjectId(), request.date(), request.startTime(), request.endTime());
     }

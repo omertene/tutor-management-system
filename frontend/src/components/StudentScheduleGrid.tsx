@@ -370,12 +370,19 @@ function StudentScheduleGrid() {
         return getRuleCoverageQuartersForCell(dayIndex, hour).every(Boolean);
     }
 
+    function isCellInPast(dayIndex: number, hour: number): boolean {
+        const cellStart = new Date(weekDates[dayIndex]);
+        cellStart.setHours(hour, 0, 0, 0);
+        return cellStart <= now;
+    }
+
     // clicking a cell only opens the booking form when the slot is actually bookable -
     // a student can't add availability or block time like a teacher can, so a partially
     // or fully unavailable cell (and anything already covered by a lesson/override) does nothing
     function handleCellClick(dayIndex: number, hour: number) {
         if (isCellCoveredByOverrideOrLesson(dayIndex, hour)) return;
         if (!isCellFullyAvailable(dayIndex, hour)) return;
+        if (isCellInPast(dayIndex, hour)) return;
 
         const dateStr = toDateString(weekDates[dayIndex]);
         const startTime = `${String(hour).padStart(2, "0")}:00`;
@@ -398,6 +405,14 @@ function StudentScheduleGrid() {
 
         if (!bookSubjectId || !bookDate || !bookStartTime || !bookEndTime) {
             setBookError("Please fill in all fields");
+            return;
+        }
+
+        const [bookHour, bookMinute] = bookStartTime.split(":").map(Number);
+        const requestedStart = new Date(bookDate);
+        requestedStart.setHours(bookHour, bookMinute, 0, 0);
+        if (requestedStart <= new Date()) {
+            setBookError("Can't book a lesson in the past");
             return;
         }
 
@@ -558,6 +573,7 @@ function StudentScheduleGrid() {
                                 const quarters = getRuleCoverageQuartersForCell(dayIndex, hour);
                                 const allCovered = quarters.every(Boolean);
                                 const noneCovered = quarters.every((covered) => !covered);
+                                const isPast = isCellInPast(dayIndex, hour);
 
                                 return (
                                     <button
@@ -566,14 +582,16 @@ function StudentScheduleGrid() {
                                         style={{
                                             height: `${ROW_HEIGHT}px`,
                                             boxSizing: "border-box",
-                                            background: allCovered || noneCovered ? undefined : ruleCoverageBackground(quarters),
+                                            background: !isPast && !allCovered && !noneCovered ? ruleCoverageBackground(quarters) : undefined,
                                         }}
                                         className={`block w-full border-b border-slate-300 transition-colors select-none ${
-                                            allCovered
-                                                ? "bg-white hover:bg-slate-50 cursor-pointer"
-                                                : noneCovered
-                                                    ? "bg-slate-200 cursor-default"
-                                                    : "cursor-default"
+                                            isPast
+                                                ? "bg-slate-100 cursor-default"
+                                                : allCovered
+                                                    ? "bg-white hover:bg-slate-50 cursor-pointer"
+                                                    : noneCovered
+                                                        ? "bg-slate-200 cursor-default"
+                                                        : "cursor-default"
                                         }`}
                                     />
                                 );
@@ -654,7 +672,7 @@ function StudentScheduleGrid() {
 
                         <div className="flex flex-col gap-1">
                             <label className={labelClass}>Date</label>
-                            <input type="date" value={bookDate} onChange={(e) => setBookDate(e.target.value)} className={inputClass} />
+                            <input type="date" value={bookDate} min={toDateString(new Date())} onChange={(e) => setBookDate(e.target.value)} className={inputClass} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">

@@ -16,7 +16,6 @@ const teacherLinks = [
 ];
 
 const studentLinks = [
-    { label: "Schedule", to: "/student/schedule" },
     { label: "Lessons", to: "/student/lessons" },
     { label: "Payments", to: "/student/payments" },
     { label: "Materials", to: "/student/materials" },
@@ -209,6 +208,14 @@ function LessonsPage() {
     // student books a lesson for themselves - POST /student/lessons
     async function handleCreateLessonAsStudent() {
         setErrorMessage("");
+
+        const [bookHour, bookMinute] = startTime.split(":").map(Number);
+        const requestedStart = new Date(date);
+        requestedStart.setHours(bookHour, bookMinute, 0, 0);
+        if (requestedStart <= new Date()) {
+            setErrorMessage("Can't book a lesson in the past");
+            return;
+        }
 
         const response = await fetch(`${API_BASE_URL}/student/lessons`, {
             method: "POST",
@@ -435,7 +442,7 @@ function LessonsPage() {
 
                             <div className="flex flex-col gap-1">
                                 <label className={labelClass}>Date</label>
-                                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
+                                <input type="date" value={date} min={todayDateString()} onChange={(e) => setDate(e.target.value)} className={inputClass} />
                             </div>
 
                             <div className="flex flex-col gap-1">
