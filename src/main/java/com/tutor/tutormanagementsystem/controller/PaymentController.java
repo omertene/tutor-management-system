@@ -47,6 +47,13 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getAllPayments());
     }
 
+    // teacher corrects an existing payment (amount/method/notes/date)
+    @PreAuthorize("hasRole('TEACHER')")
+    @PutMapping("/teacher/payments/{id}")
+    public ResponseEntity<PaymentResponse> updatePayment(@PathVariable("id") Long paymentId, @RequestBody PaymentRequest request) {
+        return ResponseEntity.ok(paymentService.updatePayment(paymentId, request));
+    }
+
     @PreAuthorize("hasRole('TEACHER')")
     @DeleteMapping("/teacher/payments/{id}")
     public ResponseEntity<Void> cancelPayment(@PathVariable("id") Long paymentId) {

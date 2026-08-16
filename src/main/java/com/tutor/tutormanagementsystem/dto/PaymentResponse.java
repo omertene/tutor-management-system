@@ -3,6 +3,7 @@ package com.tutor.tutormanagementsystem.dto;
 import com.tutor.tutormanagementsystem.model.PaymentMethod;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public record PaymentResponse(
@@ -13,6 +14,7 @@ public record PaymentResponse(
         BigDecimal amount,
         PaymentMethod method,
         String notes,
+        LocalDate paymentDate,
         LocalDateTime createdAt
 ) {
 }

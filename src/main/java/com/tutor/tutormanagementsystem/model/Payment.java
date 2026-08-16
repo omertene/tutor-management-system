@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 
@@ -39,6 +40,12 @@ public class Payment {
 
     @Column(nullable = false)
     private BigDecimal amount;
+
+    // the date the payment was actually received - separate from createdAt (when the
+    // record was entered into the system), since a teacher may log a payment a few
+    // days after actually receiving it
+    @Column(nullable = false)
+    private LocalDate paymentDate;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

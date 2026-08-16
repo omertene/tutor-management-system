@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -37,7 +38,37 @@ public class PaymentService {
                 .amount(request.amount())
                 .method(request.method())
                 .notes(request.notes())
+                .paymentDate(request.paymentDate() != null ? request.paymentDate() : LocalDate.now())
                 .build();
+
+        paymentRepository.save(payment);
+
+        return toResponse(payment);
+    }
+
+    // teacher corrects an existing payment (amount, method, notes, date, or even
+    // which student it belongs to - e.g. it was logged against the wrong student).
+    // debt for both the old and new student is derived on read (sumPaymentsForStudent
+    // by studentId), so simply re-pointing the payment at a new student is enough -
+    // no separate debt total to patch up on either side.
+    public PaymentResponse updatePayment(Long paymentId, PaymentRequest request) {
+
+        if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidPaymentAmountException("Payment amount must be greater than zero");
+        }
+
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
+
+        if (request.studentId() != null && !request.studentId().equals(payment.getStudent().getId())) {
+            Student newStudent = studentService.getStudentEntity(request.studentId());
+            payment.setStudent(newStudent);
+        }
+
+        payment.setAmount(request.amount());
+        payment.setMethod(request.method());
+        payment.setNotes(request.notes());
+        payment.setPaymentDate(request.paymentDate() != null ? request.paymentDate() : payment.getPaymentDate());
 
         paymentRepository.save(payment);
 
@@ -121,6 +152,7 @@ public class PaymentService {
                 payment.getAmount(),
                 payment.getMethod(),
                 payment.getNotes(),
+                payment.getPaymentDate(),
                 payment.getCreatedAt()
         );
     }

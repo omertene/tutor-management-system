@@ -31,6 +31,7 @@ type Payment = {
     amount: number;
     method: PaymentMethod;
     notes: string;
+    paymentDate: string;
     createdAt: string;
 }
 
@@ -43,12 +44,14 @@ type Debt = {
     debt: number;
 }
 
+// insertion order here drives the dropdown order - Paybox then Bit listed first
+// per how the teacher actually gets paid most often
 const methodLabels: Record<PaymentMethod, string> = {
+    PAYBOX: "Paybox",
+    BIT: "Bit",
     CASH: "Cash",
     BANK_TRANSFER: "Bank transfer",
-    BIT: "Bit",
     CREDIT_CARD: "Credit card",
-    PAYBOX: "Paybox",
 };
 
 // "2026-10-07T18:00:00" -> "7/10/26 18:00"
@@ -57,6 +60,20 @@ function formatPaymentDate(dateTime: string): string {
     const [year, month, day] = datePart.split("-");
     const time = timePart ? timePart.slice(0, 5) : "";
     return `${Number(day)}/${Number(month)}/${year.slice(2)} ${time}`;
+}
+
+// "2026-10-07" -> "7/10/26"
+function formatDateOnly(date: string): string {
+    const [year, month, day] = date.split("-");
+    return `${Number(day)}/${Number(month)}/${year.slice(2)}`;
+}
+
+// today as "YYYY-MM-DD", for defaulting the date input
+function todayDateString(): string {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${now.getFullYear()}-${month}-${day}`;
 }
 
 function PaymentsPage() {
@@ -69,11 +86,26 @@ function PaymentsPage() {
 
     const [students, setStudents] = useState<Student[]>([]);
 
-    // teacher's "record a payment" form fields
+    // teacher's "record a payment" form fields (top panel - create only)
     const [selectedStudentId, setSelectedStudentId] = useState("");
     const [amount, setAmount] = useState("");
-    const [method, setMethod] = useState<PaymentMethod>("CASH");
+    const [method, setMethod] = useState<PaymentMethod>("PAYBOX");
     const [notes, setNotes] = useState("");
+    const [paymentDate, setPaymentDate] = useState(todayDateString());
+
+    // inline edit panel state - which payment row is expanded for editing, and its
+    // own separate set of field values, kept apart from the "record a payment" form above
+    const [editingPaymentId, setEditingPaymentId] = useState<number | null>(null);
+    const [editStudentId, setEditStudentId] = useState("");
+    const [editAmount, setEditAmount] = useState("");
+    const [editMethod, setEditMethod] = useState<PaymentMethod>("PAYBOX");
+    const [editNotes, setEditNotes] = useState("");
+    const [editPaymentDate, setEditPaymentDate] = useState(todayDateString());
+    // separate from errorMessage above - the page-level error banner renders way up
+    // near the top of the page, which is out of view while editing a row further down
+    // the list, so a rejected edit (e.g. a negative amount) needs its own message
+    // shown right next to the edit panel instead
+    const [editErrorMessage, setEditErrorMessage] = useState("");
 
     // debt views
     const [ownDebt, setOwnDebt] = useState<Debt | null>(null);
@@ -200,7 +232,7 @@ function PaymentsPage() {
         setDebtPage(1);
     }, [studentSearchQuery]);
 
-    // teacher records a payment - POST /teacher/payments
+    // teacher records a new payment - POST /teacher/payments
     async function handleCreatePayment() {
         setErrorMessage("");
 
@@ -215,6 +247,7 @@ function PaymentsPage() {
                 amount: Number(amount),
                 method,
                 notes,
+                paymentDate,
             }),
         });
 
@@ -226,11 +259,68 @@ function PaymentsPage() {
 
         const createdPayment = await response.json();
         setPayments([...payments, createdPayment]);
+        setSelectedStudentId("");
         setAmount("");
+        setMethod("PAYBOX");
         setNotes("");
+        setPaymentDate(todayDateString());
 
         // a new payment changes the student's balance, so the debt snapshot
         // needs refreshing too
+        handleLoadAllDebts();
+    }
+
+    // opens the inline edit panel on a payment row, pre-filled with that payment's
+    // current values - kept separate from the "record a payment" form above so
+    // editing one doesn't disturb whatever the teacher was mid-typing into the other
+    function handleStartEdit(payment: Payment) {
+        setEditErrorMessage("");
+        setEditingPaymentId(payment.id);
+        setEditStudentId(String(payment.studentId));
+        setEditAmount(String(payment.amount));
+        setEditMethod(payment.method);
+        setEditNotes(payment.notes ?? "");
+        setEditPaymentDate(payment.paymentDate ?? todayDateString());
+    }
+
+    function handleCancelEdit() {
+        setEditingPaymentId(null);
+        setEditErrorMessage("");
+    }
+
+    // saves the inline edit panel - PUT /teacher/payments/{id}. student is editable
+    // here (unlike before), so a payment logged against the wrong student can be
+    // reassigned; debt is derived per-student on read, so refreshing the debt list
+    // after this picks up the corrected balance for both the old and new student.
+    async function handleSaveEdit(paymentId: number) {
+        setEditErrorMessage("");
+
+        const response = await fetch(`${API_BASE_URL}/teacher/payments/${paymentId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                studentId: Number(editStudentId),
+                amount: Number(editAmount),
+                method: editMethod,
+                notes: editNotes,
+                paymentDate: editPaymentDate,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            setEditErrorMessage(errorData.message || "Failed to save payment");
+            return;
+        }
+
+        const savedPayment = await response.json();
+        setPayments(payments.map((p) => (p.id === savedPayment.id ? savedPayment : p)));
+        setEditingPaymentId(null);
+
+        // covers both the old and new student's balance if the student was changed
         handleLoadAllDebts();
     }
 
@@ -337,6 +427,16 @@ function PaymentsPage() {
                             </div>
 
                             <div className="flex flex-col gap-1">
+                                <label className={labelClass}>Date received *</label>
+                                <input
+                                    type="date"
+                                    value={paymentDate}
+                                    onChange={(e) => setPaymentDate(e.target.value)}
+                                    className={inputClass}
+                                />
+                            </div>
+
+                            <div className="flex flex-col gap-1">
                                 <label className={labelClass}>Method</label>
                                 <select value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)} className={inputClass}>
                                     {Object.entries(methodLabels).map(([value, label]) => (
@@ -357,7 +457,7 @@ function PaymentsPage() {
 
                             <button
                                 onClick={handleCreatePayment}
-                                disabled={!selectedStudentId || !amount}
+                                disabled={!selectedStudentId || !amount || !paymentDate}
                                 className={primaryButtonClass}
                             >
                                 Record payment
@@ -398,16 +498,103 @@ function PaymentsPage() {
                                         </span>
                                     )}
                                     <span className="text-slate-500 text-sm">{methodLabels[payment.method] ?? payment.method}</span>
-                                    <span className="text-slate-400 text-sm">{formatPaymentDate(payment.createdAt)}</span>
+                                    <span className="text-slate-400 text-sm">
+                                        {payment.paymentDate ? formatDateOnly(payment.paymentDate) : formatPaymentDate(payment.createdAt)}
+                                    </span>
                                     {payment.notes && <span className="text-slate-500 text-sm">— {payment.notes}</span>}
                                 </div>
-                                {role === "TEACHER" && (
-                                    <button
-                                        onClick={() => handleCancelPayment(payment)}
-                                        className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
+
+                                {role === "TEACHER" && editingPaymentId === payment.id && (
+                                    <div className="flex flex-wrap gap-2 items-end bg-slate-50 border border-slate-200 rounded-lg p-3 w-full mt-1">
+                                        {editErrorMessage && (
+                                            <p className="text-sm text-red-600 w-full">{editErrorMessage}</p>
+                                        )}
+
+                                        <div className="flex flex-col gap-1">
+                                            <label className={labelClass}>Student</label>
+                                            <select
+                                                value={editStudentId}
+                                                onChange={(e) => setEditStudentId(e.target.value)}
+                                                className={inputClass}
+                                            >
+                                                {students.map((student) => (
+                                                    <option key={student.id} value={student.id}>
+                                                        {student.firstName} {student.lastName}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <label className={labelClass}>Amount</label>
+                                            <input
+                                                type="number"
+                                                value={editAmount}
+                                                onChange={(e) => setEditAmount(e.target.value)}
+                                                className={`${inputClass} w-28`}
+                                            />
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <label className={labelClass}>Date received</label>
+                                            <input
+                                                type="date"
+                                                value={editPaymentDate}
+                                                onChange={(e) => setEditPaymentDate(e.target.value)}
+                                                className={inputClass}
+                                            />
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <label className={labelClass}>Method</label>
+                                            <select
+                                                value={editMethod}
+                                                onChange={(e) => setEditMethod(e.target.value as PaymentMethod)}
+                                                className={inputClass}
+                                            >
+                                                {Object.entries(methodLabels).map(([value, label]) => (
+                                                    <option key={value} value={value}>{label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1 flex-1 min-w-[160px]">
+                                            <label className={labelClass}>Notes</label>
+                                            <input
+                                                value={editNotes}
+                                                onChange={(e) => setEditNotes(e.target.value)}
+                                                className={`${inputClass} w-full`}
+                                            />
+                                        </div>
+
+                                        <button
+                                            onClick={() => handleSaveEdit(payment.id)}
+                                            disabled={!editStudentId || !editAmount || !editPaymentDate}
+                                            className={primaryButtonClass}
+                                        >
+                                            Save changes
+                                        </button>
+                                        <button onClick={handleCancelEdit} className={smallSecondaryButtonClass}>
+                                            Cancel
+                                        </button>
+                                    </div>
+                                )}
+
+                                {role === "TEACHER" && editingPaymentId !== payment.id && (
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleStartEdit(payment)}
+                                            className={smallSecondaryButtonClass}
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => handleCancelPayment(payment)}
+                                            className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         ))}
