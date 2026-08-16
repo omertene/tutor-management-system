@@ -119,8 +119,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
-    @ExceptionHandler(InvalidPasswordException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidPassword(InvalidPasswordException ex) {
+    @ExceptionHandler(InvalidStudentDataException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidStudentData(InvalidStudentDataException ex) {
         ErrorResponse body = new ErrorResponse(ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }

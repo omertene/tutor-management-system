@@ -18,6 +18,40 @@ const teacherLinks = [
 
 const API_BASE_URL = "http://localhost:8080";
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^\d+$/;
+
+function validateEmailField(email: string): string | null {
+  if (!EMAIL_PATTERN.test(email)) return "Please enter a valid email address";
+  return null;
+}
+
+function validatePasswordField(password: string): string | null {
+  if (password.length < 4) return "Password must be at least 4 characters";
+  return null;
+}
+
+function validatePhoneField(phone: string): string | null {
+  if (!PHONE_PATTERN.test(phone)) return "Phone number must contain digits only";
+  return null;
+}
+
+function validateHourlyRateField(hourlyRate: string): string | null {
+  if (!/^\d+$/.test(hourlyRate) || Number(hourlyRate) <= 0) {
+    return "Hourly rate must be a positive whole number";
+  }
+  return null;
+}
+
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const errorData = await response.json();
+    return errorData.message || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -116,24 +150,27 @@ function RegisterPage() {
 
     const token = localStorage.getItem("token");
 
-    const response = await fetch(`${API_BASE_URL}/teacher/students/${student.id}/active`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ active: !student.active }),
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/teacher/students/${student.id}/active`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ active: !student.active }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      setListErrorMessage(errorData.message || "Failed to update student status");
-      return;
+      if (!response.ok) {
+        setListErrorMessage(await readErrorMessage(response, "Failed to update student status"));
+        return;
+      }
+
+      loadStudents(showingInactive);
+      loadDebts();
+      loadCounts();
+    } catch {
+      setListErrorMessage("Could not reach the server. Please try again.");
     }
-
-    loadStudents(showingInactive);
-    loadDebts();
-    loadCounts();
   }
 
   // opens the edit form for a student, pre-filled with their current values
@@ -155,33 +192,42 @@ function RegisterPage() {
   async function handleSaveEdit(studentId: number) {
     setListErrorMessage("");
 
-    const token = localStorage.getItem("token");
-
-    const response = await fetch(`${API_BASE_URL}/teacher/students/${studentId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        firstName: editFirstName,
-        lastName: editLastName,
-        phone: editPhone,
-        hourlyRate: Number(editHourlyRate),
-        educationLevel: editEducationLevel,
-        notes: editNotes,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      setListErrorMessage(errorData.message || "Failed to update student");
+    const fieldError = validatePhoneField(editPhone) || validateHourlyRateField(editHourlyRate);
+    if (fieldError) {
+      setListErrorMessage(fieldError);
       return;
     }
 
-    const updatedStudent = await response.json();
-    setStudents(students.map((student) => (student.id === studentId ? updatedStudent : student)));
-    setEditingStudentId(null);
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/teacher/students/${studentId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          firstName: editFirstName,
+          lastName: editLastName,
+          phone: editPhone,
+          hourlyRate: Number(editHourlyRate),
+          educationLevel: editEducationLevel,
+          notes: editNotes,
+        }),
+      });
+
+      if (!response.ok) {
+        setListErrorMessage(await readErrorMessage(response, "Failed to update student"));
+        return;
+      }
+
+      const updatedStudent = await response.json();
+      setStudents(students.map((student) => (student.id === studentId ? updatedStudent : student)));
+      setEditingStudentId(null);
+    } catch {
+      setListErrorMessage("Could not reach the server. Please try again.");
+    }
   }
 
   function handleStartCredentials(student: Student) {
@@ -201,27 +247,36 @@ function RegisterPage() {
     setCredentialsErrorMessage("");
     setCredentialsSuccessMessage("");
 
-    const token = localStorage.getItem("token");
-
-    const response = await fetch(`${API_BASE_URL}/teacher/students/${credentialsStudent.id}/email`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ email: credentialsEmail }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      setCredentialsErrorMessage(errorData.message || "Failed to update email");
+    const fieldError = validateEmailField(credentialsEmail);
+    if (fieldError) {
+      setCredentialsErrorMessage(fieldError);
       return;
     }
 
-    const updatedStudent = await response.json();
-    setStudents(students.map((student) => (student.id === updatedStudent.id ? updatedStudent : student)));
-    setCredentialsStudent(updatedStudent);
-    setCredentialsSuccessMessage("Email updated");
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/teacher/students/${credentialsStudent.id}/email`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email: credentialsEmail }),
+      });
+
+      if (!response.ok) {
+        setCredentialsErrorMessage(await readErrorMessage(response, "Failed to update email"));
+        return;
+      }
+
+      const updatedStudent = await response.json();
+      setStudents(students.map((student) => (student.id === updatedStudent.id ? updatedStudent : student)));
+      setCredentialsStudent(updatedStudent);
+      setCredentialsSuccessMessage("Email updated");
+    } catch {
+      setCredentialsErrorMessage("Could not reach the server. Please try again.");
+    }
   }
 
   async function handleResetPassword() {
@@ -229,30 +284,34 @@ function RegisterPage() {
     setCredentialsErrorMessage("");
     setCredentialsSuccessMessage("");
 
-    if (!credentialsNewPassword) {
-      setCredentialsErrorMessage("Enter a new password");
+    const fieldError = validatePasswordField(credentialsNewPassword);
+    if (fieldError) {
+      setCredentialsErrorMessage(fieldError);
       return;
     }
 
     const token = localStorage.getItem("token");
 
-    const response = await fetch(`${API_BASE_URL}/teacher/students/${credentialsStudent.id}/password`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ newPassword: credentialsNewPassword }),
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/teacher/students/${credentialsStudent.id}/password`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ newPassword: credentialsNewPassword }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      setCredentialsErrorMessage(errorData.message || "Failed to reset password");
-      return;
+      if (!response.ok) {
+        setCredentialsErrorMessage(await readErrorMessage(response, "Failed to reset password"));
+        return;
+      }
+
+      setCredentialsNewPassword("");
+      setCredentialsSuccessMessage("Password reset");
+    } catch {
+      setCredentialsErrorMessage("Could not reach the server. Please try again.");
     }
-
-    setCredentialsNewPassword("");
-    setCredentialsSuccessMessage("Password reset");
   }
 
   async function handleRegister() {
@@ -264,45 +323,59 @@ function RegisterPage() {
       return;
     }
 
-    const token = localStorage.getItem("token");
+    const fieldError =
+      validateEmailField(email) ||
+      validatePasswordField(password) ||
+      validatePhoneField(phone) ||
+      validateHourlyRateField(hourlyRate);
 
-    const response = await fetch(`${API_BASE_URL}/teacher/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        email,
-        password,
-        firstName,
-        lastName,
-        phone,
-        hourlyRate: Number(hourlyRate),
-        educationLevel,
-        notes,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      setErrorMessage(errorData.message);
+    if (fieldError) {
+      setErrorMessage(fieldError);
       return;
     }
 
-    setSuccessMessage("Student created successfully");
-    setEmail("");
-    setPassword("");
-    setFirstName("");
-    setLastName("");
-    setPhone("");
-    setHourlyRate("");
-    setEducationLevel("");
-    setNotes("");
-    loadStudents(showingInactive);
-    loadDebts();
-    loadCounts();
-    setShowAddStudentModal(false);
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/teacher/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          firstName,
+          lastName,
+          phone,
+          hourlyRate: Number(hourlyRate),
+          educationLevel,
+          notes,
+        }),
+      });
+
+      if (!response.ok) {
+        setErrorMessage(await readErrorMessage(response, "Failed to create student"));
+        return;
+      }
+
+      setSuccessMessage("Student created successfully");
+      setEmail("");
+      setPassword("");
+      setFirstName("");
+      setLastName("");
+      setPhone("");
+      setHourlyRate("");
+      setEducationLevel("");
+      setNotes("");
+      loadStudents(showingInactive);
+      loadDebts();
+      loadCounts();
+      setShowAddStudentModal(false);
+    } catch {
+      setErrorMessage("Could not reach the server. Please try again.");
+    }
   }
 
   const inputClass = "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
