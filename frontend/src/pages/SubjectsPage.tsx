@@ -68,6 +68,31 @@ function SubjectsPage() {
     setNewSubject("");
   }
 
+  async function handleDeleteSubject(subject: Subject) {
+    setErrorMessage("");
+
+    if (!window.confirm(`Delete "${subject.name}"? This can't be undone.`)) {
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${API_BASE_URL}/subjects/${subject.id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      setErrorMessage(errorData.message || "Failed to delete subject");
+      return;
+    }
+
+    setSubjects(subjects.filter((s) => s.id !== subject.id));
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <NavBar homePath="/teacher" links={teacherLinks} />
@@ -103,8 +128,14 @@ function SubjectsPage() {
               <p className="px-4 py-6 text-sm text-slate-500 text-center">No subjects yet.</p>
             )}
             {subjects.map((subject) => (
-              <div key={subject.id} className="px-4 py-3">
+              <div key={subject.id} className="px-4 py-3 flex items-center justify-between">
                 <span className="text-slate-900">{subject.name}</span>
+                <button
+                  onClick={() => handleDeleteSubject(subject)}
+                  className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-colors"
+                >
+                  Delete
+                </button>
               </div>
             ))}
           </div>

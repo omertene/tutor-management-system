@@ -50,4 +50,6 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
 
 
     List<Lesson> findAllByStatusAndReminderSentFalse(LessonStatus status);
+
+    long countBySubjectId(Long subjectId);
 }

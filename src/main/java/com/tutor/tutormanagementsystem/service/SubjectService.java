@@ -4,8 +4,10 @@ package com.tutor.tutormanagementsystem.service;
 import com.tutor.tutormanagementsystem.dto.SubjectRequest;
 import com.tutor.tutormanagementsystem.dto.SubjectResponse;
 import com.tutor.tutormanagementsystem.exception.DuplicateSubjectException;
+import com.tutor.tutormanagementsystem.exception.SubjectInUseException;
 import com.tutor.tutormanagementsystem.exception.SubjectNotFoundException;
 import com.tutor.tutormanagementsystem.model.Subject;
+import com.tutor.tutormanagementsystem.repository.LessonRepository;
 import com.tutor.tutormanagementsystem.repository.SubjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import java.util.List;
 public class SubjectService {
 
     private final SubjectRepository subjectRepository;
+    private final LessonRepository lessonRepository;
 
     public SubjectResponse createSubject(SubjectRequest request) {
 
@@ -27,6 +30,18 @@ public class SubjectService {
         subjectRepository.save(subject);
 
         return new SubjectResponse(subject.getId(), subject.getName());
+    }
+
+    public void deleteSubject(Long subjectId) {
+        Subject subject = getSubjectEntity(subjectId);
+
+        long lessonCount = lessonRepository.countBySubjectId(subjectId);
+        if (lessonCount > 0) {
+            throw new SubjectInUseException(
+                    lessonCount + " lesson(s) use this subject - it can't be deleted");
+        }
+
+        subjectRepository.delete(subject);
     }
 
     public List<SubjectResponse> getAllSubjects() {
