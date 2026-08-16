@@ -121,10 +121,20 @@ public class MaterialService {
     }
 
     // returns the raw entity (not the DTO) because the controller needs the actual
-    // bytes/fileName/contentType to stream back
-    public Material getMaterialEntity(Long materialId) {
-        return materialRepository.findById(materialId)
+    // bytes/fileName/contentType to stream back. a teacher may download any material;
+    // a student may only download their own - without this check, any logged-in student
+    // could download another student's file by guessing/incrementing the material id
+    public Material getMaterialEntity(Long materialId, Long callerId, Role callerRole) {
+        Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new MaterialNotFoundException("Material not found"));
+
+        boolean isOwner = material.getStudent().getId().equals(callerId);
+
+        if (callerRole == Role.STUDENT && !isOwner) {
+            throw new LessonAccessDeniedException("You can only download your own materials");
+        }
+
+        return material;
     }
 
     // teacher deletes a material - hard delete

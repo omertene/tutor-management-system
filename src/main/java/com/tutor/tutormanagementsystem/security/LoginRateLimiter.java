@@ -38,11 +38,13 @@ public class LoginRateLimiter {
         attemptsByEmail.remove(key);
     }
 
-    // call after a failed password check - locks the email out once MAX_ATTEMPTS is reached
+    // call after a failed password check - locks the email out once MAX_ATTEMPTS is reached.
+    // throws immediately if this attempt is the one that triggers the lock, so the caller
+    // returns the lockout message on the same request instead of one request later
     public void recordFailedAttempt(String email) {
         String key = email.toLowerCase();
 
-        attemptsByEmail.compute(key, (ignoredKey, existing) -> {
+        AttemptRecord updated = attemptsByEmail.compute(key, (ignoredKey, existing) -> {
             int failedAttempts = (existing == null ? 0 : existing.failedAttempts()) + 1;
 
             Instant lockedUntil = failedAttempts >= MAX_ATTEMPTS
@@ -51,6 +53,12 @@ public class LoginRateLimiter {
 
             return new AttemptRecord(failedAttempts, lockedUntil);
         });
+
+        if (updated.lockedUntil() != null) {
+            long secondsLeft = Instant.now().until(updated.lockedUntil(), ChronoUnit.SECONDS) + 1;
+            throw new TooManyAttemptsException(
+                    "Too many failed login attempts. Try again in " + secondsLeft + " seconds.");
+        }
     }
 
    

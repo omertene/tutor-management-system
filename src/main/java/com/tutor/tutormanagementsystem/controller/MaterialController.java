@@ -86,11 +86,14 @@ public class MaterialController {
         return ResponseEntity.ok(materialService.getMaterialsForLesson(lessonId, caller.id(), caller.role()));
     }
 
-    // downloads a FILE-type material's actual bytes. tely excludes the
+    // downloads a FILE-type material's actual bytes - a student may only download
+    // their own material (enforced in MaterialService)
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     @GetMapping("/materials/{id}/download")
-    public ResponseEntity<byte[]> downloadFile(@PathVariable("id") Long materialId) {
-        Material material = materialService.getMaterialEntity(materialId);
+    public ResponseEntity<byte[]> downloadFile(
+            @PathVariable("id") Long materialId,
+            @AuthenticationPrincipal AuthenticatedUser caller) {
+        Material material = materialService.getMaterialEntity(materialId, caller.id(), caller.role());
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(material.getContentType()))
