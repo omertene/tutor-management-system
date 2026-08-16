@@ -1,9 +1,12 @@
 package com.tutor.tutormanagementsystem.service;
 
 import com.tutor.tutormanagementsystem.dto.CreateStudentRequest;
+import com.tutor.tutormanagementsystem.dto.ResetStudentPasswordRequest;
 import com.tutor.tutormanagementsystem.dto.StudentResponse;
+import com.tutor.tutormanagementsystem.dto.UpdateStudentEmailRequest;
 import com.tutor.tutormanagementsystem.dto.UpdateStudentRequest;
 import com.tutor.tutormanagementsystem.exception.DuplicateEmailException;
+import com.tutor.tutormanagementsystem.exception.InvalidPasswordException;
 import com.tutor.tutormanagementsystem.exception.StudentNotFoundException;
 import com.tutor.tutormanagementsystem.model.Role;
 import com.tutor.tutormanagementsystem.model.Student;
@@ -78,6 +81,37 @@ public class StudentService {
         return toResponse(student);
     }
 
+
+    @Transactional
+    public StudentResponse updateStudentEmail(Long studentId, String newEmail) {
+        Student student = getStudentEntity(studentId);
+        User user = student.getUser();
+
+        if (!newEmail.equalsIgnoreCase(user.getEmail())
+                && userRepository.findByEmail(newEmail).isPresent()) {
+            throw new DuplicateEmailException("email already registered");
+        }
+
+        user.setEmail(newEmail);
+        userRepository.save(user);
+
+        return toResponse(student);
+    }
+
+    @Transactional
+    public StudentResponse resetStudentPassword(Long studentId, String newPassword) {
+        Student student = getStudentEntity(studentId);
+        User user = student.getUser();
+
+        if (newPassword == null || newPassword.length() < 4) {
+            throw new InvalidPasswordException("Password must be at least 4 characters");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        return toResponse(student);
+    }
 
     public List<StudentResponse> getAllStudents() {
         return studentRepository.findAllByActive(true).stream()

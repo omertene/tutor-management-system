@@ -1,8 +1,10 @@
 package com.tutor.tutormanagementsystem.controller;
 
 import com.tutor.tutormanagementsystem.dto.CreateStudentRequest;
+import com.tutor.tutormanagementsystem.dto.ResetStudentPasswordRequest;
 import com.tutor.tutormanagementsystem.dto.SetStudentActiveRequest;
 import com.tutor.tutormanagementsystem.dto.StudentResponse;
+import com.tutor.tutormanagementsystem.dto.UpdateStudentEmailRequest;
 import com.tutor.tutormanagementsystem.dto.UpdateStudentRequest;
 import com.tutor.tutormanagementsystem.service.StudentService;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +54,22 @@ public class TeacherController {
             @PathVariable("id") Long studentId,
             @RequestBody UpdateStudentRequest request) {
         return ResponseEntity.ok(studentService.updateStudent(studentId, request));
+    }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    @PatchMapping("/students/{id}/email")
+    public ResponseEntity<StudentResponse> updateStudentEmail(
+            @PathVariable("id") Long studentId,
+            @RequestBody UpdateStudentEmailRequest request) {
+        return ResponseEntity.ok(studentService.updateStudentEmail(studentId, request.email()));
+    }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    @PatchMapping("/students/{id}/password")
+    public ResponseEntity<StudentResponse> resetStudentPassword(
+            @PathVariable("id") Long studentId,
+            @RequestBody ResetStudentPasswordRequest request) {
+        return ResponseEntity.ok(studentService.resetStudentPassword(studentId, request.newPassword()));
     }
 
     @PreAuthorize("hasRole('TEACHER')")

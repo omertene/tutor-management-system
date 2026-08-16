@@ -119,6 +119,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidPassword(InvalidPasswordException ex) {
+        ErrorResponse body = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
     @ExceptionHandler(TooManyAttemptsException.class)
     public ResponseEntity<ErrorResponse> handleTooManyAttempts(TooManyAttemptsException ex) {
         ErrorResponse body = new ErrorResponse(ex.getMessage());

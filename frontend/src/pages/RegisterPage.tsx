@@ -50,6 +50,12 @@ function RegisterPage() {
   const [editEducationLevel, setEditEducationLevel] = useState("");
   const [editNotes, setEditNotes] = useState("");
 
+  const [credentialsStudent, setCredentialsStudent] = useState<Student | null>(null);
+  const [credentialsEmail, setCredentialsEmail] = useState("");
+  const [credentialsNewPassword, setCredentialsNewPassword] = useState("");
+  const [credentialsErrorMessage, setCredentialsErrorMessage] = useState("");
+  const [credentialsSuccessMessage, setCredentialsSuccessMessage] = useState("");
+
   async function loadStudents(inactiveOnly: boolean) {
     setListErrorMessage("");
     setShowingInactive(inactiveOnly);
@@ -176,6 +182,77 @@ function RegisterPage() {
     const updatedStudent = await response.json();
     setStudents(students.map((student) => (student.id === studentId ? updatedStudent : student)));
     setEditingStudentId(null);
+  }
+
+  function handleStartCredentials(student: Student) {
+    setCredentialsStudent(student);
+    setCredentialsEmail(student.email);
+    setCredentialsNewPassword("");
+    setCredentialsErrorMessage("");
+    setCredentialsSuccessMessage("");
+  }
+
+  function handleCloseCredentials() {
+    setCredentialsStudent(null);
+  }
+
+  async function handleSaveEmail() {
+    if (!credentialsStudent) return;
+    setCredentialsErrorMessage("");
+    setCredentialsSuccessMessage("");
+
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${API_BASE_URL}/teacher/students/${credentialsStudent.id}/email`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ email: credentialsEmail }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      setCredentialsErrorMessage(errorData.message || "Failed to update email");
+      return;
+    }
+
+    const updatedStudent = await response.json();
+    setStudents(students.map((student) => (student.id === updatedStudent.id ? updatedStudent : student)));
+    setCredentialsStudent(updatedStudent);
+    setCredentialsSuccessMessage("Email updated");
+  }
+
+  async function handleResetPassword() {
+    if (!credentialsStudent) return;
+    setCredentialsErrorMessage("");
+    setCredentialsSuccessMessage("");
+
+    if (!credentialsNewPassword) {
+      setCredentialsErrorMessage("Enter a new password");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${API_BASE_URL}/teacher/students/${credentialsStudent.id}/password`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ newPassword: credentialsNewPassword }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      setCredentialsErrorMessage(errorData.message || "Failed to reset password");
+      return;
+    }
+
+    setCredentialsNewPassword("");
+    setCredentialsSuccessMessage("Password reset");
   }
 
   async function handleRegister() {
@@ -394,6 +471,12 @@ function RegisterPage() {
                         Edit
                       </button>
                       <button
+                        onClick={() => handleStartCredentials(student)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+                      >
+                        Credentials
+                      </button>
+                      <button
                         onClick={() => handleToggleActive(student)}
                         className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
                       >
@@ -462,6 +545,55 @@ function RegisterPage() {
             >
               Add student
             </button>
+          </div>
+        </Modal>
+      )}
+
+      {credentialsStudent && (
+        <Modal
+          title={`Credentials — ${credentialsStudent.firstName} ${credentialsStudent.lastName}`}
+          onClose={handleCloseCredentials}
+        >
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-2">
+              <label className={labelClass}>Email</label>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={credentialsEmail}
+                  onChange={(e) => setCredentialsEmail(e.target.value)}
+                  className={inputClass}
+                />
+                <button
+                  onClick={handleSaveEmail}
+                  className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
+                >
+                  Save email
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-3 border-t border-slate-200">
+              <label className={labelClass}>Reset password</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="New password"
+                  value={credentialsNewPassword}
+                  onChange={(e) => setCredentialsNewPassword(e.target.value)}
+                  className={inputClass}
+                />
+                <button
+                  onClick={handleResetPassword}
+                  className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
+                >
+                  Reset password
+                </button>
+              </div>
+            </div>
+
+            {credentialsErrorMessage && <p className="text-sm text-red-600">{credentialsErrorMessage}</p>}
+            {credentialsSuccessMessage && <p className="text-sm text-green-600">{credentialsSuccessMessage}</p>}
           </div>
         </Modal>
       )}
