@@ -543,7 +543,7 @@ function SchedulePage() {
         setAddOverrideStartTime(override.startTime.slice(0, 5));
         setAddOverrideEndTime(override.endTime.slice(0, 5));
         setAddOverrideType(override.type);
-        setAddOverrideTypeLocked(false);
+        setAddOverrideTypeLocked(true);
         setAddOverrideNote(override.note ?? "");
         setViewingOverride(null);
     }
@@ -1315,7 +1315,16 @@ function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: Schedule
         <Modal title="Weekly availability" onClose={onClose}>
             <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
-                    <select value={dayOfWeek} onChange={(e) => setDayOfWeek(e.target.value)} className={inputClass}>
+                    <select
+                        value={dayOfWeek}
+                        onChange={(e) => {
+                            if (editingRuleId !== null) {
+                                resetForm();
+                            }
+                            setDayOfWeek(e.target.value);
+                        }}
+                        className={inputClass}
+                    >
                         {days.map((day) => (
                             <option key={day} value={day}>{day}</option>
                         ))}

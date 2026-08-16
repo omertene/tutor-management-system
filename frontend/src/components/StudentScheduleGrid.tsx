@@ -369,13 +369,13 @@ function StudentScheduleGrid() {
             .filter((block) => block.height > 0);
     }
 
-    function isCellFullyAvailable(dayIndex: number, hour: number): boolean {
-        return getRuleCoverageQuartersForCell(dayIndex, hour).every(Boolean);
-    }
-
-    function isCellTooSoonToBook(dayIndex: number, hour: number): boolean {
+    // startTime (HH:MM) lets a partially-available cell be checked at its actual
+    // bookable start rather than the hour boundary - falls back to :00 when omitted,
+    // used for the cell's hover/cursor styling before a specific start is known
+    function isCellTooSoonToBook(dayIndex: number, hour: number, startTime?: string): boolean {
+        const [startHour, startMinute] = startTime ? startTime.split(":").map(Number) : [hour, 0];
         const cellStart = new Date(weekDates[dayIndex]);
-        cellStart.setHours(hour, 0, 0, 0);
+        cellStart.setHours(startHour, startMinute, 0, 0);
         const minBookingTime = new Date(now);
         minBookingTime.setHours(minBookingTime.getHours() + STUDENT_MIN_BOOKING_NOTICE_HOURS);
         return cellStart < minBookingTime;
@@ -388,21 +388,41 @@ function StudentScheduleGrid() {
         return lessonStart >= minCancelTime;
     }
 
-    // clicking a cell only opens the booking form when the slot is actually bookable -
-    // a student can't add availability or block time like a teacher can, so a partially
-    // or fully unavailable cell (and anything already covered by a lesson/override) does nothing
+    // finds the first run of covered quarters within this hour cell, so a rule like
+    // 08:15-13:00 (quarters [false, true, true, true]) resolves to a 08:15 start
+    // instead of leaving the whole 08:00 row unclickable
+    function firstAvailableQuarterRun(dayIndex: number, hour: number): { startQuarter: number; quarterCount: number } | null {
+        const quarters = getRuleCoverageQuartersForCell(dayIndex, hour);
+        const startQuarter = quarters.indexOf(true);
+        if (startQuarter === -1) return null;
+
+        let quarterCount = 0;
+        for (let i = startQuarter; i < quarters.length && quarters[i]; i++) quarterCount++;
+
+        return { startQuarter, quarterCount };
+    }
+
+    // clicking a cell only opens the booking form when at least part of the hour is
+    // actually bookable - a student can't add availability or block time like a
+    // teacher can, so a fully unavailable cell (or one covered by a lesson/override)
+    // does nothing. a partially-available cell (e.g. rule starts at 08:15) still opens
+    // the form, pre-filled to the exact time that's actually available
     function handleCellClick(dayIndex: number, hour: number) {
         if (isCellCoveredByOverrideOrLesson(dayIndex, hour)) return;
-        if (!isCellFullyAvailable(dayIndex, hour)) return;
-        if (isCellTooSoonToBook(dayIndex, hour)) return;
 
-        const dateStr = toDateString(weekDates[dayIndex]);
-        const startTime = `${String(hour).padStart(2, "0")}:00`;
+        const availableRun = firstAvailableQuarterRun(dayIndex, hour);
+        if (!availableRun) return;
+
+        const startMinutes = hour * 60 + availableRun.startQuarter * 15;
+        const startTime = `${String(Math.floor(startMinutes / 60)).padStart(2, "0")}:${String(startMinutes % 60).padStart(2, "0")}`;
+
+        if (isCellTooSoonToBook(dayIndex, hour, startTime)) return;
+
         const endTime = addOneHour(startTime);
 
         setBookError("");
         setBookSubjectId("");
-        setBookDate(dateStr);
+        setBookDate(toDateString(weekDates[dayIndex]));
         setBookStartTime(startTime);
         setBookEndTime(endTime);
     }
@@ -587,7 +607,15 @@ function StudentScheduleGrid() {
                                 const quarters = getRuleCoverageQuartersForCell(dayIndex, hour);
                                 const allCovered = quarters.every(Boolean);
                                 const noneCovered = quarters.every((covered) => !covered);
-                                const isTooSoon = isCellTooSoonToBook(dayIndex, hour);
+
+                                const availableRun = firstAvailableQuarterRun(dayIndex, hour);
+                                const isCovered = isCellCoveredByOverrideOrLesson(dayIndex, hour);
+                                const runStartMinutes = availableRun ? hour * 60 + availableRun.startQuarter * 15 : null;
+                                const runStartTime = runStartMinutes !== null
+                                    ? `${String(Math.floor(runStartMinutes / 60)).padStart(2, "0")}:${String(runStartMinutes % 60).padStart(2, "0")}`
+                                    : undefined;
+                                const isTooSoon = availableRun !== null && isCellTooSoonToBook(dayIndex, hour, runStartTime);
+                                const isClickable = !isCovered && availableRun !== null && !isTooSoon;
 
                                 return (
                                     <button
@@ -600,10 +628,12 @@ function StudentScheduleGrid() {
                                         }}
                                         className={`block w-full border-b border-slate-300 transition-colors select-none ${
                                             allCovered
-                                                ? `bg-white ${isTooSoon ? "cursor-default" : "hover:bg-slate-50 cursor-pointer"}`
+                                                ? `bg-white ${isClickable ? "hover:bg-slate-50 cursor-pointer" : "cursor-default"}`
                                                 : noneCovered
                                                     ? "bg-slate-200 cursor-default"
-                                                    : "cursor-default"
+                                                    : isClickable
+                                                        ? "hover:brightness-95 cursor-pointer"
+                                                        : "cursor-default"
                                         }`}
                                     />
                                 );

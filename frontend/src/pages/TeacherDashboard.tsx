@@ -55,6 +55,7 @@ function TimeSelect({ value, onChange, className }: TimeSelectProps) {
 
 type Lesson = {
   id: number;
+  studentId: number;
   studentFirstName: string;
   studentLastName: string;
   subjectName: string;
@@ -63,6 +64,16 @@ type Lesson = {
   endTime: string;
   status: string;
 };
+
+function timeToMinutes(time: string): number {
+  const [hours, minutes] = time.slice(0, 5).split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function formatHours(totalMinutes: number): string {
+  const hours = totalMinutes / 60;
+  return hours % 1 === 0 ? String(hours) : hours.toFixed(1);
+}
 
 type Debt = {
   studentId: number;
@@ -96,9 +107,16 @@ function TeacherDashboard() {
   const [needsCompletionLessons, setNeedsCompletionLessons] = useState<Lesson[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
 
-  const [activeStudentCount, setActiveStudentCount] = useState(0);
+  const [studentsThisMonthCount, setStudentsThisMonthCount] = useState(0);
   const [lessonsThisWeekCount, setLessonsThisWeekCount] = useState(0);
+  const [minutesThisWeek, setMinutesThisWeek] = useState(0);
   const [revenueThisMonth, setRevenueThisMonth] = useState(0);
+
+  const [needsCompletionPage, setNeedsCompletionPage] = useState(0);
+  const NEEDS_COMPLETION_PAGE_SIZE = 3;
+
+  const [debtPage, setDebtPage] = useState(0);
+  const DEBT_PAGE_SIZE = 5;
 
   // "add student" modal
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
@@ -140,7 +158,7 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     return response.json();
   }
 
-  async function loadLessonsData(token: string | null): Promise<{ upcoming: Lesson[]; needsCompletion: Lesson[]; thisWeekCount: number } | null> {
+  async function loadLessonsData(token: string | null): Promise<{ upcoming: Lesson[]; needsCompletion: Lesson[]; thisWeekCount: number; thisWeekMinutes: number; studentsThisMonth: number } | null> {
     const response = await fetch(`${API_BASE_URL}/teacher/lessons`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -148,12 +166,14 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
 
     const data: Lesson[] = await response.json();
     const todayDate = toLocalDateString(new Date());
+    const tomorrowDate = toLocalDateString(new Date(Date.now() + 24 * 60 * 60 * 1000));
     const scheduled = data.filter((lesson) => lesson.status === "SCHEDULED");
 
+    // "today" and "tomorrow" only - a full week list just duplicates the Schedule
+    // page, and at a normal booking pace it would rarely show past tomorrow anyway
     const upcoming = scheduled
-      .filter((lesson) => lesson.date >= todayDate)
-      .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime))
-      .slice(0, 5);
+      .filter((lesson) => lesson.date === todayDate || lesson.date === tomorrowDate)
+      .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
 
     const needsCompletion = scheduled
       .filter((lesson) => lesson.date < todayDate)
@@ -166,11 +186,27 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     const startOfWeekDate = toLocalDateString(startOfWeek);
     const endOfWeekDate = toLocalDateString(endOfWeek);
 
-    const thisWeekCount = data.filter(
+    const thisWeekLessons = data.filter(
       (lesson) => lesson.status !== "CANCELLED" && lesson.date >= startOfWeekDate && lesson.date <= endOfWeekDate
-    ).length;
+    );
+    const thisWeekCount = thisWeekLessons.length;
+    const thisWeekMinutes = thisWeekLessons.reduce(
+      (total, lesson) => total + (timeToMinutes(lesson.endTime) - timeToMinutes(lesson.startTime)),
+      0
+    );
 
-    return { upcoming, needsCompletion, thisWeekCount };
+    // distinct students with a lesson (past or upcoming) somewhere in the current
+    // calendar month - cancelled lessons don't count, since a cancelled lesson means
+    // that student wasn't actually taught. this is a better "who am I teaching right
+    // now" number than a manually-toggled active/inactive flag would give
+    const monthStr = todayDate.slice(0, 7);
+    const studentsThisMonth = new Set(
+      data
+        .filter((lesson) => lesson.status !== "CANCELLED" && lesson.date.slice(0, 7) === monthStr)
+        .map((lesson) => lesson.studentId)
+    ).size;
+
+    return { upcoming, needsCompletion, thisWeekCount, thisWeekMinutes, studentsThisMonth };
   }
 
   async function loadDebtsList(token: string | null): Promise<Debt[] | null> {
@@ -203,14 +239,19 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
 
     if (studentsData) {
       setStudents(studentsData);
-      setActiveStudentCount(studentsData.filter((student) => student.active).length);
     }
     if (lessonsData) {
       setUpcomingLessons(lessonsData.upcoming);
       setNeedsCompletionLessons(lessonsData.needsCompletion);
+      setNeedsCompletionPage(0);
       setLessonsThisWeekCount(lessonsData.thisWeekCount);
+      setMinutesThisWeek(lessonsData.thisWeekMinutes);
+      setStudentsThisMonthCount(lessonsData.studentsThisMonth);
     }
-    if (debtsData) setDebts(debtsData);
+    if (debtsData) {
+      setDebts(debtsData);
+      setDebtPage(0);
+    }
     if (revenueData !== null) setRevenueThisMonth(revenueData);
   }
 
@@ -336,9 +377,33 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     refreshDashboard();
   }
 
+  // these are still-SCHEDULED lessons, so cancelling is a plain soft-cancel with no
+  // confirm needed (same as everywhere else a SCHEDULED lesson gets cancelled) -
+  // confirmation only matters when reversing an already-COMPLETED lesson's debt/revenue
+  async function handleCancelLesson(lessonId: number) {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) return;
+    refreshDashboard();
+  }
+
   const todayDate = toLocalDateString(new Date());
   const todaysLessons = upcomingLessons.filter((lesson) => lesson.date === todayDate);
-  const restOfWeekLessons = upcomingLessons.filter((lesson) => lesson.date !== todayDate);
+  const tomorrowsLessons = upcomingLessons.filter((lesson) => lesson.date !== todayDate);
+
+  const needsCompletionTotalPages = Math.max(1, Math.ceil(needsCompletionLessons.length / NEEDS_COMPLETION_PAGE_SIZE));
+  const needsCompletionPageItems = needsCompletionLessons.slice(
+    needsCompletionPage * NEEDS_COMPLETION_PAGE_SIZE,
+    (needsCompletionPage + 1) * NEEDS_COMPLETION_PAGE_SIZE
+  );
+
+  const debtTotalPages = Math.max(1, Math.ceil(debts.length / DEBT_PAGE_SIZE));
+  const debtPageItems = debts.slice(debtPage * DEBT_PAGE_SIZE, (debtPage + 1) * DEBT_PAGE_SIZE);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -369,21 +434,23 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
 
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-4">
-            <p className="text-sm text-slate-500">Active students</p>
-            <p className="text-2xl font-semibold text-slate-900 mt-1">{activeStudentCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-4">
-            <p className="text-sm text-slate-500">Lessons this week</p>
-            <p className="text-2xl font-semibold text-slate-900 mt-1">{lessonsThisWeekCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-4">
             <p className="text-sm text-slate-500">Revenue this month</p>
             <p className="text-2xl font-semibold text-slate-900 mt-1">₪{revenueThisMonth}</p>
           </div>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-4">
+            <p className="text-sm text-slate-500">Lessons this week</p>
+            <p className="text-2xl font-semibold text-slate-900 mt-1">
+              {lessonsThisWeekCount} <span className="text-base font-normal text-slate-400">&middot; {formatHours(minutesThisWeek)} hrs</span>
+            </p>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-4">
+            <p className="text-sm text-slate-500">Students this month</p>
+            <p className="text-2xl font-semibold text-slate-900 mt-1">{studentsThisMonthCount}</p>
+          </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div className="lg:order-2 bg-white rounded-xl border border-slate-200 shadow-sm">
             <div className="px-6 py-4 border-b border-slate-100">
               <h2 className="text-lg font-semibold text-slate-900">Today</h2>
             </div>
@@ -405,13 +472,13 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
             </div>
 
             <div className="px-6 py-4 border-b border-t border-slate-100">
-              <h2 className="text-lg font-semibold text-slate-900">Upcoming this week</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Tomorrow</h2>
             </div>
             <div className="divide-y divide-slate-100">
-              {restOfWeekLessons.length === 0 && (
-                <p className="px-6 py-6 text-sm text-slate-500 text-center">No other upcoming lessons.</p>
+              {tomorrowsLessons.length === 0 && (
+                <p className="px-6 py-6 text-sm text-slate-500 text-center">No lessons tomorrow.</p>
               )}
-              {restOfWeekLessons.map((lesson) => (
+              {tomorrowsLessons.map((lesson) => (
                 <div key={lesson.id} className="px-6 py-3 flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium text-slate-900">
                     {formatDate(lesson.date)} {formatTime(lesson.startTime)}-{formatTime(lesson.endTime)}
@@ -425,7 +492,7 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
             </div>
           </div>
 
-          <div className="flex flex-col gap-6">
+          <div className="lg:order-1 flex flex-col gap-6">
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
               <div className="px-6 py-4 border-b border-slate-100">
                 <h2 className="text-lg font-semibold text-slate-900">Outstanding debt</h2>
@@ -434,7 +501,7 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
                 {debts.length === 0 && (
                   <p className="px-6 py-6 text-sm text-slate-500 text-center">No outstanding debt.</p>
                 )}
-                {debts.map((debt) => (
+                {debtPageItems.map((debt) => (
                   <div key={debt.studentId} className="px-6 py-3 flex items-center justify-between gap-2">
                     <span className="text-slate-900 text-sm">
                       {debt.studentFirstName} {debt.studentLastName}
@@ -443,6 +510,27 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
                   </div>
                 ))}
               </div>
+              {debts.length > DEBT_PAGE_SIZE && (
+                <div className="px-6 py-3 border-t border-slate-100 flex items-center justify-between">
+                  <button
+                    onClick={() => setDebtPage((page) => Math.max(0, page - 1))}
+                    disabled={debtPage === 0}
+                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium disabled:text-slate-300 disabled:cursor-default"
+                  >
+                    &larr; Previous
+                  </button>
+                  <span className="text-xs text-slate-400">
+                    Page {debtPage + 1} of {debtTotalPages}
+                  </span>
+                  <button
+                    onClick={() => setDebtPage((page) => Math.min(debtTotalPages - 1, page + 1))}
+                    disabled={debtPage >= debtTotalPages - 1}
+                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium disabled:text-slate-300 disabled:cursor-default"
+                  >
+                    Next &rarr;
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
@@ -453,7 +541,7 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
                 {needsCompletionLessons.length === 0 && (
                   <p className="px-6 py-6 text-sm text-slate-500 text-center">Nothing to mark.</p>
                 )}
-                {needsCompletionLessons.map((lesson) => (
+                {needsCompletionPageItems.map((lesson) => (
                   <div key={lesson.id} className="px-6 py-3 flex flex-col gap-2">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-slate-900 text-sm font-medium">
@@ -463,15 +551,44 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
                         {lesson.studentFirstName} {lesson.studentLastName}
                       </span>
                     </div>
-                    <button
-                      onClick={() => handleCompleteLesson(lesson.id)}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors self-start"
-                    >
-                      Mark completed
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleCompleteLesson(lesson.id)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+                      >
+                        Mark completed
+                      </button>
+                      <button
+                        onClick={() => handleCancelLesson(lesson.id)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
+              {needsCompletionLessons.length > NEEDS_COMPLETION_PAGE_SIZE && (
+                <div className="px-6 py-3 border-t border-slate-100 flex items-center justify-between">
+                  <button
+                    onClick={() => setNeedsCompletionPage((page) => Math.max(0, page - 1))}
+                    disabled={needsCompletionPage === 0}
+                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium disabled:text-slate-300 disabled:cursor-default"
+                  >
+                    &larr; Previous
+                  </button>
+                  <span className="text-xs text-slate-400">
+                    Page {needsCompletionPage + 1} of {needsCompletionTotalPages}
+                  </span>
+                  <button
+                    onClick={() => setNeedsCompletionPage((page) => Math.min(needsCompletionTotalPages - 1, page + 1))}
+                    disabled={needsCompletionPage >= needsCompletionTotalPages - 1}
+                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium disabled:text-slate-300 disabled:cursor-default"
+                  >
+                    Next &rarr;
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
