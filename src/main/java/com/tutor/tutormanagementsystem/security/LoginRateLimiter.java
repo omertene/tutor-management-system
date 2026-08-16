@@ -29,7 +29,8 @@ public class LoginRateLimiter {
         }
 
         if (Instant.now().isBefore(record.lockedUntil())) {
-            long secondsLeft = Instant.now().until(record.lockedUntil(), ChronoUnit.SECONDS) + 1;
+            long millisLeft = Instant.now().until(record.lockedUntil(), ChronoUnit.MILLIS);
+            long secondsLeft = (millisLeft + 999) / 1000;
             throw new TooManyAttemptsException(
                     "Too many failed login attempts. Try again in " + secondsLeft + " seconds.");
         }
@@ -55,7 +56,8 @@ public class LoginRateLimiter {
         });
 
         if (updated.lockedUntil() != null) {
-            long secondsLeft = Instant.now().until(updated.lockedUntil(), ChronoUnit.SECONDS) + 1;
+            long millisLeft = Instant.now().until(updated.lockedUntil(), ChronoUnit.MILLIS);
+            long secondsLeft = (millisLeft + 999) / 1000;
             throw new TooManyAttemptsException(
                     "Too many failed login attempts. Try again in " + secondsLeft + " seconds.");
         }
