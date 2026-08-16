@@ -84,10 +84,17 @@ function MaterialsPage() {
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
 
-    // shared "which student / which lesson" fields for all three add forms
+    // single "add material" form - shared Student/Lesson/Title fields, plus a type
+    // tab (Link / Note / File) that swaps in just the one field that type needs
     const [selectedStudentId, setSelectedStudentId] = useState("");
     const [lessonId, setLessonId] = useState("");
     const [title, setTitle] = useState("");
+    const [addType, setAddType] = useState<MaterialType>("LINK");
+
+    // description is shared by LINK/FILE (optional extra context); NOTE reuses the
+    // same field as its actual note text (the backend's AddNoteRequest.description
+    // *is* the note body - there's no separate field), but is labeled "Note text"
+    // in the UI below so it doesn't read as an optional description
     const [description, setDescription] = useState("");
 
     // link-only
@@ -217,10 +224,17 @@ function MaterialsPage() {
         setCurrentPage(1);
     }, [searchQuery, typeFilter, subjectFilter, lessonFilterQuery]);
 
-    // teacher adds a link
-    async function handleAddLink() {
-        setErrorMessage("");
+    // clears just the fields that are specific to one material type, called after
+    // a successful add so switching type tabs afterward doesn't carry stale values over
+    function resetAddForm() {
+        setTitle("");
+        setDescription("");
+        setUrl("");
+        setFile(null);
+    }
 
+    // teacher adds a link - POST /teacher/materials/link
+    async function submitAddLink() {
         const response = await fetch(`${API_BASE_URL}/teacher/materials/link`, {
             method: "POST",
             headers: {
@@ -244,15 +258,13 @@ function MaterialsPage() {
 
         const createdMaterial = await response.json();
         setMaterials([...materials, createdMaterial]);
-        setTitle("");
-        setDescription("");
-        setUrl("");
+        resetAddForm();
     }
 
-    // teacher adds a note
-    async function handleAddNote() {
-        setErrorMessage("");
-
+    // teacher adds a note - POST /teacher/materials/note. the note's text is sent
+    // as "description" (that's what AddNoteRequest expects - there's no separate
+    // field on the backend), but the form below labels it "Note text" for clarity
+    async function submitAddNote() {
         const response = await fetch(`${API_BASE_URL}/teacher/materials/note`, {
             method: "POST",
             headers: {
@@ -275,14 +287,11 @@ function MaterialsPage() {
 
         const createdMaterial = await response.json();
         setMaterials([...materials, createdMaterial]);
-        setTitle("");
-        setDescription("");
+        resetAddForm();
     }
 
-    // teacher uploads a file
-    async function handleUploadFile() {
-        setErrorMessage("");
-
+    // teacher uploads a file - POST /teacher/materials/file
+    async function submitUploadFile() {
         if (!file) {
             setErrorMessage("Choose a file first");
             return;
@@ -313,9 +322,21 @@ function MaterialsPage() {
 
         const createdMaterial = await response.json();
         setMaterials([...materials, createdMaterial]);
-        setTitle("");
-        setDescription("");
-        setFile(null);
+        resetAddForm();
+    }
+
+    // single entry point for the "Add material" button - dispatches to the right
+    // submit function based on which type tab is selected
+    async function handleAddMaterial() {
+        setErrorMessage("");
+
+        if (addType === "LINK") {
+            await submitAddLink();
+        } else if (addType === "NOTE") {
+            await submitAddNote();
+        } else {
+            await submitUploadFile();
+        }
     }
 
     // downloads a FILE-type material
@@ -445,72 +466,112 @@ function MaterialsPage() {
                                 </select>
                             </div>
 
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1 flex-1 min-w-[160px]">
                                 <label className={labelClass}>Title *</label>
                                 <input
                                     placeholder="Title"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    className={inputClass}
-                                />
-                            </div>
-
-                            <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
-                                <label className={labelClass}>Description (optional)</label>
-                                <input
-                                    placeholder="Description"
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
                                     className={`${inputClass} w-full`}
                                 />
                             </div>
                         </div>
 
-                        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="border border-slate-200 rounded-lg p-4">
-                                <h3 className="text-sm font-semibold text-slate-900 mb-2">As a link</h3>
-                                <input
-                                    placeholder="URL"
-                                    value={url}
-                                    onChange={(e) => setUrl(e.target.value)}
-                                    className={`${inputClass} w-full`}
-                                />
+                        {/* type selector - picks which of the three material kinds this is;
+                            only the one field that type actually needs is shown below */}
+                        <div className="mt-4 flex gap-2 border-b border-slate-200">
+                            {(["LINK", "NOTE", "FILE"] as MaterialType[]).map((type) => (
                                 <button
-                                    onClick={handleAddLink}
-                                    disabled={!selectedStudentId || !title || !url}
-                                    className={`${secondaryButtonClass} w-full mt-2`}
+                                    key={type}
+                                    onClick={() => setAddType(type)}
+                                    className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                                        addType === type
+                                            ? "border-indigo-600 text-indigo-600"
+                                            : "border-transparent text-slate-500 hover:text-slate-700"
+                                    }`}
                                 >
-                                    Add link
+                                    {type === "LINK" ? "Link" : type === "NOTE" ? "Note" : "File"}
                                 </button>
-                            </div>
+                            ))}
+                        </div>
 
-                            <div className="border border-slate-200 rounded-lg p-4">
-                                <h3 className="text-sm font-semibold text-slate-900 mb-2">As a note</h3>
-                                <p className="text-xs text-slate-500 mb-2">Uses the description above as the note text.</p>
-                                <button
-                                    onClick={handleAddNote}
-                                    disabled={!selectedStudentId || !title || !description}
-                                    className={`${secondaryButtonClass} w-full`}
-                                >
-                                    Add note
-                                </button>
-                            </div>
+                        <div className="mt-4 flex flex-wrap gap-3 items-end">
+                            {addType === "LINK" && (
+                                <>
+                                    <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+                                        <label className={labelClass}>URL *</label>
+                                        <input
+                                            placeholder="https://..."
+                                            value={url}
+                                            onChange={(e) => setUrl(e.target.value)}
+                                            className={`${inputClass} w-full`}
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+                                        <label className={labelClass}>Description (optional)</label>
+                                        <input
+                                            placeholder="Description"
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            className={`${inputClass} w-full`}
+                                        />
+                                    </div>
+                                </>
+                            )}
 
-                            <div className="border border-slate-200 rounded-lg p-4">
-                                <h3 className="text-sm font-semibold text-slate-900 mb-2">As a file</h3>
-                                <input
-                                    type="file"
-                                    onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
-                                    className="text-sm text-slate-600 w-full"
-                                />
-                                <button
-                                    onClick={handleUploadFile}
-                                    disabled={!selectedStudentId || !title || !file}
-                                    className={`${secondaryButtonClass} w-full mt-2`}
-                                >
-                                    Upload file
-                                </button>
-                            </div>
+                            {addType === "NOTE" && (
+                                <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+                                    <label className={labelClass}>Note text *</label>
+                                    <textarea
+                                        placeholder="Write the note here..."
+                                        value={description}
+                                        onChange={(e) => setDescription(e.target.value)}
+                                        rows={3}
+                                        className={`${inputClass} w-full`}
+                                    />
+                                </div>
+                            )}
+
+                            {addType === "FILE" && (
+                                <>
+                                    <div className="flex flex-col gap-1">
+                                        <label className={labelClass}>File *</label>
+                                        <label className="flex flex-col gap-1 cursor-pointer">
+                                            <input
+                                                type="file"
+                                                onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+                                                className="text-sm text-slate-600 file:mr-2 file:px-3 file:py-1.5 file:rounded-lg file:border file:border-slate-300 file:bg-white file:text-slate-700 file:text-sm file:font-medium hover:file:bg-slate-50 file:cursor-pointer cursor-pointer"
+                                            />
+                                        </label>
+                                        {file && (
+                                            <p className="text-xs text-slate-500 mt-1 truncate">Selected: {file.name}</p>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+                                        <label className={labelClass}>Description (optional)</label>
+                                        <input
+                                            placeholder="Description"
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            className={`${inputClass} w-full`}
+                                        />
+                                    </div>
+                                </>
+                            )}
+
+                            <button
+                                onClick={handleAddMaterial}
+                                disabled={
+                                    !selectedStudentId ||
+                                    !title ||
+                                    (addType === "LINK" && !url) ||
+                                    (addType === "NOTE" && !description) ||
+                                    (addType === "FILE" && !file)
+                                }
+                                className={secondaryButtonClass}
+                            >
+                                {addType === "FILE" ? "Upload file" : "Add material"}
+                            </button>
                         </div>
                     </div>
                 )}
