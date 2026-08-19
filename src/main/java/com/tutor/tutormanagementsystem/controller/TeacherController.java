@@ -1,15 +1,21 @@
 package com.tutor.tutormanagementsystem.controller;
 
 import com.tutor.tutormanagementsystem.dto.CreateStudentRequest;
+import com.tutor.tutormanagementsystem.dto.ResetOwnPasswordRequest;
 import com.tutor.tutormanagementsystem.dto.ResetStudentPasswordRequest;
 import com.tutor.tutormanagementsystem.dto.SetStudentActiveRequest;
 import com.tutor.tutormanagementsystem.dto.StudentResponse;
+import com.tutor.tutormanagementsystem.dto.UpdateOwnEmailRequest;
 import com.tutor.tutormanagementsystem.dto.UpdateStudentEmailRequest;
 import com.tutor.tutormanagementsystem.dto.UpdateStudentRequest;
+import com.tutor.tutormanagementsystem.dto.UserResponse;
+import com.tutor.tutormanagementsystem.security.AuthenticatedUser;
 import com.tutor.tutormanagementsystem.service.StudentService;
+import com.tutor.tutormanagementsystem.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +33,7 @@ import java.util.List;
 public class TeacherController {
 
     private final StudentService studentService;
+    private final UserService userService;
 
     @PreAuthorize("hasRole('TEACHER')")
     @PostMapping("/register")
@@ -78,5 +85,23 @@ public class TeacherController {
             @PathVariable("id") Long studentId,
             @RequestBody SetStudentActiveRequest request) {
         return ResponseEntity.ok(studentService.setStudentActive(studentId, request.active()));
+    }
+
+    // the teacher's own login email/password - identified from the JWT (caller.id()),
+    // never a path variable, so this can only ever change the caller's own account
+    @PreAuthorize("hasRole('TEACHER')")
+    @PatchMapping("/me/email")
+    public ResponseEntity<UserResponse> updateOwnEmail(
+            @AuthenticationPrincipal AuthenticatedUser caller,
+            @RequestBody UpdateOwnEmailRequest request) {
+        return ResponseEntity.ok(userService.updateOwnEmail(caller.id(), request.email()));
+    }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    @PatchMapping("/me/password")
+    public ResponseEntity<UserResponse> resetOwnPassword(
+            @AuthenticationPrincipal AuthenticatedUser caller,
+            @RequestBody ResetOwnPasswordRequest request) {
+        return ResponseEntity.ok(userService.resetOwnPassword(caller.id(), request.newPassword()));
     }
 }

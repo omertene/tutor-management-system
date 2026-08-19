@@ -9,7 +9,12 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-// creates the one teacher account on startup, but only if it doesn't already exist.
+// creates the one teacher account on startup, but only if no teacher account
+// exists yet at all. deliberately checks by role rather than by the fixed seed
+// email - if the teacher later changes their own login email (see /teacher/me
+// endpoints in TeacherController), findByEmail(teacherEmail) would no longer
+// match their renamed row, and the old email-based check would have silently
+// recreated a second teacher account with the default password on next restart
 @Component
 @RequiredArgsConstructor
 public class TeacherSeeder implements CommandLineRunner {
@@ -25,8 +30,8 @@ public class TeacherSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (userRepository.findByEmail(teacherEmail).isPresent()) {
-            return; // already seeded, nothing to do
+        if (userRepository.existsByRole(Role.TEACHER)) {
+            return; // a teacher account already exists, nothing to do
         }
 
         User teacher = User.builder()

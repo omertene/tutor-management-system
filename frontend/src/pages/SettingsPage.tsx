@@ -4,6 +4,29 @@ import type { Subject } from "../types";
 
 const API_BASE_URL = "http://localhost:8080";
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateEmailField(email: string): string | null {
+    if (!EMAIL_PATTERN.test(email)) return "Please enter a valid email address";
+    return null;
+}
+
+function validatePasswordField(password: string): string | null {
+    if (password.length < 4) return "Password must be at least 4 characters";
+    return null;
+}
+
+// mirrors the defensive error-reading pattern used on RegisterPage/PaymentsPage -
+// a bad response body shouldn't leave the UI silently showing no error at all
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+    try {
+        const data = await response.json();
+        return data?.message || fallback;
+    } catch {
+        return fallback;
+    }
+}
+
 const teacherLinks = [
     { label: "Students", to: "/teacher/register" },
     { label: "Schedule", to: "/teacher/schedule-rules" },
@@ -24,6 +47,16 @@ function SettingsPage() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [newSubject, setNewSubject] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
+
+    // teacher's own login email/password - separate state/section from Subjects,
+    // since this changes the teacher's own account rather than app configuration.
+    // collapsed by default so the fields aren't sitting open the moment this page loads
+    const [showAccountForm, setShowAccountForm] = useState(false);
+    const [accountEmail, setAccountEmail] = useState("");
+    const [accountNewPassword, setAccountNewPassword] = useState("");
+    const [showAccountPassword, setShowAccountPassword] = useState(false);
+    const [accountErrorMessage, setAccountErrorMessage] = useState("");
+    const [accountSuccessMessage, setAccountSuccessMessage] = useState("");
 
     async function handleLoadSubjects() {
         setErrorMessage("");
@@ -89,6 +122,70 @@ function SettingsPage() {
         setSubjects(subjects.filter((s) => s.id !== subject.id));
     }
 
+    async function handleUpdateAccountEmail() {
+        setAccountErrorMessage("");
+        setAccountSuccessMessage("");
+
+        const fieldError = validateEmailField(accountEmail);
+        if (fieldError) {
+            setAccountErrorMessage(fieldError);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/teacher/me/email`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ email: accountEmail }),
+            });
+
+            if (!response.ok) {
+                setAccountErrorMessage(await readErrorMessage(response, "Failed to update email"));
+                return;
+            }
+
+            setAccountSuccessMessage("Login email updated. Use your new email next time you sign in.");
+            setAccountEmail("");
+        } catch {
+            setAccountErrorMessage("Could not reach the server. Please try again.");
+        }
+    }
+
+    async function handleResetAccountPassword() {
+        setAccountErrorMessage("");
+        setAccountSuccessMessage("");
+
+        const fieldError = validatePasswordField(accountNewPassword);
+        if (fieldError) {
+            setAccountErrorMessage(fieldError);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/teacher/me/password`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ newPassword: accountNewPassword }),
+            });
+
+            if (!response.ok) {
+                setAccountErrorMessage(await readErrorMessage(response, "Failed to reset password"));
+                return;
+            }
+
+            setAccountSuccessMessage("Password updated. Use your new password next time you sign in.");
+            setAccountNewPassword("");
+        } catch {
+            setAccountErrorMessage("Could not reach the server. Please try again.");
+        }
+    }
+
     return (
         <div className="min-h-screen bg-slate-50">
             <NavBar homePath="/teacher" links={teacherLinks} />
@@ -99,6 +196,83 @@ function SettingsPage() {
                 {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
                 <div className="mt-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-lg font-semibold text-slate-900 mb-1">Your account</h2>
+                            <p className="text-sm text-slate-500">
+                                Change the email or password you use to log in.
+                            </p>
+                        </div>
+                        {!showAccountForm && (
+                            <button
+                                onClick={() => setShowAccountForm(true)}
+                                className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+                            >
+                                Change email or password
+                            </button>
+                        )}
+                    </div>
+
+                    {showAccountForm && (
+                        <>
+                            <div className="mt-4 bg-white rounded-xl border border-slate-200 shadow-sm p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Login email</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="email"
+                                            value={accountEmail}
+                                            onChange={(e) => setAccountEmail(e.target.value)}
+                                            onKeyDown={(e) => e.key === "Enter" && handleUpdateAccountEmail()}
+                                            placeholder="New email"
+                                            className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        />
+                                        <button
+                                            onClick={handleUpdateAccountEmail}
+                                            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+                                        >
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">New password</label>
+                                    <div className="flex gap-2">
+                                        <div className="relative flex-1">
+                                            <input
+                                                type={showAccountPassword ? "text" : "password"}
+                                                value={accountNewPassword}
+                                                onChange={(e) => setAccountNewPassword(e.target.value)}
+                                                onKeyDown={(e) => e.key === "Enter" && handleResetAccountPassword()}
+                                                placeholder="New password"
+                                                className="w-full rounded-lg border border-slate-300 pl-3 pr-16 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowAccountPassword((v) => !v)}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-500 hover:text-slate-700"
+                                            >
+                                                {showAccountPassword ? "Hide" : "Show"}
+                                            </button>
+                                        </div>
+                                        <button
+                                            onClick={handleResetAccountPassword}
+                                            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+                                        >
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {accountErrorMessage && <p className="text-sm text-red-600 mt-3">{accountErrorMessage}</p>}
+                            {accountSuccessMessage && <p className="text-sm text-green-600 mt-3">{accountSuccessMessage}</p>}
+                        </>
+                    )}
+                </div>
+
+                <div className="mt-8">
                     <h2 className="text-lg font-semibold text-slate-900 mb-1">Subjects</h2>
                     <p className="text-sm text-slate-500 mb-4">
                         Manage the subjects lessons can be booked under. You can also add a new one directly from the Lessons page while booking.
