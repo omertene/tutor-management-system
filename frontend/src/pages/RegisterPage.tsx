@@ -513,28 +513,42 @@ function RegisterPage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-slate-900">
-                        {student.firstName} {student.lastName}
-                      </span>
-                      <span className="text-slate-500 text-sm">{student.email}</span>
-                      <span className="text-slate-500 text-sm">{student.phone}</span>
-                      <span className="text-slate-500 text-sm">₪{student.hourlyRate}/hr</span>
-                      {(debtByStudentId[student.id] ?? 0) > 0 && (
-                        <span className="text-sm font-medium text-red-600">
-                          Debt: ₪{debtByStudentId[student.id]}
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-slate-900">
+                          {student.firstName} {student.lastName}
                         </span>
+                        <span className="text-slate-500 text-sm">{student.email}</span>
+                        <span className="text-slate-500 text-sm">{student.phone}</span>
+                        <span className="text-slate-500 text-sm">₪{student.hourlyRate}/hr</span>
+                        {(debtByStudentId[student.id] ?? 0) > 0 && (
+                          <span className="text-sm font-medium text-red-600">
+                            Debt: ₪{debtByStudentId[student.id]}
+                          </span>
+                        )}
+                        <span
+                          className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                            student.active
+                              ? "bg-green-50 text-green-700"
+                              : "bg-slate-100 text-slate-500"
+                          }`}
+                        >
+                          {student.active ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                      {(student.educationLevel || student.notes) && (
+                        <div className="flex items-start gap-2 flex-wrap text-sm text-slate-500">
+                          {student.educationLevel && (
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                              {student.educationLevel}
+                            </span>
+                          )}
+                          {student.notes && (
+                            <span className="italic">{student.notes}</span>
+                          )}
+                        </div>
                       )}
-                      <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          student.active
-                            ? "bg-green-50 text-green-700"
-                            : "bg-slate-100 text-slate-500"
-                        }`}
-                      >
-                        {student.active ? "Active" : "Inactive"}
-                      </span>
                     </div>
                     <div className="flex gap-2">
                       <button
