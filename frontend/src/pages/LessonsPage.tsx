@@ -58,6 +58,23 @@ function formatLessonTime(time: string): string {
     return time.slice(0, 5);
 }
 
+const monthNames = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+// "2025-08-17" -> "2025-8" - same key shape used, keeps the filter dropdown's
+// value in sync with what's actually derived from each lesson's date
+function lessonMonthKey(date: string): string {
+    const [year, month] = date.split("-");
+    return `${year}-${Number(month)}`;
+}
+
+function monthLabel(key: string): string {
+    const [year, month] = key.split("-").map(Number);
+    return `${monthNames[month - 1]} ${year}`;
+}
+
 // today's date as "YYYY-MM-DD" using local date fields, not toISOString (which
 // converts through UTC first and can shift the date by a day near midnight)
 function todayDateString(): string {
@@ -68,7 +85,6 @@ function todayDateString(): string {
     return `${year}-${month}-${day}`;
 }
 
-const STUDENT_MIN_BOOKING_NOTICE_HOURS = 2;
 const STUDENT_MIN_CANCEL_NOTICE_HOURS = 6;
 
 
@@ -159,6 +175,10 @@ function LessonsPage() {
     // filters for the lesson list below
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("ALL");
+    // "YYYY-M" (e.g. "2025-8") or "ALL" - lets the teacher narrow the list down to
+    // one specific month/year (any month, not just the current one), same idea as
+    // the month filter on Statistics
+    const [monthFilter, setMonthFilter] = useState("ALL");
     const [currentPage, setCurrentPage] = useState(1);
     const LESSONS_PER_PAGE = 10;
 
@@ -269,7 +289,7 @@ function LessonsPage() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, statusFilter]);
+    }, [searchQuery, statusFilter, monthFilter]);
 
     // close the open "..." action menu on any click outside it
     useEffect(() => {
@@ -280,44 +300,6 @@ function LessonsPage() {
         document.addEventListener("click", handleClickAway);
         return () => document.removeEventListener("click", handleClickAway);
     }, [openMenuLessonId]);
-
-    // student books a lesson for themselves - POST /student/lessons
-    async function handleCreateLessonAsStudent() {
-        setErrorMessage("");
-
-        const [bookHour, bookMinute] = startTime.split(":").map(Number);
-        const requestedStart = new Date(date);
-        requestedStart.setHours(bookHour, bookMinute, 0, 0);
-        const minBookingTime = new Date();
-        minBookingTime.setHours(minBookingTime.getHours() + STUDENT_MIN_BOOKING_NOTICE_HOURS);
-        if (requestedStart < minBookingTime) {
-            setErrorMessage(`Lessons must be booked at least ${STUDENT_MIN_BOOKING_NOTICE_HOURS} hours in advance`);
-            return;
-        }
-
-        const response = await fetch(`${API_BASE_URL}/student/lessons`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-                subjectId: Number(selectedSubjectId),
-                date,
-                startTime,
-                endTime,
-            }),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to create lesson");
-            return;
-        }
-
-        const createdLesson = await response.json();
-        setLessons([...lessons, createdLesson]);
-    }
 
     // teacher books a lesson on behalf of a chosen student - POST /teacher/lessons
     async function handleCreateLessonForStudent() {
@@ -420,8 +402,15 @@ function LessonsPage() {
     const primaryButtonClass = "px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors";
     const smallSecondaryButtonClass = "px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors";
 
+    // every "YYYY-M" that actually has a lesson on it, newest first - built from
+    // the teacher's own lessons rather than a fixed list, so only real months show up
+    const availableMonths = Array.from(new Set(lessons.map((lesson) => lessonMonthKey(lesson.date))))
+        .sort()
+        .reverse();
+
     const filteredLessons = lessons
         .filter((lesson) => statusFilter === "ALL" || lesson.status === statusFilter)
+        .filter((lesson) => monthFilter === "ALL" || lessonMonthKey(lesson.date) === monthFilter)
         .filter((lesson) => {
             if (!searchQuery.trim()) return true;
             const fullName = `${lesson.studentFirstName} ${lesson.studentLastName}`.toLowerCase();
@@ -547,48 +536,10 @@ function LessonsPage() {
                     </div>
                 )}
 
-                {role === "STUDENT" && (
-                    <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                        <h2 className="text-lg font-semibold text-slate-900 mb-4">Book a lesson</h2>
-
-                        <div className="flex flex-wrap gap-3 items-end">
-                            <div className="flex flex-col gap-1">
-                                <label className={labelClass}>Subject</label>
-                                <select
-                                    value={selectedSubjectId}
-                                    onChange={(e) => setSelectedSubjectId(e.target.value)}
-                                    className={inputClass}
-                                >
-                                    <option value="">Select subject</option>
-                                    {subjects.map((subject) => (
-                                        <option key={subject.id} value={subject.id}>
-                                            {subject.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="flex flex-col gap-1">
-                                <label className={labelClass}>Date</label>
-                                <input type="date" value={date} min={todayDateString()} onChange={(e) => setDate(e.target.value)} className={inputClass} />
-                            </div>
-
-                            <div className="flex flex-col gap-1">
-                                <label className={labelClass}>Start time</label>
-                                <TimeSelect value={startTime} onChange={handleStartTimeChange} className={inputClass} />
-                            </div>
-
-                            <div className="flex flex-col gap-1">
-                                <label className={labelClass}>End time</label>
-                                <TimeSelect value={endTime} onChange={setEndTime} className={inputClass} />
-                            </div>
-
-                            <button onClick={handleCreateLessonAsStudent} className={primaryButtonClass}>
-                                Book lesson
-                            </button>
-                        </div>
-                    </div>
-                )}
+                {/* students book lessons interactively on the Schedule calendar (see
+                    StudentDashboard / StudentScheduleGrid) - this page focuses on
+                    showing their upcoming/completed/cancelled lessons instead of
+                    duplicating the booking form here */}
 
                 {role === "TEACHER" && (
                     <div className="mt-8">
@@ -607,6 +558,12 @@ function LessonsPage() {
                                     <option value="SCHEDULED">Scheduled</option>
                                     <option value="COMPLETED">Completed</option>
                                     <option value="CANCELLED">Cancelled</option>
+                                </select>
+                                <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} className={inputClass}>
+                                    <option value="ALL">All months</option>
+                                    {availableMonths.map((key) => (
+                                        <option key={key} value={key}>{monthLabel(key)}</option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
@@ -719,7 +676,7 @@ function LessonsPage() {
                             <h2 className="text-lg font-semibold text-slate-900 mb-3">Upcoming</h2>
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
                                 {upcomingLessons.length === 0 && (
-                                    <p className="px-4 py-6 text-sm text-slate-500 text-center">No upcoming lessons. Book one above!</p>
+                                    <p className="px-4 py-6 text-sm text-slate-500 text-center">No upcoming lessons. Book one from the Schedule tab!</p>
                                 )}
                                 {upcomingLessons.map((lesson) => (
                                     <div key={lesson.id} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
@@ -734,16 +691,14 @@ function LessonsPage() {
                                             </span>
                                         </div>
 
-                                        {canCancelLesson(lesson) ? (
-                                            <button
-                                                onClick={() => handleCancelLesson(lesson)}
-                                                className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
-                                            >
-                                                Cancel
-                                            </button>
-                                        ) : (
-                                            <span className="text-xs text-slate-400">Too close to cancel</span>
-                                        )}
+                                        <button
+                                            onClick={() => handleCancelLesson(lesson)}
+                                            disabled={!canCancelLesson(lesson)}
+                                            title={canCancelLesson(lesson) ? undefined : `Can't be cancelled within ${STUDENT_MIN_CANCEL_NOTICE_HOURS} hours of the start time.`}
+                                            className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+                                        >
+                                            Cancel
+                                        </button>
                                     </div>
                                 ))}
                             </div>

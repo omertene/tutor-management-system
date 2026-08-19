@@ -849,10 +849,7 @@ function SchedulePage() {
                                         onClick={() => setViewingOverride(override)}
                                         className={`absolute block left-0 right-0 m-0 px-1.5 py-1 text-xs text-left leading-tight overflow-hidden transition-colors ${overrideBlockStyles[override.type]}`}
                                         style={{ top: `${top}px`, height: `${height}px` }}
-                                        title={override.note || override.type}
-                                    >
-                                        {override.note && <span className="line-clamp-2 text-slate-700">{override.note}</span>}
-                                    </button>
+                                    />
                                 ))}
 
                                 {getLessonsForDay(dayIndex).map(({ lesson, top, height }) => (

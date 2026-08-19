@@ -238,22 +238,45 @@ function StudentScheduleGrid() {
         return result;
     }, [hourStart, hourEnd]);
 
-    // which of the 4 quarter-hour slots within this cell are covered by a rule -
-    // same logic as the teacher's Schedule page, so a partially-available hour
-    // (e.g. rule starts at 07:15) is shown split instead of all-or-nothing
+    // which of the 4 quarter-hour slots within this cell are actually bookable -
+    // a quarter counts as available if it's covered by a weekly rule OR an ADD
+    // override (the teacher explicitly opening up extra time), and NOT covered by
+    // a BLOCK override (which always wins over both). students never see overrides
+    // as their own distinct thing - an ADD override just looks/behaves like normal
+    // availability (white), a BLOCK override like normal unavailability (gray),
+    // same principle as hiding "Booked"/override notes elsewhere in this component
     function getRuleCoverageQuartersForCell(dayIndex: number, hour: number): boolean[] {
+        const dateStr = toDateString(weekDates[dayIndex]);
         const cellStart = hour * 60;
 
         return [0, 1, 2, 3].map((quarter) => {
             const quarterStart = cellStart + quarter * 15;
             const quarterEnd = quarterStart + 15;
 
-            return scheduleRules.some(
+            const coveredByRule = scheduleRules.some(
                 (rule) =>
                     rule.dayOfWeek === days[dayIndex] &&
                     timeToMinutes(rule.startTime) <= quarterStart &&
                     timeToMinutes(rule.endTime) >= quarterEnd
             );
+
+            const coveredByAddOverride = scheduleOverrides.some(
+                (override) =>
+                    override.type === "ADD" &&
+                    override.date === dateStr &&
+                    timeToMinutes(override.startTime) <= quarterStart &&
+                    timeToMinutes(override.endTime) >= quarterEnd
+            );
+
+            const coveredByBlockOverride = scheduleOverrides.some(
+                (override) =>
+                    override.type === "BLOCK" &&
+                    override.date === dateStr &&
+                    timeToMinutes(override.startTime) < quarterEnd &&
+                    timeToMinutes(override.endTime) > quarterStart
+            );
+
+            return (coveredByRule || coveredByAddOverride) && !coveredByBlockOverride;
         });
     }
 
@@ -269,34 +292,19 @@ function StudentScheduleGrid() {
         return `linear-gradient(to bottom, ${stops})`;
     }
 
-    // overrides for this day within the visible hour window - BLOCK ones are shown
-    // (so the student knows why a normally-open slot is unavailable), ADD ones too
-    function getOverridesForDay(dayIndex: number) {
-        const dateStr = toDateString(weekDates[dayIndex]);
-        const windowStart = hourStart * 60;
-        const windowEnd = hourEnd * 60;
-
-        return scheduleOverrides
-            .filter((override) => override.date === dateStr)
-            .map((override) => {
-                const startMinutes = Math.max(timeToMinutes(override.startTime), windowStart);
-                const endMinutes = Math.min(timeToMinutes(override.endTime), windowEnd);
-                return {
-                    override,
-                    top: ((startMinutes - windowStart) / 60) * ROW_HEIGHT,
-                    height: ((endMinutes - startMinutes) / 60) * ROW_HEIGHT,
-                };
-            })
-            .filter((block) => block.height > 0);
-    }
-
+    // whether the whole hour is off-limits for booking - a BLOCK override, an
+    // existing lesson, or a slot someone else already booked. an ADD override is
+    // deliberately NOT included here anymore: it's meant to open the slot up for
+    // booking, so it's handled by getRuleCoverageQuartersForCell instead (same
+    // path as a weekly rule), not treated as "covered"/unclickable
     function isCellCoveredByOverrideOrLesson(dayIndex: number, hour: number) {
         const dateStr = toDateString(weekDates[dayIndex]);
         const cellStart = hour * 60;
         const cellEnd = cellStart + 60;
 
-        const overridden = scheduleOverrides.some(
+        const blocked = scheduleOverrides.some(
             (override) =>
+                override.type === "BLOCK" &&
                 override.date === dateStr &&
                 timeToMinutes(override.startTime) < cellEnd &&
                 timeToMinutes(override.endTime) > cellStart
@@ -320,7 +328,7 @@ function StudentScheduleGrid() {
                 timeToMinutes(slot.endTime) > cellStart
         );
 
-        return overridden || hasLesson || bookedByAnyone;
+        return blocked || hasLesson || bookedByAnyone;
     }
 
     // other students' busy slots for this day, excluding anything that overlaps one
@@ -503,11 +511,6 @@ function StudentScheduleGrid() {
         setViewingLesson(null);
     }
 
-    const overrideBlockStyles: Record<string, string> = {
-        BLOCK: "bg-red-100 hover:bg-red-200",
-        ADD: "bg-green-100 hover:bg-green-200",
-    };
-
     const lessonBlockStyles: Record<string, string> = {
         SCHEDULED: "bg-blue-100 hover:bg-blue-200",
         COMPLETED: "bg-slate-200 hover:bg-slate-300",
@@ -519,7 +522,7 @@ function StudentScheduleGrid() {
     return (
         <>
             <div>
-                <p className="text-slate-500 text-sm">White = available, gray = unavailable or booked by another student, split = partly available within the hour, red = blocked, green = extra availability, blue = your upcoming lesson, slate = your completed lesson. Click an open slot to book.</p>
+                <p className="text-slate-500 text-sm">White = available, gray = unavailable, split = partly available within the hour, blue = your upcoming lesson, slate = your completed lesson. Click an open slot to book.</p>
             </div>
 
             {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
@@ -639,26 +642,16 @@ function StudentScheduleGrid() {
                                 );
                             })}
 
-                            {getOverridesForDay(dayIndex).map(({ override, top, height }) => (
-                                <div
-                                    key={`override-${override.id}`}
-                                    className={`absolute block left-0 right-0 m-0 px-1.5 py-1 text-xs text-left leading-tight overflow-hidden ${overrideBlockStyles[override.type]}`}
-                                    style={{ top: `${top}px`, height: `${height}px` }}
-                                    title={override.note || override.type}
-                                >
-                                    {override.note && <span className="line-clamp-2 text-slate-700">{override.note}</span>}
-                                </div>
-                            ))}
-
+                            {/* slots taken by another student - rendered as a plain gray block with no
+                                label or tooltip, identical to a cell that's simply outside the teacher's
+                                availability rules, so a student can't tell the two apart or infer that
+                                a lesson is booked there */}
                             {getBusySlotsForDay(dayIndex).map(({ slot, top, height }, index) => (
                                 <div
                                     key={`busy-${slot.date}-${slot.startTime}-${index}`}
-                                    className="absolute block left-0 right-0 m-0 px-1.5 py-1 text-xs text-left leading-tight overflow-hidden bg-slate-200"
+                                    className="absolute block left-0 right-0 m-0 bg-slate-200"
                                     style={{ top: `${top}px`, height: `${height}px` }}
-                                    title="Booked"
-                                >
-                                    <span className="text-slate-500">Booked</span>
-                                </div>
+                                />
                             ))}
 
                             {getLessonsForDay(dayIndex).map(({ lesson, top, height }) => (
@@ -751,18 +744,18 @@ function StudentScheduleGrid() {
 
                         {viewingLesson.status === "SCHEDULED" && (
                             <div className="flex flex-col gap-2 mt-2">
-                                {canCancelLesson(viewingLesson) ? (
-                                    <button
-                                        onClick={() => handleCancelLesson(viewingLesson.id)}
-                                        className="w-full rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium py-2.5 hover:bg-red-50 transition-colors"
-                                    >
-                                        Cancel lesson
-                                    </button>
-                                ) : (
-                                    <p className="text-xs text-slate-400">
-                                        Can't be cancelled within {STUDENT_MIN_CANCEL_NOTICE_HOURS} hours of the start time.
-                                    </p>
-                                )}
+                                <button
+                                    onClick={() => handleCancelLesson(viewingLesson.id)}
+                                    disabled={!canCancelLesson(viewingLesson)}
+                                    title={
+                                        canCancelLesson(viewingLesson)
+                                            ? undefined
+                                            : `Can't be cancelled within ${STUDENT_MIN_CANCEL_NOTICE_HOURS} hours of the start time.`
+                                    }
+                                    className="w-full rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium py-2.5 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+                                >
+                                    Cancel lesson
+                                </button>
                             </div>
                         )}
                     </div>
