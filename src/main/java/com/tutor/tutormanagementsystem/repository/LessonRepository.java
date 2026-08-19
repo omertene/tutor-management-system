@@ -28,19 +28,6 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     void acquireDateLock(@Param("key") long key);
 
 
-    @Query("SELECT YEAR(l.date), MONTH(l.date), COUNT(l) FROM Lesson l " +
-            "WHERE l.status = :status GROUP BY YEAR(l.date), MONTH(l.date) " +
-            "ORDER BY YEAR(l.date), MONTH(l.date)")
-    List<Object[]> countCompletedLessonsGroupedByMonth(@Param("status") LessonStatus status);
-
-
-    @Query("SELECT l.subject.name, COUNT(l), COALESCE(SUM(l.priceAtBooking), 0) FROM Lesson l " +
-            "WHERE l.status = :status GROUP BY l.subject.name ORDER BY l.subject.name")
-    List<Object[]> summarizeCompletedLessonsBySubject(@Param("status") LessonStatus status);
-
-    // total count of COMPLETED lessons, all-time
-    long countByStatus(LessonStatus status);
-
     // total price of every lesson of the given status whose date falls within the range -
     // used for "revenue this month", counted by when the lesson happened, not when it was paid
     @Query("SELECT COALESCE(SUM(l.priceAtBooking), 0) FROM Lesson l " +
@@ -52,4 +39,23 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     List<Lesson> findAllByStatusAndReminderSentFalse(LessonStatus status);
 
     long countBySubjectId(Long subjectId);
+
+    // every COMPLETED lesson whose date falls within an arbitrary range, optionally
+    // scoped to one subject. fetch-joins student/subject so the statistics dashboard
+    // can aggregate revenue, hours, per-subject and per-student totals, and the last-
+    // 12-months trend all from one query instead of a dozen narrower ones.
+    // subjectId = null means "every subject".
+    @Query("SELECT l FROM Lesson l JOIN FETCH l.student JOIN FETCH l.subject " +
+            "WHERE l.status = :status AND l.date BETWEEN :startDate AND :endDate " +
+            "AND (:subjectId IS NULL OR l.subject.id = :subjectId)")
+    List<Lesson> findCompletedInRange(
+            @Param("status") LessonStatus status,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("subjectId") Long subjectId);
+
+    // every distinct year that has at least one COMPLETED lesson - populates the
+    // statistics dashboard's year picker so the teacher can't pick an empty year
+    @Query("SELECT DISTINCT YEAR(l.date) FROM Lesson l WHERE l.status = :status ORDER BY YEAR(l.date) DESC")
+    List<Integer> findDistinctYearsWithCompletedLessons(@Param("status") LessonStatus status);
 }

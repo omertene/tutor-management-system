@@ -4,7 +4,7 @@ import TeacherDashboard from "./pages/TeacherDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./components/ProtectedRoute";
-import SubjectsPage from "./pages/SubjectsPage";
+import SettingsPage from "./pages/SettingsPage";
 import SchedulePage from "./pages/SchedulePage"
 import LessonsPage from "./pages/LessonsPage"
 import PaymentsPage from "./pages/PaymentsPage"
@@ -45,10 +45,10 @@ function App() {
         />
 
         <Route
-          path="/teacher/subjects"
+          path="/teacher/settings"
           element={
             <ProtectedRoute requiredRole="TEACHER">
-              <SubjectsPage />
+              <SettingsPage />
             </ProtectedRoute>
           }
         />

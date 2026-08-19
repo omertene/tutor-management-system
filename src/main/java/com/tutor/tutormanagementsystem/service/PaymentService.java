@@ -109,22 +109,26 @@ public class PaymentService {
                 .toList();
     }
 
-    // used by StatisticsService for the "income per month" table. keeps
-    // StatisticsService from injecting PaymentRepository directly.
-    // row[0]/row[1] (YEAR/MONTH) come back as Integer or Long depending on the DB/
-    // Hibernate version - Number.intValue() handles either without guessing which
-    public List<MonthlyAmount> getIncomeByMonth() {
-        return paymentRepository.sumPaymentsGroupedByMonth().stream()
+    // all-time total income, across every payment ever recorded
+    public BigDecimal getTotalIncome() {
+        return paymentRepository.sumAllPayments();
+    }
+
+    // income actually received within an arbitrary range - the "Actual Income
+    // Received" KPI on the unified statistics dashboard, whatever range is selected
+    public BigDecimal getIncomeReceivedInRange(LocalDate startDate, LocalDate endDate) {
+        return paymentRepository.sumPaymentsByDateRange(startDate, endDate);
+    }
+
+    // income received per month within a range (the dashboard passes the trailing
+    // 12 months) - the "income received" half of the monthly trend chart
+    public List<MonthlyAmount> getIncomeByMonthInRange(LocalDate startDate, LocalDate endDate) {
+        return paymentRepository.sumPaymentsByPaymentDateGroupedByMonth(startDate, endDate).stream()
                 .map(row -> new MonthlyAmount(
                         ((Number) row[0]).intValue(),
                         ((Number) row[1]).intValue(),
                         (BigDecimal) row[2]))
                 .toList();
-    }
-
-    // all-time total income, across every payment ever recorded
-    public BigDecimal getTotalIncome() {
-        return paymentRepository.sumAllPayments();
     }
 
     private DebtResponse toDebtResponse(Student student) {

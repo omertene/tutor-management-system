@@ -3,9 +3,7 @@ package com.tutor.tutormanagementsystem.service;
 import com.tutor.tutormanagementsystem.dto.BusySlotResponse;
 import com.tutor.tutormanagementsystem.dto.LessonRequest;
 import com.tutor.tutormanagementsystem.dto.LessonResponse;
-import com.tutor.tutormanagementsystem.dto.MonthlyCount;
 import com.tutor.tutormanagementsystem.dto.StudentLessonRequest;
-import com.tutor.tutormanagementsystem.dto.SubjectStats;
 import com.tutor.tutormanagementsystem.exception.InvalidLessonStateException;
 import com.tutor.tutormanagementsystem.exception.LessonAccessDeniedException;
 import com.tutor.tutormanagementsystem.exception.LessonNotFoundException;
@@ -263,32 +261,30 @@ public class LessonService {
     }
 
 
-    public List<MonthlyCount> getCompletedLessonsByMonth() {
-        return lessonRepository.countCompletedLessonsGroupedByMonth(LessonStatus.COMPLETED).stream()
-                .map(row -> new MonthlyCount(
-                        ((Number) row[0]).intValue(),
-                        ((Number) row[1]).intValue(),
-                        ((Number) row[2]).longValue()))
-                .toList();
+    // every COMPLETED lesson in the given range, optionally scoped to one subject -
+    // the single fetch StatisticsService aggregates into KPIs, the subject table,
+    // and the top-students table for the unified statistics dashboard
+    public List<Lesson> getCompletedLessonsInRange(LocalDate startDate, LocalDate endDate, Long subjectId) {
+        return lessonRepository.findCompletedInRange(LessonStatus.COMPLETED, startDate, endDate, subjectId);
     }
 
-    // used by StatisticsService for the "breakdown by subject" table
-    public List<SubjectStats> getCompletedLessonsBySubject() {
-        return lessonRepository.summarizeCompletedLessonsBySubject(LessonStatus.COMPLETED).stream()
-                .map(row -> new SubjectStats(
-                        (String) row[0],
-                        ((Number) row[1]).longValue(),
-                        (BigDecimal) row[2]))
-                .toList();
+    // every year that has at least one completed lesson - powers the statistics
+    // dashboard's year picker (Month mode needs a year too, Year mode picks
+    // straight from this list) so an empty year is never offered
+    public List<Integer> getYearsWithCompletedLessons() {
+        return lessonRepository.findDistinctYearsWithCompletedLessons(LessonStatus.COMPLETED);
     }
 
-    // all-time count of COMPLETED lessons
-    public long getTotalCompletedLessons() {
-        return lessonRepository.countByStatus(LessonStatus.COMPLETED);
+    // hours a lesson lasted, as a double (e.g. 1.5 for a 90-minute lesson) - the
+    // common unit used throughout the statistics dashboard for "total hours" and
+    // effective hourly rate
+    public double lessonHours(Lesson lesson) {
+        return java.time.Duration.between(lesson.getStartTime(), lesson.getEndTime()).toMinutes() / 60.0;
     }
 
     // total price of COMPLETED lessons that happened this calendar month - "revenue this
-    // month" means work actually done this month, not payments received this month
+    // month" means work actually done this month, not payments received this month.
+    // used by the teacher dashboard's revenue card (GET /teacher/revenue/current-month)
     public BigDecimal getCompletedLessonRevenueForCurrentMonth() {
         LocalDate today = LocalDate.now();
         LocalDate startOfMonth = today.withDayOfMonth(1);
@@ -296,8 +292,6 @@ public class LessonService {
 
         return lessonRepository.sumLessonPricesByStatusAndDateRange(LessonStatus.COMPLETED, startOfMonth, endOfMonth);
     }
-
-
 
     private static final LocalTime QUIET_HOURS_START = LocalTime.of(22, 0);
     private static final LocalTime QUIET_HOURS_END = LocalTime.of(8, 0);

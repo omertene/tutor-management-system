@@ -6,12 +6,12 @@ import type { Student } from "../types";
 
 const teacherLinks = [
   { label: "Students", to: "/teacher/register" },
-  { label: "Subjects", to: "/teacher/subjects" },
   { label: "Schedule", to: "/teacher/schedule-rules" },
   { label: "Lessons", to: "/teacher/lessons" },
   { label: "Payments", to: "/teacher/payments" },
   { label: "Materials", to: "/teacher/materials" },
   { label: "Statistics", to: "/teacher/statistics" },
+  { label: "Settings", to: "/teacher/settings" },
 ];
 
 

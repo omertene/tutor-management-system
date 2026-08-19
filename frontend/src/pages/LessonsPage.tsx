@@ -7,12 +7,12 @@ const API_BASE_URL = "http://localhost:8080";
 
 const teacherLinks = [
     { label: "Students", to: "/teacher/register" },
-    { label: "Subjects", to: "/teacher/subjects" },
     { label: "Schedule", to: "/teacher/schedule-rules" },
     { label: "Lessons", to: "/teacher/lessons" },
     { label: "Payments", to: "/teacher/payments" },
     { label: "Materials", to: "/teacher/materials" },
     { label: "Statistics", to: "/teacher/statistics" },
+    { label: "Settings", to: "/teacher/settings" },
 ];
 
 const studentLinks = [
@@ -136,6 +136,11 @@ function LessonsPage() {
 
     const [showCancelledLessons, setShowCancelledLessons] = useState(false);
 
+    // which lesson's "..." action menu is currently open (teacher, COMPLETED
+    // lessons only) - null means none open. used instead of a plain red Cancel
+    // button for completed lessons so voiding one takes a deliberate extra click
+    const [openMenuLessonId, setOpenMenuLessonId] = useState<number | null>(null);
+
     // form fields shared by both roles - date/time default to today 08:00-09:00
     // instead of blank, since most bookings only need the student/subject changed
     const [selectedSubjectId, setSelectedSubjectId] = useState("");
@@ -145,6 +150,11 @@ function LessonsPage() {
 
     // only used by the teacher's form
     const [selectedStudentId, setSelectedStudentId] = useState("");
+
+    // inline "+ New subject..." creation from the teacher's booking dropdown, so
+    // adding a subject on the fly doesn't require leaving this page
+    const [isAddingSubject, setIsAddingSubject] = useState(false);
+    const [newSubjectName, setNewSubjectName] = useState("");
 
     // filters for the lesson list below
     const [searchQuery, setSearchQuery] = useState("");
@@ -201,6 +211,37 @@ function LessonsPage() {
         setSubjects(data);
     }
 
+    // teacher types a brand new subject name straight from the booking dropdown -
+    // POST /subjects, then select it immediately so booking can continue without
+    // a page navigation
+    async function handleCreateSubjectInline() {
+        const name = newSubjectName.trim();
+        if (!name) return;
+
+        setErrorMessage("");
+
+        const response = await fetch(`${API_BASE_URL}/subjects`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ name }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            setErrorMessage(errorData?.message || "Failed to add subject");
+            return;
+        }
+
+        const createdSubject = await response.json();
+        setSubjects((current) => [...current, createdSubject]);
+        setSelectedSubjectId(String(createdSubject.id));
+        setNewSubjectName("");
+        setIsAddingSubject(false);
+    }
+
     async function handleLoadStudents() {
         setErrorMessage("");
 
@@ -229,6 +270,16 @@ function LessonsPage() {
     useEffect(() => {
         setCurrentPage(1);
     }, [searchQuery, statusFilter]);
+
+    // close the open "..." action menu on any click outside it
+    useEffect(() => {
+        if (openMenuLessonId === null) return;
+        function handleClickAway() {
+            setOpenMenuLessonId(null);
+        }
+        document.addEventListener("click", handleClickAway);
+        return () => document.removeEventListener("click", handleClickAway);
+    }, [openMenuLessonId]);
 
     // student books a lesson for themselves - POST /student/lessons
     async function handleCreateLessonAsStudent() {
@@ -431,18 +482,47 @@ function LessonsPage() {
 
                             <div className="flex flex-col gap-1">
                                 <label className={labelClass}>Subject</label>
-                                <select
-                                    value={selectedSubjectId}
-                                    onChange={(e) => setSelectedSubjectId(e.target.value)}
-                                    className={inputClass}
-                                >
-                                    <option value="">Select subject</option>
-                                    {subjects.map((subject) => (
-                                        <option key={subject.id} value={subject.id}>
-                                            {subject.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                {isAddingSubject ? (
+                                    <div className="flex gap-1">
+                                        <input
+                                            autoFocus
+                                            value={newSubjectName}
+                                            onChange={(e) => setNewSubjectName(e.target.value)}
+                                            onKeyDown={(e) => e.key === "Enter" && handleCreateSubjectInline()}
+                                            placeholder="New subject name"
+                                            className={inputClass}
+                                        />
+                                        <button onClick={handleCreateSubjectInline} className={smallSecondaryButtonClass}>
+                                            Add
+                                        </button>
+                                        <button
+                                            onClick={() => { setIsAddingSubject(false); setNewSubjectName(""); }}
+                                            className="px-2 text-slate-400 hover:text-slate-600"
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <select
+                                        value={selectedSubjectId}
+                                        onChange={(e) => {
+                                            if (e.target.value === "__new__") {
+                                                setIsAddingSubject(true);
+                                                return;
+                                            }
+                                            setSelectedSubjectId(e.target.value);
+                                        }}
+                                        className={inputClass}
+                                    >
+                                        <option value="">Select subject</option>
+                                        {subjects.map((subject) => (
+                                            <option key={subject.id} value={subject.id}>
+                                                {subject.name}
+                                            </option>
+                                        ))}
+                                        <option value="__new__">+ New subject...</option>
+                                    </select>
+                                )}
                             </div>
 
                             <div className="flex flex-col gap-1">
@@ -558,19 +638,48 @@ function LessonsPage() {
                                         </span>
                                     </div>
 
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 relative">
                                         {lesson.status === "SCHEDULED" && (
                                             <button onClick={() => handleCompleteLesson(lesson.id)} className={smallSecondaryButtonClass}>
                                                 Mark completed
                                             </button>
                                         )}
-                                        {canCancelLesson(lesson) && (
+                                        {/* SCHEDULED lessons keep a plain Cancel button - cancelling before the
+                                            lesson happened is routine. COMPLETED lessons already count toward
+                                            revenue/debt, so voiding one lives behind a small "..." menu instead
+                                            of a primary red button, to avoid accidental clicks on real income */}
+                                        {lesson.status === "SCHEDULED" && canCancelLesson(lesson) && (
                                             <button
                                                 onClick={() => handleCancelLesson(lesson)}
                                                 className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
                                             >
                                                 Cancel
                                             </button>
+                                        )}
+                                        {lesson.status === "COMPLETED" && canCancelLesson(lesson) && (
+                                            <div className="relative" onClick={(e) => e.stopPropagation()}>
+                                                <button
+                                                    onClick={() => setOpenMenuLessonId(openMenuLessonId === lesson.id ? null : lesson.id)}
+                                                    title="More actions"
+                                                    aria-label="More actions"
+                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                                                >
+                                                    &#8942;
+                                                </button>
+                                                {openMenuLessonId === lesson.id && (
+                                                    <div className="absolute right-0 top-full mt-1 z-10 bg-white border border-slate-200 rounded-lg shadow-md py-1 w-44">
+                                                        <button
+                                                            onClick={() => {
+                                                                setOpenMenuLessonId(null);
+                                                                handleCancelLesson(lesson);
+                                                            }}
+                                                            className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                                        >
+                                                            Void / Cancel Lesson
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
