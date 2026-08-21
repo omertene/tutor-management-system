@@ -60,6 +60,16 @@ public class LessonService {
     }
 
 
+    // price = hourly rate x duration in hours, not the flat hourly rate - a 30-minute
+    // lesson costs half the rate, a 3-hour lesson costs 3x it. computed from whole
+    // minutes (not Duration/double) so the result is exact BigDecimal money math
+    private static BigDecimal priceForDuration(BigDecimal hourlyRate, LocalTime startTime, LocalTime endTime) {
+        long minutes = java.time.Duration.between(startTime, endTime).toMinutes();
+        return hourlyRate
+                .multiply(BigDecimal.valueOf(minutes))
+                .divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP);
+    }
+
     private LessonResponse createLesson(Student student, Long subjectId, LocalDate date, LocalTime startTime, LocalTime endTime) {
 
         Subject subject = subjectService.getSubjectEntity(subjectId);
@@ -87,7 +97,7 @@ public class LessonService {
                 .startTime(startTime)
                 .endTime(endTime)
                 .status(LessonStatus.SCHEDULED)
-                .priceAtBooking(student.getHourlyRate())
+                .priceAtBooking(priceForDuration(student.getHourlyRate(), startTime, endTime))
                 .build();
 
         lessonRepository.save(lesson);
@@ -131,7 +141,7 @@ public class LessonService {
         lesson.setDate(request.date());
         lesson.setStartTime(request.startTime());
         lesson.setEndTime(request.endTime());
-        lesson.setPriceAtBooking(student.getHourlyRate());
+        lesson.setPriceAtBooking(priceForDuration(student.getHourlyRate(), request.startTime(), request.endTime()));
 
         lessonRepository.save(lesson);
 
