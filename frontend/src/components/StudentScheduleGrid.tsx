@@ -70,13 +70,13 @@ type ScheduleRule = {
     endTime: string;
 };
 
+// student-facing shape only - GET /student/schedule-overrides deliberately omits
+// id and note (the teacher's private text), see StudentAvailabilityController
 type ScheduleOverride = {
-    id: number;
     date: string;
     startTime: string;
     endTime: string;
     type: string;
-    note: string;
 };
 
 type Lesson = {
@@ -166,15 +166,18 @@ function StudentScheduleGrid() {
     }, []);
 
     async function loadRules() {
-        const response = await fetch(`${API_BASE_URL}/teacher/schedule-rules`, {
+        const response = await fetch(`${API_BASE_URL}/student/schedule-rules`, {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) return;
         setScheduleRules(await response.json());
     }
 
+    // the student-facing endpoint returns date/time/type only - no id, no note.
+    // ScheduleOverride here is typed with id/note as optional since the response
+    // won't include them, but nothing in this component reads either field
     async function loadOverrides() {
-        const response = await fetch(`${API_BASE_URL}/teacher/schedule-overrides`, {
+        const response = await fetch(`${API_BASE_URL}/student/schedule-overrides`, {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) return;

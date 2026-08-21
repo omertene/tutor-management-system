@@ -1,5 +1,6 @@
 package com.tutor.tutormanagementsystem.service;
 
+import com.tutor.tutormanagementsystem.dto.AvailabilityOverrideResponse;
 import com.tutor.tutormanagementsystem.dto.ScheduleOverrideRequest;
 import com.tutor.tutormanagementsystem.dto.ScheduleOverrideResponse;
 import com.tutor.tutormanagementsystem.exception.PastDateException;
@@ -127,6 +128,14 @@ public class ScheduleOverrideService {
         return scheduleOverrideRepository.findAll().stream()
                 .map(o -> new ScheduleOverrideResponse(o.getId(), o.getDate(), o.getStartTime(),
                         o.getEndTime(), o.getType(), o.getNote()))
+                .toList();
+    }
+
+    // student-facing: same rows as getAllScheduleOverrides, but with the id and
+    // teacher's private note stripped out - only date/time/type reach the student
+    public List<AvailabilityOverrideResponse> getAllScheduleOverridesForStudent() {
+        return scheduleOverrideRepository.findAll().stream()
+                .map(o -> new AvailabilityOverrideResponse(o.getDate(), o.getStartTime(), o.getEndTime(), o.getType()))
                 .toList();
     }
 

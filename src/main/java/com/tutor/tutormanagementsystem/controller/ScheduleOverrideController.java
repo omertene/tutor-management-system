@@ -23,6 +23,7 @@ public class ScheduleOverrideController {
         return ResponseEntity.ok(scheduleOverrideService.createScheduleOverride(request));
     }
 
+    @PreAuthorize("hasRole('TEACHER')")
     @GetMapping
     public ResponseEntity<List<ScheduleOverrideResponse>> getAllScheduleOverrides() {
         return ResponseEntity.ok(scheduleOverrideService.getAllScheduleOverrides());

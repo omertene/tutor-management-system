@@ -23,6 +23,7 @@ public class ScheduleRuleController {
         return ResponseEntity.ok(scheduleRuleService.createScheduleRule(request));
     }
 
+    @PreAuthorize("hasRole('TEACHER')")
     @GetMapping
     public ResponseEntity<List<ScheduleRuleResponse>> getAllScheduleRules() {
         return ResponseEntity.ok(scheduleRuleService.getAllScheduleRules());
