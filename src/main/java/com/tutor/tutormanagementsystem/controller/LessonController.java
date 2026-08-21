@@ -3,12 +3,10 @@ package com.tutor.tutormanagementsystem.controller;
 import com.tutor.tutormanagementsystem.dto.BusySlotResponse;
 import com.tutor.tutormanagementsystem.dto.LessonRequest;
 import com.tutor.tutormanagementsystem.dto.LessonResponse;
-import com.tutor.tutormanagementsystem.dto.ScheduleOverrideRequest;
 import com.tutor.tutormanagementsystem.dto.StudentLessonRequest;
-import com.tutor.tutormanagementsystem.model.OverrideType;
 import com.tutor.tutormanagementsystem.security.AuthenticatedUser;
+import com.tutor.tutormanagementsystem.service.LessonBookingService;
 import com.tutor.tutormanagementsystem.service.LessonService;
-import com.tutor.tutormanagementsystem.service.ScheduleOverrideService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,7 +29,7 @@ import java.util.List;
 public class LessonController {
 
     private final LessonService lessonService;
-    private final ScheduleOverrideService scheduleOverrideService;
+    private final LessonBookingService lessonBookingService;
 
     // teacher books a lesson on behalf of a given student
     @PreAuthorize("hasRole('TEACHER')")
@@ -43,9 +41,7 @@ public class LessonController {
     @PreAuthorize("hasRole('TEACHER')")
     @PostMapping("/teacher/lessons/book-outside-hours")
     public ResponseEntity<LessonResponse> createLessonOutsideHours(@RequestBody LessonRequest request) {
-        scheduleOverrideService.createScheduleOverride(
-                new ScheduleOverrideRequest(request.date(), request.startTime(), request.endTime(), OverrideType.ADD, "Lesson booked outside regular hours"));
-        return ResponseEntity.ok(lessonService.createLessonForStudent(request));
+        return ResponseEntity.ok(lessonBookingService.createLessonOutsideHours(request));
     }
 
     // student books a lesson for themselves
