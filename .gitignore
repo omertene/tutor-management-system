@@ -41,4 +41,3 @@ build/
 
 ### VS Code ###
 .vscode/
-/frontend/src/playground.ts

@@ -1,8 +1,8 @@
 spring.application.name=tutor-backend
 
-spring.datasource.url=jdbc:postgresql://localhost:5432/tutor_db2
-spring.datasource.username=postgres
-spring.datasource.password=changeme
+spring.datasource.url=jdbc:postgresql://localhost:5432/tutor_db
+spring.datasource.username=${DB_USERNAME:postgres}
+spring.datasource.password=${DB_PASSWORD}
 
 spring.datasource.driver-class-name=org.postgresql.Driver
 
@@ -12,17 +12,18 @@ spring.jpa.properties.hibernate.format_sql=true
 spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
 
 # generate a real one with: openssl rand -base64 64
-jwt.secret=changeme
+jwt.secret=${JWT_SECRET}
 
 # the one teacher account gets created automatically on startup if it doesn't exist yet
-teacher.seed.email=teacher@example.com
-teacher.seed.password=changeme
+teacher.seed.email=${TEACHER_SEED_EMAIL:teacher@example.com}
+teacher.seed.password=${TEACHER_SEED_PASSWORD}
 
-
+# gmail SMTP - used to send lesson reminder emails. MAIL_PASSWORD is the
+# 16-character Gmail "app password" (not your real Gmail password)
 spring.mail.host=smtp.gmail.com
 spring.mail.port=587
-spring.mail.username=changeme
-spring.mail.password=changeme
+spring.mail.username=${MAIL_USERNAME}
+spring.mail.password=${MAIL_PASSWORD}
 spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
 
