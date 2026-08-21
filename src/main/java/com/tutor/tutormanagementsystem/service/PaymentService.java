@@ -5,6 +5,7 @@ import com.tutor.tutormanagementsystem.dto.MonthlyAmount;
 import com.tutor.tutormanagementsystem.dto.PaymentRequest;
 import com.tutor.tutormanagementsystem.dto.PaymentResponse;
 import com.tutor.tutormanagementsystem.exception.InvalidPaymentAmountException;
+import com.tutor.tutormanagementsystem.exception.InvalidRequestDataException;
 import com.tutor.tutormanagementsystem.exception.PaymentNotFoundException;
 import com.tutor.tutormanagementsystem.model.Payment;
 import com.tutor.tutormanagementsystem.model.Student;
@@ -31,6 +32,10 @@ public class PaymentService {
             throw new InvalidPaymentAmountException("Payment amount must be greater than zero");
         }
 
+        if (request.method() == null) {
+            throw new InvalidRequestDataException("Payment method is required");
+        }
+
         Student student = studentService.getStudentEntity(request.studentId());
 
         Payment payment = Payment.builder()
@@ -55,6 +60,10 @@ public class PaymentService {
 
         if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new InvalidPaymentAmountException("Payment amount must be greater than zero");
+        }
+
+        if (request.method() == null) {
+            throw new InvalidRequestDataException("Payment method is required");
         }
 
         Payment payment = paymentRepository.findById(paymentId)

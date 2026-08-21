@@ -64,6 +64,10 @@ public class MaterialService {
     // teacher attaches an external URL  to a student, optionally tied to a specific lesson
     public MaterialResponse addLink(AddLinkRequest request) {
 
+        if (request.title() == null || request.title().isBlank()) {
+            throw new InvalidMaterialException("Title is required");
+        }
+
         if (request.url() == null || request.url().isBlank()) {
             throw new InvalidMaterialException("URL is required");
         }
@@ -81,6 +85,10 @@ public class MaterialService {
     // teacher attaches a plain text note to a student, optionally tied to specific lesson
     public MaterialResponse addNote(AddNoteRequest request) {
 
+        if (request.title() == null || request.title().isBlank()) {
+            throw new InvalidMaterialException("Title is required");
+        }
+
         if (request.description() == null || request.description().isBlank()) {
             throw new InvalidMaterialException("Note description is required");
         }
@@ -96,6 +104,10 @@ public class MaterialService {
 
     // teacher uploads an actual file for a student, optionally tied to a specific lesson.
     public MaterialResponse uploadFile(Long studentId, Long lessonId, String title, String description, MultipartFile file) {
+
+        if (title == null || title.isBlank()) {
+            throw new InvalidMaterialException("Title is required");
+        }
 
         if (file == null || file.isEmpty()) {
             throw new InvalidMaterialException("A file is required");

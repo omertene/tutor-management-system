@@ -21,6 +21,10 @@ public class AuthService {
     private final LoginRateLimiter loginRateLimiter;
 
     public LoginResponse login(LoginRequest request) {
+        if (request.email() == null || request.email().isBlank() || request.password() == null) {
+            throw new InvalidCredentialsException("Invalid email or password");
+        }
+
         loginRateLimiter.checkNotLocked(request.email());
 
         User user = userRepository.findByEmail(request.email())

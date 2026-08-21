@@ -4,6 +4,7 @@ package com.tutor.tutormanagementsystem.service;
 import com.tutor.tutormanagementsystem.dto.SubjectRequest;
 import com.tutor.tutormanagementsystem.dto.SubjectResponse;
 import com.tutor.tutormanagementsystem.exception.DuplicateSubjectException;
+import com.tutor.tutormanagementsystem.exception.InvalidRequestDataException;
 import com.tutor.tutormanagementsystem.exception.SubjectInUseException;
 import com.tutor.tutormanagementsystem.exception.SubjectNotFoundException;
 import com.tutor.tutormanagementsystem.model.Subject;
@@ -21,6 +22,10 @@ public class SubjectService {
     private final LessonRepository lessonRepository;
 
     public SubjectResponse createSubject(SubjectRequest request) {
+
+        if (request.name() == null || request.name().isBlank()) {
+            throw new InvalidRequestDataException("Subject name is required");
+        }
 
         if (subjectRepository.findByName(request.name()).isPresent()) {
             throw new DuplicateSubjectException("Subject already exists");
