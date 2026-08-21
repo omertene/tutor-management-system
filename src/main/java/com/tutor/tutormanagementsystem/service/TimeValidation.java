@@ -11,7 +11,7 @@ public final class TimeValidation {
     }
 
     public static void requireValidRange(LocalTime startTime, LocalTime endTime) {
-        if (startTime.isAfter(endTime)) {
+        if (!startTime.isBefore(endTime)) {
             throw new InvalidTimeRangeException("Start time must be before end time");
         }
 
