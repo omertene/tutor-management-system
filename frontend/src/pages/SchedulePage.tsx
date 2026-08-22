@@ -100,6 +100,7 @@ type Lesson = {
     startTime: string;
     endTime: string;
     status: string;
+    notes: string | null;
 };
 
 type Student = {
@@ -201,6 +202,12 @@ function SchedulePage() {
 
     // viewing a lesson block, opened by clicking it
     const [viewingLesson, setViewingLesson] = useState<Lesson | null>(null);
+
+    // the notes textarea's own draft value, kept separate from viewingLesson.notes so
+    // typing doesn't need to round-trip through a lesson-list update on every keystroke -
+    // reset to the lesson's saved notes each time a different lesson is opened
+    const [notesDraft, setNotesDraft] = useState("");
+    const [savingNotes, setSavingNotes] = useState(false);
 
     const [now, setNow] = useState(() => new Date());
     useEffect(() => {
@@ -651,6 +658,40 @@ function SchedulePage() {
         setEditingOverrideId(null);
     }
 
+    // opens the lesson detail modal, syncing the notes textarea to this lesson's
+    // saved notes - notesDraft is separate local state, so it needs resetting
+    // every time a different lesson is opened, not just on first mount
+    function openViewLesson(lesson: Lesson) {
+        setViewingLesson(lesson);
+        setNotesDraft(lesson.notes ?? "");
+    }
+
+    async function handleSaveNotes(lessonId: number) {
+        setErrorMessage("");
+        setSavingNotes(true);
+
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_BASE_URL}/teacher/lessons/${lessonId}/notes`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ notes: notesDraft }),
+        });
+
+        setSavingNotes(false);
+
+        if (!response.ok) {
+            setErrorMessage(await readErrorMessage(response, "Failed to save notes"));
+            return;
+        }
+
+        const updatedLesson = await response.json();
+        setLessons(lessons.map((lesson) => (lesson.id === updatedLesson.id ? updatedLesson : lesson)));
+        setViewingLesson(updatedLesson);
+    }
+
     async function handleCompleteLesson(lessonId: number) {
         setErrorMessage("");
 
@@ -866,7 +907,7 @@ function SchedulePage() {
                                 {getLessonsForDay(dayIndex).map(({ lesson, top, height }) => (
                                     <button
                                         key={`lesson-${lesson.id}`}
-                                        onClick={() => setViewingLesson(lesson)}
+                                        onClick={() => openViewLesson(lesson)}
                                         className={`absolute block left-0 right-0 m-0 px-1.5 py-1 text-xs text-left leading-tight overflow-hidden transition-colors ${lessonBlockStyles[lesson.status] ?? lessonBlockStyles.SCHEDULED}`}
                                         style={{ top: `${top}px`, height: `${height}px` }}
                                         title={`${lesson.studentFirstName} ${lesson.studentLastName} - ${lesson.subjectName}`}
@@ -1088,6 +1129,26 @@ function SchedulePage() {
                             {viewingLesson.date} &middot; {viewingLesson.startTime.slice(0, 5)}&ndash;{viewingLesson.endTime.slice(0, 5)}
                         </p>
                         <p className="text-sm text-slate-500">Status: {viewingLesson.status}</p>
+
+                        {viewingLesson.status !== "CANCELLED" && (
+                            <div className="flex flex-col gap-1 mt-2">
+                                <label className="text-sm font-medium text-slate-700">Notes</label>
+                                <textarea
+                                    value={notesDraft}
+                                    onChange={(e) => setNotesDraft(e.target.value)}
+                                    placeholder="What was covered, homework assigned, anything worth remembering..."
+                                    rows={3}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                                />
+                                <button
+                                    onClick={() => handleSaveNotes(viewingLesson.id)}
+                                    disabled={savingNotes || notesDraft === (viewingLesson.notes ?? "")}
+                                    className="self-end px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+                                >
+                                    {savingNotes ? "Saving..." : "Save notes"}
+                                </button>
+                            </div>
+                        )}
 
                         {viewingLesson.status === "SCHEDULED" && (
                             <div className="flex flex-col gap-2 mt-2">

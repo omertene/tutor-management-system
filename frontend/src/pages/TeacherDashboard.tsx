@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import Modal from "../components/Modal";
+import AddStudentModal from "../components/AddStudentModal";
 import { readErrorMessage } from "../utils/httpError";
 import type { Student, Subject } from "../types";
 
@@ -121,16 +122,6 @@ function TeacherDashboard() {
 
   // "add student" modal
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
-  const [newStudentEmail, setNewStudentEmail] = useState("");
-  const [newStudentPassword, setNewStudentPassword] = useState("");
-  const [newStudentFirstName, setNewStudentFirstName] = useState("");
-  const [newStudentLastName, setNewStudentLastName] = useState("");
-  const [newStudentPhone, setNewStudentPhone] = useState("");
-  const [newStudentHourlyRate, setNewStudentHourlyRate] = useState("");
-  const [newStudentEducationLevel, setNewStudentEducationLevel] = useState("");
-  const [newStudentNotes, setNewStudentNotes] = useState("");
-  const [addStudentError, setAddStudentError] = useState("");
-  const [addStudentSuccess, setAddStudentSuccess] = useState("");
 
   const [showAddLessonModal, setShowAddLessonModal] = useState(false);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -261,53 +252,6 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
   }, []);
 
   // POST /teacher/register - used by the "add student" modal
-  async function handleCreateStudent() {
-    setAddStudentError("");
-    setAddStudentSuccess("");
-
-    if (!newStudentEmail || !newStudentPassword || !newStudentFirstName || !newStudentLastName
-      || !newStudentPhone || !newStudentHourlyRate || !newStudentEducationLevel) {
-      setAddStudentError("Please fill in all required fields");
-      return;
-    }
-
-    const token = localStorage.getItem("token");
-
-    const response = await fetch(`${API_BASE_URL}/teacher/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        email: newStudentEmail,
-        password: newStudentPassword,
-        firstName: newStudentFirstName,
-        lastName: newStudentLastName,
-        phone: newStudentPhone,
-        hourlyRate: Number(newStudentHourlyRate),
-        educationLevel: newStudentEducationLevel,
-        notes: newStudentNotes,
-      }),
-    });
-
-    if (!response.ok) {
-      setAddStudentError(await readErrorMessage(response, "Failed to add student"));
-      return;
-    }
-
-    setAddStudentSuccess("Student created successfully");
-    setNewStudentEmail("");
-    setNewStudentPassword("");
-    setNewStudentFirstName("");
-    setNewStudentLastName("");
-    setNewStudentPhone("");
-    setNewStudentHourlyRate("");
-    setNewStudentEducationLevel("");
-    setNewStudentNotes("");
-    refreshDashboard();
-  }
-
   async function handleLoadSubjects() {
     const token = localStorage.getItem("token");
 
@@ -414,11 +358,7 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
 
         <div className="mt-6 flex flex-wrap gap-3">
           <button
-            onClick={() => {
-              setAddStudentError("");
-              setAddStudentSuccess("");
-              setShowAddStudentModal(true);
-            }}
+            onClick={() => setShowAddStudentModal(true)}
             className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
           >
             + Add student
@@ -594,88 +534,10 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
       </main>
 
       {showAddStudentModal && (
-        <Modal title="Add student" onClose={() => setShowAddStudentModal(false)}>
-          <div className="flex flex-col gap-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-slate-700">Email *</label>
-                <input
-                  type="email"
-                  value={newStudentEmail}
-                  onChange={(e) => setNewStudentEmail(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-slate-700">Password *</label>
-                <input
-                  type="text"
-                  value={newStudentPassword}
-                  onChange={(e) => setNewStudentPassword(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-slate-700">First name *</label>
-                <input
-                  value={newStudentFirstName}
-                  onChange={(e) => setNewStudentFirstName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-slate-700">Last name *</label>
-                <input
-                  value={newStudentLastName}
-                  onChange={(e) => setNewStudentLastName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-slate-700">Phone *</label>
-                <input
-                  value={newStudentPhone}
-                  onChange={(e) => setNewStudentPhone(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-slate-700">Hourly rate *</label>
-                <input
-                  value={newStudentHourlyRate}
-                  onChange={(e) => setNewStudentHourlyRate(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-slate-700">Education level *</label>
-                <input
-                  value={newStudentEducationLevel}
-                  onChange={(e) => setNewStudentEducationLevel(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-slate-700">Notes (optional)</label>
-                <input
-                  value={newStudentNotes}
-                  onChange={(e) => setNewStudentNotes(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-            </div>
-
-            {addStudentError && <p className="text-sm text-red-600">{addStudentError}</p>}
-            {addStudentSuccess && <p className="text-sm text-green-600">{addStudentSuccess}</p>}
-
-            <button
-              onClick={handleCreateStudent}
-              className="w-full mt-2 rounded-lg bg-indigo-600 text-white text-sm font-medium py-2.5 hover:bg-indigo-700 transition-colors"
-            >
-              Add student
-            </button>
-          </div>
-        </Modal>
+        <AddStudentModal
+          onClose={() => setShowAddStudentModal(false)}
+          onCreated={refreshDashboard}
+        />
       )}
 
       {showAddLessonModal && (
