@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { decodeToken } from "../utils/jwt";
+import { readErrorMessage } from "../utils/httpError";
 import type { Student, Subject } from "../types";
 
 const API_BASE_URL = "http://localhost:8080";
@@ -251,8 +252,7 @@ function MaterialsPage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to add link");
+            setErrorMessage(await readErrorMessage(response, "Failed to add link"));
             return;
         }
 
@@ -280,8 +280,7 @@ function MaterialsPage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to add note");
+            setErrorMessage(await readErrorMessage(response, "Failed to add note"));
             return;
         }
 
@@ -315,8 +314,7 @@ function MaterialsPage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to upload file");
+            setErrorMessage(await readErrorMessage(response, "Failed to upload file"));
             return;
         }
 
@@ -381,8 +379,7 @@ function MaterialsPage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to delete material");
+            setErrorMessage(await readErrorMessage(response, "Failed to delete material"));
             return;
         }
 

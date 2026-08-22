@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import Modal from "../components/Modal";
+import { readErrorMessage } from "../utils/httpError";
 import type { Student, Subject } from "../types";
 
 const API_BASE_URL = "http://localhost:8080";
@@ -291,8 +292,7 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      setAddStudentError(errorData.message || "Failed to add student");
+      setAddStudentError(await readErrorMessage(response, "Failed to add student"));
       return;
     }
 
@@ -351,8 +351,7 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      setAddLessonError(errorData.message || "Failed to create lesson");
+      setAddLessonError(await readErrorMessage(response, "Failed to create lesson"));
       return;
     }
 

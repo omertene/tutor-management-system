@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { Link } from "react-router-dom";
 import Modal from "../components/Modal";
+import { readErrorMessage } from "../utils/httpError";
 import type { Student } from "../types";
 
 const teacherLinks = [
@@ -41,15 +42,6 @@ function validateHourlyRateField(hourlyRate: string): string | null {
     return "Hourly rate must be a positive whole number";
   }
   return null;
-}
-
-async function readErrorMessage(response: Response, fallback: string): Promise<string> {
-  try {
-    const errorData = await response.json();
-    return errorData.message || fallback;
-  } catch {
-    return fallback;
-  }
 }
 
 function RegisterPage() {

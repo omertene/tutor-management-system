@@ -1,6 +1,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { readErrorMessage } from "../utils/httpError";
 
 const API_BASE_URL = "http://localhost:8080";
 
@@ -20,8 +21,7 @@ function LoginPage() {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      setErrorMessage(errorData.message);
+      setErrorMessage(await readErrorMessage(response, "Failed to log in"));
       return;
     }
 

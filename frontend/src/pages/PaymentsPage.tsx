@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { decodeToken } from "../utils/jwt";
+import { readErrorMessage } from "../utils/httpError";
 import type { Student } from "../types";
 
 const API_BASE_URL = "http://localhost:8080";
@@ -252,8 +253,7 @@ function PaymentsPage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to record payment");
+            setErrorMessage(await readErrorMessage(response, "Failed to record payment"));
             return;
         }
 
@@ -311,8 +311,7 @@ function PaymentsPage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setEditErrorMessage(errorData.message || "Failed to save payment");
+            setEditErrorMessage(await readErrorMessage(response, "Failed to save payment"));
             return;
         }
 
@@ -340,8 +339,7 @@ function PaymentsPage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to cancel payment");
+            setErrorMessage(await readErrorMessage(response, "Failed to cancel payment"));
             return;
         }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
+import { readErrorMessage } from "../utils/httpError";
 import type { Subject } from "../types";
 
 const API_BASE_URL = "http://localhost:8080";
@@ -14,17 +15,6 @@ function validateEmailField(email: string): string | null {
 function validatePasswordField(password: string): string | null {
     if (password.length < 4) return "Password must be at least 4 characters";
     return null;
-}
-
-// mirrors the defensive error-reading pattern used on RegisterPage/PaymentsPage -
-// a bad response body shouldn't leave the UI silently showing no error at all
-async function readErrorMessage(response: Response, fallback: string): Promise<string> {
-    try {
-        const data = await response.json();
-        return data?.message || fallback;
-    } catch {
-        return fallback;
-    }
 }
 
 const teacherLinks = [
@@ -91,8 +81,7 @@ function SettingsPage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            setErrorMessage(errorData?.message || "Failed to add subject");
+            setErrorMessage(await readErrorMessage(response, "Failed to add subject"));
             return;
         }
 
@@ -114,8 +103,7 @@ function SettingsPage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            setErrorMessage(errorData?.message || "Failed to delete subject");
+            setErrorMessage(await readErrorMessage(response, "Failed to delete subject"));
             return;
         }
 

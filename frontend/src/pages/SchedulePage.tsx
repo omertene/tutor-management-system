@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import NavBar from "../components/NavBar";
 import Modal from "../components/Modal";
+import { readErrorMessage } from "../utils/httpError";
 
 const API_BASE_URL = "http://localhost:8080";
 
@@ -584,8 +585,7 @@ function SchedulePage() {
         );
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setAddLessonError(errorData.message || (isEditing ? "Failed to update lesson" : "Failed to create lesson"));
+            setAddLessonError(await readErrorMessage(response, isEditing ? "Failed to update lesson" : "Failed to create lesson"));
             return;
         }
 
@@ -622,8 +622,7 @@ function SchedulePage() {
         );
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setAddOverrideError(errorData.message || (isEditing ? "Failed to update override" : "Failed to add override"));
+            setAddOverrideError(await readErrorMessage(response, isEditing ? "Failed to update override" : "Failed to add override"));
             return;
         }
 
@@ -647,8 +646,7 @@ function SchedulePage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to mark lesson as completed");
+            setErrorMessage(await readErrorMessage(response, "Failed to mark lesson as completed"));
             return;
         }
 
@@ -670,8 +668,7 @@ function SchedulePage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to cancel lesson");
+            setErrorMessage(await readErrorMessage(response, "Failed to cancel lesson"));
             return;
         }
 
@@ -689,8 +686,7 @@ function SchedulePage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to delete override");
+            setErrorMessage(await readErrorMessage(response, "Failed to delete override"));
             return;
         }
 
@@ -1236,8 +1232,7 @@ function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: Schedule
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                setErrorMessage(errorData.message || "Failed to save rule");
+                setErrorMessage(await readErrorMessage(response, "Failed to save rule"));
                 return;
             }
 
@@ -1261,9 +1256,9 @@ function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: Schedule
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
+                const baseMessage = await readErrorMessage(response, "Failed to add rule");
                 setErrorMessage(
-                    (errorData.message || "Failed to add rule") +
+                    baseMessage +
                     (createdRules.length > 0 ? ` (${createdRules.length} of ${ranges.length} range(s) were saved before this one failed)` : "")
                 );
                 if (createdRules.length > 0) onRulesChanged(sortRules([...scheduleRules, ...createdRules]));
@@ -1300,8 +1295,7 @@ function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: Schedule
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to delete rule");
+            setErrorMessage(await readErrorMessage(response, "Failed to delete rule"));
             return;
         }
 

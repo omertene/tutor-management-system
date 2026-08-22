@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { decodeToken } from "../utils/jwt";
+import { readErrorMessage } from "../utils/httpError";
 import type { Subject, Student } from "../types";
 
 const API_BASE_URL = "http://localhost:8080";
@@ -250,8 +251,7 @@ function LessonsPage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            setErrorMessage(errorData?.message || "Failed to add subject");
+            setErrorMessage(await readErrorMessage(response, "Failed to add subject"));
             return;
         }
 
@@ -321,8 +321,7 @@ function LessonsPage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to create lesson");
+            setErrorMessage(await readErrorMessage(response, "Failed to create lesson"));
             return;
         }
 
@@ -366,8 +365,7 @@ function LessonsPage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to cancel lesson");
+            setErrorMessage(await readErrorMessage(response, "Failed to cancel lesson"));
             return;
         }
 
@@ -388,8 +386,7 @@ function LessonsPage() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to complete lesson");
+            setErrorMessage(await readErrorMessage(response, "Failed to complete lesson"));
             return;
         }
 

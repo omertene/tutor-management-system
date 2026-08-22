@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Modal from "./Modal";
+import { readErrorMessage } from "../utils/httpError";
 
 const API_BASE_URL = "http://localhost:8080";
 
@@ -476,8 +477,7 @@ function StudentScheduleGrid() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setBookError(errorData.message || "Failed to book lesson");
+            setBookError(await readErrorMessage(response, "Failed to book lesson"));
             return;
         }
 
@@ -499,8 +499,7 @@ function StudentScheduleGrid() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            setErrorMessage(errorData.message || "Failed to cancel lesson");
+            setErrorMessage(await readErrorMessage(response, "Failed to cancel lesson"));
             return;
         }
 
