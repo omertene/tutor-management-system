@@ -57,4 +57,13 @@ public class Payment {
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    // soft delete - "Cancel" on a payment used to hard-delete the row outright, which
+    // is the wrong trade for a financial record (unlike a cancelled lesson, which just
+    // frees up a time slot, a cancelled payment is the only trace that money changed
+    // hands and later got corrected/reversed). cancelled payments are excluded from
+    // every sum/list a normal read goes through, but the row itself survives.
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean cancelled = false;
 }

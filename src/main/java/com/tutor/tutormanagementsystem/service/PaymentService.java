@@ -69,6 +69,10 @@ public class PaymentService {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
 
+        if (payment.isCancelled()) {
+            throw new InvalidRequestDataException("A cancelled payment can't be edited");
+        }
+
         if (request.studentId() != null && !request.studentId().equals(payment.getStudent().getId())) {
             Student newStudent = studentService.getStudentEntity(request.studentId());
             payment.setStudent(newStudent);
@@ -84,25 +88,32 @@ public class PaymentService {
         return toResponse(payment);
     }
 
+    // soft delete - marks the payment cancelled instead of removing the row, so the
+    // record of it having existed (and having been reversed) survives for the books.
+    // every sum/list read excludes cancelled payments, so this still has the effect
+    // the teacher expects: the debt goes back up, the row drops off the visible history
     public void cancelPayment(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
 
-        if (!paymentRepository.existsById(paymentId)) {
-            throw new PaymentNotFoundException("Payment not found");
+        if (payment.isCancelled()) {
+            throw new InvalidRequestDataException("This payment is already cancelled");
         }
 
-        paymentRepository.deleteById(paymentId);
+        payment.setCancelled(true);
+        paymentRepository.save(payment);
     }
 
     public List<PaymentResponse> getPaymentsForStudent(Long studentId) {
 
-        return paymentRepository.findAllByStudentId(studentId).stream()
+        return paymentRepository.findAllByStudentIdAndCancelledFalse(studentId).stream()
                 .map(payment -> toResponse(payment)).toList();
     }
 
     // teacher views every payment across every student at once - the default
     // "payment history" view, instead of requiring a student to be picked first
     public List<PaymentResponse> getAllPayments() {
-        return paymentRepository.findAll().stream()
+        return paymentRepository.findAllByCancelledFalse().stream()
                 .map(this::toResponse)
                 .toList();
     }
