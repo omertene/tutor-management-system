@@ -201,6 +201,24 @@ public class LessonService {
         return toResponse(lesson, true);
     }
 
+    // teacher-only notes about a lesson (e.g. what was covered) - never shown to the
+    // student, same privacy rule toResponse already enforces for reading them.
+    // allowed on any lesson except a cancelled one, since there's nothing meaningful
+    // left to annotate about a lesson that never happened
+    public LessonResponse updateLessonNotes(Long lessonId, String notes) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
+
+        if (lesson.getStatus() == LessonStatus.CANCELLED) {
+            throw new InvalidLessonStateException("Can't add notes to a cancelled lesson");
+        }
+
+        lesson.setNotes(notes);
+        lessonRepository.save(lesson);
+
+        return toResponse(lesson, true);
+    }
+
     public List<LessonResponse> getAllLessonsForTeacher() {
         return lessonRepository.findAll().stream()
                 .map(lesson -> toResponse(lesson, true))

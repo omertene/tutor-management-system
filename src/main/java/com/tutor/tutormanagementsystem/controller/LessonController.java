@@ -4,6 +4,7 @@ import com.tutor.tutormanagementsystem.dto.BusySlotResponse;
 import com.tutor.tutormanagementsystem.dto.LessonRequest;
 import com.tutor.tutormanagementsystem.dto.LessonResponse;
 import com.tutor.tutormanagementsystem.dto.StudentLessonRequest;
+import com.tutor.tutormanagementsystem.dto.UpdateLessonNotesRequest;
 import com.tutor.tutormanagementsystem.security.AuthenticatedUser;
 import com.tutor.tutormanagementsystem.service.LessonBookingService;
 import com.tutor.tutormanagementsystem.service.LessonService;
@@ -104,6 +105,16 @@ public class LessonController {
     @PatchMapping("/teacher/lessons/{id}/complete")
     public ResponseEntity<LessonResponse> completeLesson(@PathVariable("id") Long lessonId) {
         return ResponseEntity.ok(lessonService.completeLesson(lessonId));
+    }
+
+    // teacher-only notes about a lesson - never exposed to the student (see
+    // LessonService.toResponse's includeNotes flag)
+    @PreAuthorize("hasRole('TEACHER')")
+    @PatchMapping("/teacher/lessons/{id}/notes")
+    public ResponseEntity<LessonResponse> updateLessonNotes(
+            @PathVariable("id") Long lessonId,
+            @RequestBody UpdateLessonNotesRequest request) {
+        return ResponseEntity.ok(lessonService.updateLessonNotes(lessonId, request.notes()));
     }
 
     // total price of lessons completed so far this calendar month - "revenue this month"
