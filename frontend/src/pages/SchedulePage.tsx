@@ -3,14 +3,12 @@ import NavBar from "../components/NavBar";
 import Modal from "../components/Modal";
 import TimeSelect from "../components/TimeSelect";
 import WeekGrid from "../components/WeekGrid";
-import { readErrorMessage } from "../utils/httpError";
+import { API_BASE_URL, readErrorMessage } from "../utils/api";
 import {
     days,
     DEFAULT_HOUR_START, DEFAULT_HOUR_END, ROW_HEIGHT,
     addOneHour, getStartOfWeek, toDateString, timeToMinutes, minutesSinceMidnight,
 } from "../utils/time";
-
-const API_BASE_URL = "http://localhost:8080";
 
 const teacherLinks = [
     { label: "Students", to: "/teacher/register" },

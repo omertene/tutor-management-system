@@ -3,7 +3,7 @@ import NavBar from "../components/NavBar";
 import { Link } from "react-router-dom";
 import Modal from "../components/Modal";
 import AddStudentModal from "../components/AddStudentModal";
-import { readErrorMessage } from "../utils/httpError";
+import { API_BASE_URL, readErrorMessage } from "../utils/api";
 import type { Student } from "../types";
 
 const teacherLinks = [
@@ -15,10 +15,6 @@ const teacherLinks = [
   { label: "Statistics", to: "/teacher/statistics" },
   { label: "Settings", to: "/teacher/settings" },
 ];
-
-
-
-const API_BASE_URL = "http://localhost:8080";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^\d+$/;

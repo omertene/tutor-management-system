@@ -2,14 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import Modal from "./Modal";
 import TimeSelect from "./TimeSelect";
 import WeekGrid from "./WeekGrid";
-import { readErrorMessage } from "../utils/httpError";
+import { API_BASE_URL, readErrorMessage } from "../utils/api";
 import {
     days,
     DEFAULT_HOUR_START, DEFAULT_HOUR_END, ROW_HEIGHT,
     addOneHour, getStartOfWeek, toDateString, timeToMinutes, minutesSinceMidnight,
 } from "../utils/time";
-
-const API_BASE_URL = "http://localhost:8080";
 
 const STUDENT_MIN_BOOKING_NOTICE_HOURS = 2;
 const STUDENT_MIN_CANCEL_NOTICE_HOURS = 6;

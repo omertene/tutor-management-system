@@ -1,9 +1,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { readErrorMessage } from "../utils/httpError";
-
-const API_BASE_URL = "http://localhost:8080";
+import { API_BASE_URL, readErrorMessage } from "../utils/api";
 
 function LoginPage() {
   const navigate = useNavigate();

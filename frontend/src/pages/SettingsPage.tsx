@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
-import { readErrorMessage } from "../utils/httpError";
+import { API_BASE_URL, readErrorMessage } from "../utils/api";
 import type { Subject } from "../types";
-
-const API_BASE_URL = "http://localhost:8080";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

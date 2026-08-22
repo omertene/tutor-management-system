@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import NavBar from "../components/NavBar";
+import { API_BASE_URL } from "../utils/api";
 import type { Subject } from "../types";
 import {
     ResponsiveContainer,
@@ -15,8 +16,6 @@ import {
     Tooltip,
     Legend,
 } from "recharts";
-
-const API_BASE_URL = "http://localhost:8080";
 
 const teacherLinks = [
     { label: "Students", to: "/teacher/register" },

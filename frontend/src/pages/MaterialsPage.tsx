@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { decodeToken } from "../utils/jwt";
-import { readErrorMessage } from "../utils/httpError";
+import { API_BASE_URL, readErrorMessage } from "../utils/api";
 import type { Student, Subject } from "../types";
-
-const API_BASE_URL = "http://localhost:8080";
 
 const teacherLinks = [
     { label: "Students", to: "/teacher/register" },
