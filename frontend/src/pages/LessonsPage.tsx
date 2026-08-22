@@ -64,11 +64,13 @@ const monthNames = [
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-// "2025-08-17" -> "2025-8" - same key shape used, keeps the filter dropdown's
-// value in sync with what's actually derived from each lesson's date
+// "2025-08-17" -> "2025-08" - zero-padded so plain string sort (used below to
+// order the filter dropdown) matches chronological order. an unpadded "2025-8"
+// would sort after "2025-10"/"2025-11"/"2025-12" ("1" < "8" lexicographically),
+// pushing autumn months above summer ones in the list
 function lessonMonthKey(date: string): string {
     const [year, month] = date.split("-");
-    return `${year}-${Number(month)}`;
+    return `${year}-${month.padStart(2, "0")}`;
 }
 
 function monthLabel(key: string): string {
