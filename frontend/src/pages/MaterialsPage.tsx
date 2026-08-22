@@ -358,9 +358,19 @@ function MaterialsPage() {
         const link = document.createElement("a");
         link.href = blobUrl;
         link.download = fileName;
+
+        // the link needs to actually be in the DOM for click() to reliably trigger a
+        // download in every browser (Chrome tolerates a detached element, Firefox/Safari
+        // don't always). revoking the blob URL on the same tick as the click is the same
+        // story - some browsers haven't finished reading it yet, so the download can come
+        // back empty/broken. deferring both to a follow-up tick avoids the race
+        document.body.appendChild(link);
         link.click();
 
-        URL.revokeObjectURL(blobUrl);
+        setTimeout(() => {
+            link.remove();
+            URL.revokeObjectURL(blobUrl);
+        }, 0);
     }
 
     // teacher deletes a material - this is a hard delete (unlike lessons/payments,
