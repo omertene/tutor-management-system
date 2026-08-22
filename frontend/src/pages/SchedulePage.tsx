@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import NavBar from "../components/NavBar";
 import Modal from "../components/Modal";
+import TimeSelect from "../components/TimeSelect";
 import { readErrorMessage } from "../utils/httpError";
+import {
+    days, dayLabels,
+    DEFAULT_HOUR_START, DEFAULT_HOUR_END, MIN_HOUR, MAX_HOUR, ROW_HEIGHT,
+    addOneHour, getStartOfWeek, toDateString, formatShortDate, timeToMinutes, minutesSinceMidnight,
+} from "../utils/time";
 
 const API_BASE_URL = "http://localhost:8080";
 
@@ -14,64 +20,6 @@ const teacherLinks = [
     { label: "Statistics", to: "/teacher/statistics" },
     { label: "Settings", to: "/teacher/settings" },
 ];
-
-const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-// the grid shows this many hour rows, starting at HOUR_START
-const DEFAULT_HOUR_START = 8;
-const DEFAULT_HOUR_END = 22;
-const MIN_HOUR = 0;
-const MAX_HOUR = 24;
-const ROW_HEIGHT = 48; // px, must match the h-12 cell height below
-
-const HOUR_OPTIONS: string[] = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, "0"));
-const MINUTE_OPTIONS: string[] = ["00", "15", "30", "45"];
-
-// adds 1 hour to a "HH:MM" time, wrapping past midnight if needed
-function addOneHour(time: string): string {
-    const [hours, minutes] = time.split(":").map(Number);
-    const nextHour = (hours + 1) % 24;
-    return `${String(nextHour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-}
-
-type TimeSelectProps = {
-    value: string;
-    onChange: (value: string) => void;
-    className: string;
-};
-
-// hour + minute picked independently via two small dropdowns, instead of one long
-// scrolling list of all 96 quarter-hour times - value/onChange still work as a single
-// "HH:MM" string so nothing else in the file needs to know this is two selects
-function TimeSelect({ value, onChange, className }: TimeSelectProps) {
-    const [hour, minute] = value ? value.split(":") : ["", ""];
-
-    function updateHour(newHour: string) {
-        onChange(`${newHour}:${minute || "00"}`);
-    }
-
-    function updateMinute(newMinute: string) {
-        onChange(`${hour || "00"}:${newMinute}`);
-    }
-
-    return (
-        <div className="flex gap-1">
-            <select value={hour} onChange={(e) => updateHour(e.target.value)} className={className}>
-                <option value="">--</option>
-                {HOUR_OPTIONS.map((h) => (
-                    <option key={h} value={h}>{h}</option>
-                ))}
-            </select>
-            <select value={minute} onChange={(e) => updateMinute(e.target.value)} className={className}>
-                <option value="">--</option>
-                {MINUTE_OPTIONS.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                ))}
-            </select>
-        </div>
-    );
-}
 
 type ScheduleRule = {
     id: number;
@@ -114,33 +62,6 @@ type Subject = {
     name: string;
 };
 
-// Monday-based week start isn't used here - the grid is Sunday-first to match
-// the `days` order used by schedule rules
-function getStartOfWeek(reference: Date): Date {
-    const result = new Date(reference);
-    result.setDate(result.getDate() - result.getDay());
-    result.setHours(0, 0, 0, 0);
-    return result;
-}
-
-// formats using the browser's local date fields (not toISOString, which converts
-// to UTC first and can shift the date by a day depending on timezone)
-function toDateString(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-}
-
-function formatShortDate(date: Date): string {
-    return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function timeToMinutes(time: string): number {
-    const [hours, minutes] = time.slice(0, 5).split(":").map(Number);
-    return hours * 60 + minutes;
-}
-
 // a lesson can only be marked completed once it's actually started - matches the
 // backend check in LessonService.completeLesson
 function hasLessonStarted(lesson: Lesson): boolean {
@@ -148,10 +69,6 @@ function hasLessonStarted(lesson: Lesson): boolean {
     const [hours, minutes] = lesson.startTime.slice(0, 5).split(":").map(Number);
     const lessonStart = new Date(year, month - 1, day, hours, minutes, 0, 0);
     return lessonStart <= new Date();
-}
-
-function minutesSinceMidnight(date: Date): number {
-    return date.getHours() * 60 + date.getMinutes();
 }
 
 function SchedulePage() {

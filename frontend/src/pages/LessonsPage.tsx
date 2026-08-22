@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
+import TimeSelect from "../components/TimeSelect";
 import { decodeToken } from "../utils/jwt";
 import { readErrorMessage } from "../utils/httpError";
 import type { Subject, Student } from "../types";
@@ -103,44 +104,6 @@ type Lesson = {
     subjectId: number;
     priceAtBooking: number;
     notes: string;
-}
-
-const HOUR_OPTIONS: string[] = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, "0"));
-const MINUTE_OPTIONS: string[] = ["00", "15", "30", "45"];
-
-type TimeSelectProps = {
-    value: string;
-    onChange: (value: string) => void;
-    className: string;
-};
-
-function TimeSelect({ value, onChange, className }: TimeSelectProps) {
-    const [hour, minute] = value ? value.split(":") : ["", ""];
-
-    function updateHour(newHour: string) {
-        onChange(`${newHour}:${minute || "00"}`);
-    }
-
-    function updateMinute(newMinute: string) {
-        onChange(`${hour || "00"}:${newMinute}`);
-    }
-
-    return (
-        <div className="flex gap-1">
-            <select value={hour} onChange={(e) => updateHour(e.target.value)} className={className}>
-                <option value="">--</option>
-                {HOUR_OPTIONS.map((h) => (
-                    <option key={h} value={h}>{h}</option>
-                ))}
-            </select>
-            <select value={minute} onChange={(e) => updateMinute(e.target.value)} className={className}>
-                <option value="">--</option>
-                {MINUTE_OPTIONS.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                ))}
-            </select>
-        </div>
-    );
 }
 
 function LessonsPage() {

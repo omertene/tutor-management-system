@@ -1,68 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import Modal from "./Modal";
+import TimeSelect from "./TimeSelect";
 import { readErrorMessage } from "../utils/httpError";
+import {
+    days, dayLabels,
+    DEFAULT_HOUR_START, DEFAULT_HOUR_END, MIN_HOUR, MAX_HOUR, ROW_HEIGHT,
+    addOneHour, getStartOfWeek, toDateString, formatShortDate, timeToMinutes, minutesSinceMidnight,
+} from "../utils/time";
 
 const API_BASE_URL = "http://localhost:8080";
 
-const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-// the grid shows this many hour rows, starting at HOUR_START
-const DEFAULT_HOUR_START = 8;
-const DEFAULT_HOUR_END = 22;
-const MIN_HOUR = 0;
-const MAX_HOUR = 24;
-const ROW_HEIGHT = 48; // px, must match the h-12 cell height below
-
-const HOUR_OPTIONS: string[] = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, "0"));
-const MINUTE_OPTIONS: string[] = ["00", "15", "30", "45"];
-
 const STUDENT_MIN_BOOKING_NOTICE_HOURS = 2;
 const STUDENT_MIN_CANCEL_NOTICE_HOURS = 6;
-
-// adds 1 hour to a "HH:MM" time, wrapping past midnight if needed
-function addOneHour(time: string): string {
-    const [hours, minutes] = time.split(":").map(Number);
-    const nextHour = (hours + 1) % 24;
-    return `${String(nextHour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-}
-
-type TimeSelectProps = {
-    value: string;
-    onChange: (value: string) => void;
-    className: string;
-};
-
-// hour + minute picked independently via two small dropdowns, same pattern used on
-// the teacher's Schedule page and every other booking form in the app
-function TimeSelect({ value, onChange, className }: TimeSelectProps) {
-    const [hour, minute] = value ? value.split(":") : ["", ""];
-
-    function updateHour(newHour: string) {
-        onChange(`${newHour}:${minute || "00"}`);
-    }
-
-    function updateMinute(newMinute: string) {
-        onChange(`${hour || "00"}:${newMinute}`);
-    }
-
-    return (
-        <div className="flex gap-1">
-            <select value={hour} onChange={(e) => updateHour(e.target.value)} className={className}>
-                <option value="">--</option>
-                {HOUR_OPTIONS.map((h) => (
-                    <option key={h} value={h}>{h}</option>
-                ))}
-            </select>
-            <select value={minute} onChange={(e) => updateMinute(e.target.value)} className={className}>
-                <option value="">--</option>
-                {MINUTE_OPTIONS.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                ))}
-            </select>
-        </div>
-    );
-}
 
 type ScheduleRule = {
     id: number;
@@ -102,35 +51,6 @@ type Subject = {
     id: number;
     name: string;
 };
-
-function getStartOfWeek(reference: Date): Date {
-    const result = new Date(reference);
-    result.setDate(result.getDate() - result.getDay());
-    result.setHours(0, 0, 0, 0);
-    return result;
-}
-
-// formats using the browser's local date fields (not toISOString, which converts
-// to UTC first and can shift the date by a day depending on timezone)
-function toDateString(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-}
-
-function formatShortDate(date: Date): string {
-    return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function timeToMinutes(time: string): number {
-    const [hours, minutes] = time.slice(0, 5).split(":").map(Number);
-    return hours * 60 + minutes;
-}
-
-function minutesSinceMidnight(date: Date): number {
-    return date.getHours() * 60 + date.getMinutes();
-}
 
 // the student-facing weekly schedule: shows the teacher's availability, other
 // students' booked slots (grayed out, no details), and this student's own lessons.

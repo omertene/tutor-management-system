@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import Modal from "../components/Modal";
 import AddStudentModal from "../components/AddStudentModal";
+import TimeSelect from "../components/TimeSelect";
 import { readErrorMessage } from "../utils/httpError";
+import { timeToMinutes, toDateString } from "../utils/time";
 import type { Student, Subject } from "../types";
 
 const API_BASE_URL = "http://localhost:8080";
@@ -17,44 +19,6 @@ const teacherLinks = [
   { label: "Settings", to: "/teacher/settings" },
 ];
 
-const HOUR_OPTIONS: string[] = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, "0"));
-const MINUTE_OPTIONS: string[] = ["00", "15", "30", "45"];
-
-type TimeSelectProps = {
-  value: string;
-  onChange: (value: string) => void;
-  className: string;
-};
-
-function TimeSelect({ value, onChange, className }: TimeSelectProps) {
-  const [hour, minute] = value ? value.split(":") : ["", ""];
-
-  function updateHour(newHour: string) {
-    onChange(`${newHour}:${minute || "00"}`);
-  }
-
-  function updateMinute(newMinute: string) {
-    onChange(`${hour || "00"}:${newMinute}`);
-  }
-
-  return (
-    <div className="flex gap-1">
-      <select value={hour} onChange={(e) => updateHour(e.target.value)} className={className}>
-        <option value="">--</option>
-        {HOUR_OPTIONS.map((h) => (
-          <option key={h} value={h}>{h}</option>
-        ))}
-      </select>
-      <select value={minute} onChange={(e) => updateMinute(e.target.value)} className={className}>
-        <option value="">--</option>
-        {MINUTE_OPTIONS.map((m) => (
-          <option key={m} value={m}>{m}</option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
 type Lesson = {
   id: number;
   studentId: number;
@@ -66,11 +30,6 @@ type Lesson = {
   endTime: string;
   status: string;
 };
-
-function timeToMinutes(time: string): number {
-  const [hours, minutes] = time.slice(0, 5).split(":").map(Number);
-  return hours * 60 + minutes;
-}
 
 function formatHours(totalMinutes: number): string {
   const hours = totalMinutes / 60;
@@ -91,15 +50,6 @@ function formatTime(time: string): string {
 function formatDate(date: string): string {
   const [, month, day] = date.split("-");
   return `${day}/${month}`;
-}
-
-// formats using the browser's local date fields (not toISOString, which converts
-// to UTC first and can shift the date by a day depending on timezone)
-function toLocalDateString(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 function TeacherDashboard() {
@@ -157,8 +107,8 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     if (!response.ok) return null;
 
     const data: Lesson[] = await response.json();
-    const todayDate = toLocalDateString(new Date());
-    const tomorrowDate = toLocalDateString(new Date(Date.now() + 24 * 60 * 60 * 1000));
+    const todayDate = toDateString(new Date());
+    const tomorrowDate = toDateString(new Date(Date.now() + 24 * 60 * 60 * 1000));
     const scheduled = data.filter((lesson) => lesson.status === "SCHEDULED");
 
     // "today" and "tomorrow" only - a full week list just duplicates the Schedule
@@ -175,8 +125,8 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
-    const startOfWeekDate = toLocalDateString(startOfWeek);
-    const endOfWeekDate = toLocalDateString(endOfWeek);
+    const startOfWeekDate = toDateString(startOfWeek);
+    const endOfWeekDate = toDateString(endOfWeek);
 
     const thisWeekLessons = data.filter(
       (lesson) => lesson.status !== "CANCELLED" && lesson.date >= startOfWeekDate && lesson.date <= endOfWeekDate
@@ -335,7 +285,7 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     refreshDashboard();
   }
 
-  const todayDate = toLocalDateString(new Date());
+  const todayDate = toDateString(new Date());
   const todaysLessons = upcomingLessons.filter((lesson) => lesson.date === todayDate);
   const tomorrowsLessons = upcomingLessons.filter((lesson) => lesson.date !== todayDate);
 
