@@ -7,6 +7,7 @@ import com.tutor.tutormanagementsystem.model.Material;
 import com.tutor.tutormanagementsystem.security.AuthenticatedUser;
 import com.tutor.tutormanagementsystem.service.MaterialService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -95,9 +96,20 @@ public class MaterialController {
             @AuthenticationPrincipal AuthenticatedUser caller) {
         Material material = materialService.getMaterialEntity(materialId, caller.id(), caller.role());
 
+        ContentDisposition contentDisposition = ContentDisposition.attachment()
+                .filename(material.getFileName(), java.nio.charset.StandardCharsets.UTF_8)
+                .build();
+
+        // the client's browser/HTTP client isn't guaranteed to send a content type on
+        // upload - MediaType.parseMediaType(null) throws, so fall back to a generic
+        // binary type rather than 500ing on an otherwise perfectly valid download
+        String contentType = material.getContentType() != null
+                ? material.getContentType()
+                : MediaType.APPLICATION_OCTET_STREAM_VALUE;
+
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(material.getContentType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + material.getFileName() + "\"")
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
                 .body(material.getData());
     }
 

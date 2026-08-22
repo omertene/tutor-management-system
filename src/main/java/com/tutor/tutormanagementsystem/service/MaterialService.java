@@ -146,6 +146,10 @@ public class MaterialService {
             throw new LessonAccessDeniedException("You can only download your own materials");
         }
 
+        if (material.getType() != MaterialType.FILE) {
+            throw new InvalidMaterialException("Only file materials can be downloaded");
+        }
+
         return material;
     }
 
