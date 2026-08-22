@@ -83,7 +83,7 @@ public class LessonService {
         }
 
         boolean alreadyBooked = !lessonRepository
-                .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThanAndStatus(date, endTime, startTime, LessonStatus.SCHEDULED)
+                .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThanAndStatusNot(date, endTime, startTime, LessonStatus.CANCELLED)
                 .isEmpty();
 
         if (alreadyBooked) {
@@ -127,8 +127,8 @@ public class LessonService {
         }
 
         boolean alreadyBooked = lessonRepository
-                .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThanAndStatus(
-                        request.date(), request.endTime(), request.startTime(), LessonStatus.SCHEDULED)
+                .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThanAndStatusNot(
+                        request.date(), request.endTime(), request.startTime(), LessonStatus.CANCELLED)
                 .stream()
                 .anyMatch(other -> !other.getId().equals(lessonId));
 

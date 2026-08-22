@@ -23,6 +23,13 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     List<Lesson> findAllByDateAndStartTimeLessThanAndEndTimeGreaterThanAndStatus(
             LocalDate date, LocalTime endTime, LocalTime startTime, LessonStatus status);
 
+    // for double-booking checks: a slot is taken if ANY non-cancelled lesson overlaps
+    // it, not just a SCHEDULED one - a COMPLETED lesson still genuinely happened at
+    // that time and must keep blocking new bookings there, same as getBusySlots (the
+    // student grid's "is this slot taken" endpoint) already treats it
+    List<Lesson> findAllByDateAndStartTimeLessThanAndEndTimeGreaterThanAndStatusNot(
+            LocalDate date, LocalTime endTime, LocalTime startTime, LessonStatus statusNot);
+
 
     @Query(value = "SELECT pg_advisory_xact_lock(:key)", nativeQuery = true)
     void acquireDateLock(@Param("key") long key);
