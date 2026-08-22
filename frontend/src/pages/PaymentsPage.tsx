@@ -515,6 +515,16 @@ function PaymentsPage() {
                                                 onChange={(e) => setEditStudentId(e.target.value)}
                                                 className={inputClass}
                                             >
+                                                {/* this payment's own student may have been deactivated since it was
+                                                    recorded - "students" only lists active ones, so without this the
+                                                    dropdown would have no matching option and silently show whichever
+                                                    student happens to be first instead. shown disabled so it's clearly
+                                                    not a real choice, just a way to display who it actually belongs to */}
+                                                {!students.some((student) => String(student.id) === editStudentId) && editStudentId && (
+                                                    <option value={editStudentId} disabled>
+                                                        {payment.studentFirstName} {payment.studentLastName} (inactive)
+                                                    </option>
+                                                )}
                                                 {students.map((student) => (
                                                     <option key={student.id} value={student.id}>
                                                         {student.firstName} {student.lastName}
