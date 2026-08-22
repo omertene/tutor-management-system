@@ -395,48 +395,63 @@ function SchedulePage() {
             .filter((block) => block.height > 0);
     }
 
+    // whether a rule overlaps this day/[startHour, endHour) range AT ALL - matches
+    // the backend's own "coveredByRule" check in ScheduleOverrideService exactly
+    // (start < requestedEnd AND end > requestedStart). this has to be the same
+    // "any overlap" definition the backend uses, not "every quarter individually
+    // covered" - an override is a single flat range and the override table can't
+    // represent partial-hour coverage, so offering "Add availability"/"Block this
+    // time" based on a stricter frontend-only definition led the server to reject
+    // the exact action the popup had just offered (e.g. a rule starting at 08:15
+    // means the 08:00 cell isn't "fully available" by quarters, but the backend still
+    // sees 08:00-09:00 as already covered and refuses to add it again)
+    function isRangeCoveredByRule(dayIndex: number, startHour: number, endHour: number): boolean {
+        const rangeStart = startHour * 60;
+        const rangeEnd = endHour * 60;
+
+        return scheduleRules.some(
+            (rule) =>
+                rule.dayOfWeek === days[dayIndex] &&
+                timeToMinutes(rule.startTime) < rangeEnd &&
+                timeToMinutes(rule.endTime) > rangeStart
+        );
+    }
+
     // opens the right popup for a resolved [startHour, endHour) range on a given day,
-    // based on the availability of the range's starting cell (shared by click and drag).
-    // a cell that's only partially covered by a rule (e.g. rule starts at 07:15) is
-    // treated as "unavailable" here too, since assuming the whole hour is bookable
-    // would be misleading - the teacher picks the exact time in the form that follows
+    // offering "Add availability" only when the backend would actually accept it
+    // (no rule overlaps at all) and "Block this time" only when the backend would
+    // accept that (some rule does overlap) - see isRangeCoveredByRule
     function openPopupForRange(dayIndex: number, startHour: number, endHour: number) {
         const dateStr = toDateString(weekDates[dayIndex]);
         const startTime = `${String(startHour).padStart(2, "0")}:00`;
         const endTime = `${String(endHour).padStart(2, "0")}:00`;
 
-        const quarters = getRuleCoverageQuartersForCell(dayIndex, startHour);
-        const fullyAvailable = quarters.every(Boolean);
+        const available = isRangeCoveredByRule(dayIndex, startHour, endHour);
 
         setChooseActionDate(dateStr);
         setChooseActionStartTime(startTime);
         setChooseActionEndTime(endTime);
-        setChooseActionIsUnavailable(!fullyAvailable);
-    }
-
-    // a cell counts as "fully available" only if all 4 of its quarter-hours are
-    // covered by a rule - a partially-covered cell is treated as unavailable for
-    // uniformity purposes, same as openPopupForRange
-    function isCellFullyAvailable(dayIndex: number, hour: number): boolean {
-        return getRuleCoverageQuartersForCell(dayIndex, hour).every(Boolean);
+        setChooseActionIsUnavailable(!available);
     }
 
     // extends [startHour, hour] to the widest contiguous run of cells that share the
     // same availability as the starting cell, so a drag across mixed cells doesn't
-    // silently include time the teacher didn't intend to select
+    // silently include time the teacher didn't intend to select. "availability" here
+    // uses isRangeCoveredByRule (any overlap), matching what the popup will actually
+    // offer/the backend will actually accept for the resulting range
     function clampRangeToUniformAvailability(dayIndex: number, startHour: number, hour: number): [number, number] {
-        const startAvailable = isCellFullyAvailable(dayIndex, startHour);
+        const startAvailable = isRangeCoveredByRule(dayIndex, startHour, startHour + 1);
         const lo = Math.min(startHour, hour);
         const hi = Math.max(startHour, hour);
 
         let rangeStart = startHour;
         let rangeEnd = startHour;
         for (let h = startHour; h >= lo; h--) {
-            if (isCellFullyAvailable(dayIndex, h) !== startAvailable || isCellCoveredByOverride(dayIndex, h)) break;
+            if (isRangeCoveredByRule(dayIndex, h, h + 1) !== startAvailable || isCellCoveredByOverride(dayIndex, h)) break;
             rangeStart = h;
         }
         for (let h = startHour; h <= hi; h++) {
-            if (isCellFullyAvailable(dayIndex, h) !== startAvailable || isCellCoveredByOverride(dayIndex, h)) break;
+            if (isRangeCoveredByRule(dayIndex, h, h + 1) !== startAvailable || isCellCoveredByOverride(dayIndex, h)) break;
             rangeEnd = h;
         }
         return [rangeStart, rangeEnd + 1];
