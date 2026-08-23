@@ -1,7 +1,7 @@
 package com.tutor.tutormanagementsystem.jms;
 
 import com.tutor.tutormanagementsystem.model.Lesson;
-import com.tutor.tutormanagementsystem.service.LessonService;
+import com.tutor.tutormanagementsystem.service.LessonReminderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.core.JmsTemplate;
@@ -15,7 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LessonReminderScheduler {
 
-    private final LessonService lessonService;
+    private final LessonReminderService lessonReminderService;
     private final JmsTemplate jmsTemplate;
 
     @Value("${reminder.hours-before}")
@@ -28,7 +28,7 @@ public class LessonReminderScheduler {
     // email is lost and this lesson would never be picked up again on a future run
     @Scheduled(fixedRate = 30 * 60 * 1000)
     public void checkForUpcomingLessons() {
-        List<Lesson> dueForReminder = lessonService.getLessonsAwaitingReminder(hoursBefore);
+        List<Lesson> dueForReminder = lessonReminderService.getLessonsAwaitingReminder(hoursBefore);
 
         for (Lesson lesson : dueForReminder) {
             jmsTemplate.convertAndSend(JmsQueues.LESSON_REMINDER_QUEUE, lesson.getId());

@@ -3,6 +3,7 @@ package com.tutor.tutormanagementsystem.jms;
 import com.tutor.tutormanagementsystem.model.Lesson;
 import com.tutor.tutormanagementsystem.model.LessonStatus;
 import com.tutor.tutormanagementsystem.service.EmailService;
+import com.tutor.tutormanagementsystem.service.LessonReminderService;
 import com.tutor.tutormanagementsystem.service.LessonService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import java.time.format.DateTimeFormatter;
 public class LessonReminderListener {
 
     private final LessonService lessonService;
+    private final LessonReminderService lessonReminderService;
     private final EmailService emailService;
 
     private static final Logger log = LoggerFactory.getLogger(LessonReminderListener.class);
@@ -62,7 +64,7 @@ public class LessonReminderListener {
 
             emailService.sendEmail(to, subject, body);
 
-            lessonService.markReminderSent(lesson);
+            lessonReminderService.markReminderSent(lesson);
         } catch (Exception e) {
             log.error("Failed to send lesson reminder for lesson {}", lessonId, e);
         }
