@@ -4,6 +4,7 @@ import com.tutor.tutormanagementsystem.dto.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -187,6 +188,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
         ErrorResponse body = new ErrorResponse("You don't have permission to do that");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
+    // someone else changed this row between our read and our write (@Version on Lesson
+    // and Payment). retrying the request against fresh data is the fix, so this is a
+    // 409 the user can act on, not a 500
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLockFailure(ObjectOptimisticLockingFailureException ex) {
+        ErrorResponse body = new ErrorResponse(
+                "Someone else changed this while you were editing it. Reload and try again.");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 
     // a database constraint was violated in a way no service-level check caught first

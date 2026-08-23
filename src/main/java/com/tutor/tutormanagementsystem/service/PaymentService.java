@@ -12,6 +12,7 @@ import com.tutor.tutormanagementsystem.model.Student;
 import com.tutor.tutormanagementsystem.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,6 +27,7 @@ public class PaymentService {
     private final StudentService studentService;
 
     // teacher records a payment received from a student
+    @Transactional
     public PaymentResponse recordPayment(PaymentRequest request) {
 
         if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
@@ -56,6 +58,7 @@ public class PaymentService {
     // debt for both the old and new student is derived on read (sumPaymentsForStudent
     // by studentId), so simply re-pointing the payment at a new student is enough -
     // no separate debt total to patch up on either side.
+    @Transactional
     public PaymentResponse updatePayment(Long paymentId, PaymentRequest request) {
 
         if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
@@ -92,6 +95,7 @@ public class PaymentService {
     // record of it having existed (and having been reversed) survives for the books.
     // every sum/list read excludes cancelled payments, so this still has the effect
     // the teacher expects: the debt goes back up, the row drops off the visible history
+    @Transactional
     public void cancelPayment(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
@@ -118,11 +122,13 @@ public class PaymentService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public DebtResponse getDebtForStudent(Long studentId) {
         Student student = studentService.getStudentEntity(studentId);
         return toDebtResponse(student);
     }
     
+    @Transactional(readOnly = true)
     public List<DebtResponse> getAllDebts() {
         return studentService.getAllStudentEntities().stream()
                 .map(this::toDebtResponse)

@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -69,6 +70,18 @@ public class Lesson {
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    // optimistic locking. two teacher tabs (or a teacher and a student) editing the
+    // same row at once used to silently overwrite each other - last write won and the
+    // earlier change vanished with no error. Hibernate now checks this column on every
+    // update and throws if the row changed since it was read, which
+    // GlobalExceptionHandler turns into a 409 the UI can show.
+    // columnDefinition carries the DEFAULT 0 so ddl-auto=update backfills existing
+    // rows instead of leaving them NULL (a NULL version breaks the next update)
+    @Version
+    @Column(nullable = false, columnDefinition = "bigint default 0")
+    private Long version;
+
 
     // true once the "your lesson is coming up" reminder email has been sent for this
     // lesson - prevents the scheduled reminder job from emailing the same lesson twice.

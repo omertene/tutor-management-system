@@ -8,6 +8,7 @@ import com.tutor.tutormanagementsystem.model.ScheduleRule;
 import com.tutor.tutormanagementsystem.repository.ScheduleRuleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.util.List;
@@ -19,6 +20,7 @@ public class ScheduleRuleService {
     private final ScheduleRuleRepository scheduleRuleRepository;
     private final LessonService lessonService;
 
+    @Transactional
     public ScheduleRuleResponse createScheduleRule(ScheduleRuleRequest request) {
 
         TimeValidation.requireValidRange(request.startTime(), request.endTime());
@@ -68,6 +70,7 @@ public class ScheduleRuleService {
                 newRequest.dayOfWeek(), newRequest.startTime(), newRequest.endTime());
     }
 
+    @Transactional
     public ScheduleRuleResponse updateScheduleRule(Long ruleId, ScheduleRuleRequest request) {
         ScheduleRule rule = scheduleRuleRepository.findById(ruleId)
                 .orElseThrow(() -> new ScheduleRuleNotFoundException("Schedule rule not found"));
@@ -93,6 +96,7 @@ public class ScheduleRuleService {
         return new ScheduleRuleResponse(rule.getId(), rule.getDayOfWeek(), rule.getStartTime(), rule.getEndTime());
     }
 
+    @Transactional
     public void deleteScheduleRule(Long ruleId) {
         if (!scheduleRuleRepository.existsById(ruleId)) {
             throw new ScheduleRuleNotFoundException("Schedule rule not found");

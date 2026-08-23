@@ -148,6 +148,7 @@ public class LessonService {
         return toResponse(lesson, true);
     }
 
+    @Transactional
     public LessonResponse cancelLesson(Long lessonId, Long callerId, Role callerRole) {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
@@ -182,6 +183,7 @@ public class LessonService {
     }
 
 
+    @Transactional
     public LessonResponse completeLesson(Long lessonId) {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
@@ -205,6 +207,7 @@ public class LessonService {
     // student, same privacy rule toResponse already enforces for reading them.
     // allowed on any lesson except a cancelled one, since there's nothing meaningful
     // left to annotate about a lesson that never happened
+    @Transactional
     public LessonResponse updateLessonNotes(Long lessonId, String notes) {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
@@ -362,6 +365,7 @@ public class LessonService {
     }
 
     // marks a lesson as reminded so the next scheduled check doesn't pick it up again
+    @Transactional
     public void markReminderSent(Lesson lesson) {
         lesson.setReminderSent(true);
         lessonRepository.save(lesson);

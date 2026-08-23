@@ -15,6 +15,7 @@ import com.tutor.tutormanagementsystem.model.Student;
 import com.tutor.tutormanagementsystem.repository.MaterialRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -56,6 +57,7 @@ public class MaterialService {
     }
 
     // teacher attaches an external URL  to a student, optionally tied to a specific lesson
+    @Transactional
     public MaterialResponse addLink(AddLinkRequest request) {
 
         if (request.title() == null || request.title().isBlank()) {
@@ -66,9 +68,18 @@ public class MaterialService {
             throw new InvalidMaterialException("URL is required");
         }
 
+        // only http/https may be stored. the student's browser renders this straight
+        // into an anchor's href, so a "javascript:..." URL saved here would execute in
+        // their session when they click it
+        String url = request.url().trim();
+        String lowerUrl = url.toLowerCase();
+        if (!lowerUrl.startsWith("http://") && !lowerUrl.startsWith("https://")) {
+            throw new InvalidMaterialException("Link must start with http:// or https://");
+        }
+
         Material material = newMaterialFor(request.studentId(), request.lessonId(), request.title(), request.description())
                 .type(MaterialType.LINK)
-                .url(request.url())
+                .url(url)
                 .build();
 
         materialRepository.save(material);
@@ -77,6 +88,7 @@ public class MaterialService {
     }
 
     // teacher attaches a plain text note to a student, optionally tied to specific lesson
+    @Transactional
     public MaterialResponse addNote(AddNoteRequest request) {
 
         if (request.title() == null || request.title().isBlank()) {
@@ -97,6 +109,7 @@ public class MaterialService {
     }
 
     // teacher uploads an actual file for a student, optionally tied to a specific lesson.
+    @Transactional
     public MaterialResponse uploadFile(Long studentId, Long lessonId, String title, String description, MultipartFile file) {
 
         if (title == null || title.isBlank()) {
@@ -148,6 +161,7 @@ public class MaterialService {
     }
 
     // teacher deletes a material - hard delete
+    @Transactional
     public void deleteMaterial(Long materialId) {
 
         if (!materialRepository.existsById(materialId)) {

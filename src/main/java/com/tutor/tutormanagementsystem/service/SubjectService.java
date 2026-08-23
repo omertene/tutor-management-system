@@ -12,6 +12,7 @@ import com.tutor.tutormanagementsystem.repository.LessonRepository;
 import com.tutor.tutormanagementsystem.repository.SubjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -21,6 +22,7 @@ public class SubjectService {
     private final SubjectRepository subjectRepository;
     private final LessonRepository lessonRepository;
 
+    @Transactional
     public SubjectResponse createSubject(SubjectRequest request) {
 
         if (request.name() == null || request.name().isBlank()) {
@@ -37,6 +39,7 @@ public class SubjectService {
         return new SubjectResponse(subject.getId(), subject.getName());
     }
 
+    @Transactional
     public void deleteSubject(Long subjectId) {
         Subject subject = getSubjectEntity(subjectId);
 

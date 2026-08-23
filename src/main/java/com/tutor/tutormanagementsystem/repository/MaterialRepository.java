@@ -22,27 +22,29 @@ public interface MaterialRepository extends JpaRepository<Material, Long> {
     // silent no-op without Hibernate bytecode enhancement, which this project doesn't
     // have configured. lesson/subject are LEFT JOINed since a material's lesson link
     // is optional - JPQL returns null for those fields when there's no lesson, same as
-    // the ternaries the old Java-side mapping used to do
+    // the ternaries the old Java-side mapping used to do. every join is aliased
+    // explicitly (JOIN m.student st JOIN st.user u) rather than dereferencing a path
+    // inside the join itself, which Hibernate accepts inconsistently
     @Query("SELECT NEW com.tutor.tutormanagementsystem.dto.MaterialResponse(" +
-            "m.id, m.student.id, m.student.user.firstName, m.student.user.lastName, " +
+            "m.id, st.id, u.firstName, u.lastName, " +
             "l.id, l.date, l.startTime, s.name, " +
             "m.title, m.description, m.type, m.url, m.fileName, m.uploadedAt) " +
-            "FROM Material m JOIN m.student.user LEFT JOIN m.lesson l LEFT JOIN l.subject s")
+            "FROM Material m JOIN m.student st JOIN st.user u LEFT JOIN m.lesson l LEFT JOIN l.subject s")
     List<MaterialResponse> findAllProjected();
 
     @Query("SELECT NEW com.tutor.tutormanagementsystem.dto.MaterialResponse(" +
-            "m.id, m.student.id, m.student.user.firstName, m.student.user.lastName, " +
+            "m.id, st.id, u.firstName, u.lastName, " +
             "l.id, l.date, l.startTime, s.name, " +
             "m.title, m.description, m.type, m.url, m.fileName, m.uploadedAt) " +
-            "FROM Material m JOIN m.student.user LEFT JOIN m.lesson l LEFT JOIN l.subject s " +
-            "WHERE m.student.id = :studentId")
+            "FROM Material m JOIN m.student st JOIN st.user u LEFT JOIN m.lesson l LEFT JOIN l.subject s" +
+            " WHERE st.id = :studentId")
     List<MaterialResponse> findAllByStudentIdProjected(@Param("studentId") Long studentId);
 
     @Query("SELECT NEW com.tutor.tutormanagementsystem.dto.MaterialResponse(" +
-            "m.id, m.student.id, m.student.user.firstName, m.student.user.lastName, " +
+            "m.id, st.id, u.firstName, u.lastName, " +
             "l.id, l.date, l.startTime, s.name, " +
             "m.title, m.description, m.type, m.url, m.fileName, m.uploadedAt) " +
-            "FROM Material m JOIN m.student.user LEFT JOIN m.lesson l LEFT JOIN l.subject s " +
-            "WHERE m.lesson.id = :lessonId")
+            "FROM Material m JOIN m.student st JOIN st.user u LEFT JOIN m.lesson l LEFT JOIN l.subject s" +
+            " WHERE l.id = :lessonId")
     List<MaterialResponse> findAllByLessonIdProjected(@Param("lessonId") Long lessonId);
 }

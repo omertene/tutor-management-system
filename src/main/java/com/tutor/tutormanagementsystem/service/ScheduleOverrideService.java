@@ -12,6 +12,8 @@ import com.tutor.tutormanagementsystem.repository.ScheduleOverrideRepository;
 import com.tutor.tutormanagementsystem.repository.ScheduleRuleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,6 +26,7 @@ public class ScheduleOverrideService {
     private final ScheduleRuleRepository scheduleRuleRepository;
     private final LessonService lessonService;
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ScheduleOverrideResponse createScheduleOverride(ScheduleOverrideRequest request) {
 
         if (request.date().isBefore(LocalDate.now())) {
@@ -31,6 +34,12 @@ public class ScheduleOverrideService {
         }
 
         TimeValidation.requireValidRange(request.startTime(), request.endTime());
+
+        // taken before any of the checks below, for the same reason LessonService takes
+        // it before its availability check: everything from here to the save is a
+        // check-then-act sequence, and without the lock two concurrent writes on this
+        // date can both pass the checks and both insert
+        scheduleOverrideRepository.acquireDateLock(request.date().toEpochDay());
 
         List<ScheduleOverride> overlapping = scheduleOverrideRepository
                 .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThan(
@@ -73,6 +82,7 @@ public class ScheduleOverrideService {
                 scheduleOverride.getType(), scheduleOverride.getNote());
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ScheduleOverrideResponse updateScheduleOverride(Long overrideId, ScheduleOverrideRequest request) {
         ScheduleOverride scheduleOverride = scheduleOverrideRepository.findById(overrideId)
                 .orElseThrow(() -> new ScheduleOverrideNotFoundException("Schedule override not found"));
@@ -82,6 +92,8 @@ public class ScheduleOverrideService {
         }
 
         TimeValidation.requireValidRange(request.startTime(), request.endTime());
+
+        scheduleOverrideRepository.acquireDateLock(request.date().toEpochDay());
 
         boolean overlapping = scheduleOverrideRepository
                 .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThan(
@@ -148,6 +160,7 @@ public class ScheduleOverrideService {
 
     // undoes a mistaken override (e.g. blocked the wrong day). nothing else
     // references a ScheduleOverride by FK, so this is a plain delete, no guard needed
+    @Transactional
     public void deleteScheduleOverride(Long overrideId) {
         if (!scheduleOverrideRepository.existsById(overrideId)) {
             throw new ScheduleOverrideNotFoundException("Schedule override not found");
