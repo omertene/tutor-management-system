@@ -30,17 +30,13 @@ public class MaterialService {
     private final LessonService lessonService;
 
     public List<MaterialResponse> getMaterialsForStudent(Long studentId) {
-        return materialRepository.findAllByStudentId(studentId).stream()
-                .map(this::toResponse)
-                .toList();
+        return materialRepository.findAllByStudentIdProjected(studentId);
     }
 
     // teacher views every material across every student at once - the default
     // "materials" view, instead of requiring a student to be picked first
     public List<MaterialResponse> getAllMaterials() {
-        return materialRepository.findAll().stream()
-                .map(this::toResponse)
-                .toList();
+        return materialRepository.findAllProjected();
     }
 
     // callerId/callerRole identify who is asking, same pattern as LessonService.cancelLesson.
@@ -56,9 +52,7 @@ public class MaterialService {
             throw new LessonAccessDeniedException("You can only view materials for your own lessons");
         }
 
-        return materialRepository.findAllByLessonId(lessonId).stream()
-                .map(this::toResponse)
-                .toList();
+        return materialRepository.findAllByLessonIdProjected(lessonId);
     }
 
     // teacher attaches an external URL  to a student, optionally tied to a specific lesson
