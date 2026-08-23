@@ -675,8 +675,14 @@ function SchedulePage() {
     };
 
     const lessonBlockStyles: Record<string, string> = {
-        SCHEDULED: "bg-blue-100 hover:bg-blue-200",
-        COMPLETED: "bg-slate-200 hover:bg-slate-300",
+        // indigo matches the app's primary action color elsewhere, so an upcoming
+        // lesson reads as "the active thing to look at"
+        SCHEDULED: "bg-indigo-100 hover:bg-indigo-200",
+        // was the same slate as an unavailable cell, so a completed lesson was
+        // visually indistinguishable from empty/unbookable time on the grid - teal
+        // is a distinct hue from every other color already on the grid (red/green/
+        // indigo/gray) and reads calmly as "done, nothing to act on"
+        COMPLETED: "bg-teal-100 hover:bg-teal-200",
     };
 
     const inputClass = "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
@@ -690,7 +696,7 @@ function SchedulePage() {
                 <div className="flex items-center justify-between flex-wrap gap-3">
                     <div>
                         <h1 className="text-2xl font-semibold text-slate-900">Schedule</h1>
-                        <p className="text-slate-500 mt-1">White = available, gray = unavailable, split = partly available within the hour, red = blocked, green = added, blue = upcoming lesson, slate = completed lesson.</p>
+                        <p className="text-slate-500 mt-1">White = available, gray = unavailable, split = partly available within the hour, red = blocked, green = added, indigo = upcoming lesson, teal = completed lesson.</p>
                     </div>
                     <button
                         onClick={() => setShowRulesModal(true)}
