@@ -198,7 +198,7 @@ function SchedulePage() {
     useEffect(() => {
         window.addEventListener("mouseup", handleMouseUp);
         return () => window.removeEventListener("mouseup", handleMouseUp);
-    });
+    }, [isDragging, dragDayIndex, dragStartHour, dragCurrentHour]);
 
     const weekDates = useMemo(() => {
         return days.map((_, index) => {
@@ -1255,7 +1255,7 @@ function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: Schedule
                                 onChange={(value) => updateRange(index, "endTime", value)}
                                 className={inputClass}
                             />
-                            {!editingRuleId && ranges.length > 1 && (
+                            {editingRuleId === null && ranges.length > 1 && (
                                 <button
                                     onClick={() => removeRange(index)}
                                     className="px-2 py-1 rounded-md bg-white border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors"
@@ -1266,7 +1266,7 @@ function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: Schedule
                         </div>
                     ))}
 
-                    {!editingRuleId && (
+                    {editingRuleId === null && (
                         <button
                             onClick={addRange}
                             className="self-start text-sm text-indigo-600 hover:text-indigo-700 font-medium"
