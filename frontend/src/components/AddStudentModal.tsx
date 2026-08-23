@@ -56,7 +56,7 @@ function AddStudentModal({ onClose, onCreated }: AddStudentModalProps) {
         setErrorMessage("");
         setSuccessMessage("");
 
-        if (!email || !password || !firstName || !lastName || !phone || !hourlyRate || !educationLevel) {
+        if (!email || !password || !firstName || !lastName || !phone || !hourlyRate) {
             setErrorMessage("Please fill in all required fields");
             return;
         }
@@ -153,7 +153,7 @@ function AddStudentModal({ onClose, onCreated }: AddStudentModalProps) {
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Education level *</label>
+                        <label className={labelClass}>Education level</label>
                         <input value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)} className={inputClass} />
                     </div>
 
