@@ -33,6 +33,12 @@ public class StudentService {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\d+$");
 
+    // null-safe so validateEmail below still produces the friendly message for a
+    // missing email instead of this throwing a NullPointerException first
+    private String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase();
+    }
+
     private void validateEmail(String email) {
         if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
             throw new InvalidStudentDataException("Please enter a valid email address");
@@ -61,19 +67,24 @@ public class StudentService {
 
     @Transactional
     public StudentResponse createStudent(CreateStudentRequest request) {
-        validateEmail(request.email());
+        // stored lowercased+trimmed so the DB's unique constraint on email actually
+        // means "one account per address" - without it Foo@x.com and foo@x.com are
+        // two separate rows that both satisfy the constraint
+        String email = normalizeEmail(request.email());
+
+        validateEmail(email);
         validatePassword(request.password());
         validatePhone(request.phone());
         validateHourlyRate(request.hourlyRate());
 
         // checks user doesn't exist already
-        if (userRepository.findByEmail(request.email()).isPresent()) {
+        if (userRepository.findByEmailIgnoreCase(email).isPresent()) {
             throw new DuplicateEmailException("email already registered");
         }
 
         // builds new user with the information received
         User user = User.builder()
-                .email(request.email())
+                .email(email)
                 .password(passwordEncoder.encode(request.password()))
                 .role(Role.STUDENT) // forced here, never taken from the request
                 .firstName(request.firstName())
@@ -122,17 +133,18 @@ public class StudentService {
 
     @Transactional
     public StudentResponse updateStudentEmail(Long studentId, String newEmail) {
-        validateEmail(newEmail);
+        String email = normalizeEmail(newEmail);
+        validateEmail(email);
 
         Student student = getStudentEntity(studentId);
         User user = student.getUser();
 
-        if (!newEmail.equalsIgnoreCase(user.getEmail())
-                && userRepository.findByEmail(newEmail).isPresent()) {
+        if (!email.equalsIgnoreCase(user.getEmail())
+                && userRepository.findByEmailIgnoreCase(email).isPresent()) {
             throw new DuplicateEmailException("email already registered");
         }
 
-        user.setEmail(newEmail);
+        user.setEmail(email);
         userRepository.save(user);
 
         return toResponse(student);

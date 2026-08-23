@@ -29,11 +29,16 @@ public class SubjectService {
             throw new InvalidRequestDataException("Subject name is required");
         }
 
-        if (subjectRepository.findByName(request.name()).isPresent()) {
+        // trimmed so " Math" and "Math " aren't stored as distinct subjects, and
+        // matched case-insensitively so "math" can't be added alongside "Math".
+        // the teacher's original capitalisation is what gets stored and displayed
+        String name = request.name().trim();
+
+        if (subjectRepository.findByNameIgnoreCase(name).isPresent()) {
             throw new DuplicateSubjectException("Subject already exists");
         }
 
-        Subject subject = Subject.builder().name(request.name()).build();
+        Subject subject = Subject.builder().name(name).build();
         subjectRepository.save(subject);
 
         return new SubjectResponse(subject.getId(), subject.getName());

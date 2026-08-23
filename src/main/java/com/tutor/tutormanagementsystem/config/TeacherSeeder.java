@@ -35,7 +35,9 @@ public class TeacherSeeder implements CommandLineRunner {
         }
 
         User teacher = User.builder()
-                .email(teacherEmail)
+                // normalised the same way StudentService/UserService store emails, so
+                // the seeded teacher can log in regardless of how the property is cased
+                .email(teacherEmail.trim().toLowerCase())
                 .password(passwordEncoder.encode(teacherPassword))
                 .role(Role.TEACHER)
                 .firstName("Teacher")

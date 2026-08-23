@@ -29,6 +29,10 @@ public class UserService {
     // since the two validate different entities (User here vs a student's fields there)
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
+    private String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase();
+    }
+
     private void validateEmail(String email) {
         if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
             throw new InvalidStudentDataException("Please enter a valid email address");
@@ -43,16 +47,17 @@ public class UserService {
 
     @Transactional
     public UserResponse updateOwnEmail(Long userId, String newEmail) {
-        validateEmail(newEmail);
+        String email = normalizeEmail(newEmail);
+        validateEmail(email);
 
         User user = getUserEntity(userId);
 
-        if (!newEmail.equalsIgnoreCase(user.getEmail())
-                && userRepository.findByEmail(newEmail).isPresent()) {
+        if (!email.equalsIgnoreCase(user.getEmail())
+                && userRepository.findByEmailIgnoreCase(email).isPresent()) {
             throw new DuplicateEmailException("email already registered");
         }
 
-        user.setEmail(newEmail);
+        user.setEmail(email);
         userRepository.save(user);
 
         return toResponse(user);

@@ -7,5 +7,7 @@ import java.util.Optional;
 
 public interface SubjectRepository extends JpaRepository<Subject, Long> {
 
-    Optional<Subject> findByName(String name);
+    // case-insensitive so "Math" and "math" can't both be created as separate
+    // subjects, which would split every statistic that groups by subject name
+    Optional<Subject> findByNameIgnoreCase(String name);
 }
