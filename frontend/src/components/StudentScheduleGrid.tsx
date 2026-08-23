@@ -456,9 +456,12 @@ function StudentScheduleGrid() {
         setViewingLesson(null);
     }
 
+    // students shouldn't be able to tell a completed lesson apart from an upcoming
+    // one at a glance - both statuses render identically here, unlike the teacher's
+    // own schedule which does distinguish them
     const lessonBlockStyles: Record<string, string> = {
         SCHEDULED: "bg-blue-100 hover:bg-blue-200",
-        COMPLETED: "bg-slate-200 hover:bg-slate-300",
+        COMPLETED: "bg-blue-100 hover:bg-blue-200",
     };
 
     const inputClass = "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
@@ -467,7 +470,7 @@ function StudentScheduleGrid() {
     return (
         <>
             <div>
-                <p className="text-slate-500 text-sm">White = available, gray = unavailable, split = partly available within the hour, blue = your upcoming lesson, slate = your completed lesson. Click an open slot to book.</p>
+                <p className="text-slate-500 text-sm">White = available, gray = unavailable, split = partly available within the hour, blue = your lesson. Click an open slot to book.</p>
             </div>
 
             {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
@@ -611,7 +614,6 @@ function StudentScheduleGrid() {
                         <p className="text-sm text-slate-500">
                             {viewingLesson.date} &middot; {viewingLesson.startTime.slice(0, 5)}&ndash;{viewingLesson.endTime.slice(0, 5)}
                         </p>
-                        <p className="text-sm text-slate-500">Status: {viewingLesson.status}</p>
 
                         {viewingLesson.status === "SCHEDULED" && (
                             <div className="flex flex-col gap-2 mt-2">
