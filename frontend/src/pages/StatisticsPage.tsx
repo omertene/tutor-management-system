@@ -67,6 +67,7 @@ type DashboardStatistics = {
     incomeReceived: number;
     totalLessons: number;
     totalHours: number;
+    effectiveHourlyRate: number;
     monthlyTrend: MonthlyTrend[];
     subjectBreakdown: SubjectPerformance[];
     topStudents: StudentPerformance[];
@@ -98,9 +99,11 @@ function resolveRange(rangeType: RangeType, year: number, month: number): { star
         return { startDate: toIsoDate(start), endDate: toIsoDate(end) };
     }
 
-    // allTime
+    // allTime - end date is intentionally far in the future rather than "today", since
+    // a lesson or payment can be dated ahead (a booked-in-advance lesson, a payment
+    // logged for next month) and would otherwise silently fall outside "all time"
     const today = new Date();
-    return { startDate: "2000-01-01", endDate: toIsoDate(new Date(today.getFullYear() + 1, 0, 0)) };
+    return { startDate: "2000-01-01", endDate: toIsoDate(new Date(today.getFullYear() + 10, 11, 31)) };
 }
 
 function formatHours(hours: number): string {
@@ -275,7 +278,7 @@ function StatisticsPage() {
                 {statistics && (
                     <>
                         {/* KPI row */}
-                        <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className={cardClass}>
                                 <p className="text-sm text-slate-500">Total Revenue</p>
                                 <p className="text-3xl font-semibold text-slate-900 mt-1">₪{statistics.totalRevenue}</p>
@@ -293,12 +296,22 @@ function StatisticsPage() {
                                 </p>
                                 <p className="text-xs text-slate-400 mt-1">{statistics.totalLessons} lesson{statistics.totalLessons === 1 ? "" : "s"}</p>
                             </div>
+                            <div className={cardClass}>
+                                <p className="text-sm text-slate-500">Effective Hourly Rate</p>
+                                <p className="text-3xl font-semibold text-slate-900 mt-1">₪{statistics.effectiveHourlyRate}</p>
+                                <p className="text-xs text-slate-400 mt-1">Revenue divided by hours taught</p>
+                            </div>
                         </div>
 
                         {/* charts */}
                         <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div>
                                 <h2 className={sectionTitleClass}>Monthly performance (last 12 months)</h2>
+                                {subjectId && (
+                                    <p className="text-xs text-slate-400 -mt-2 mb-3">
+                                        Revenue is filtered to the selected subject; income received always covers every subject.
+                                    </p>
+                                )}
                                 <div className={cardClass}>
                                     <ResponsiveContainer width="100%" height={300}>
                                         <ComposedChart data={trendChartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
