@@ -62,3 +62,14 @@ Runs on `http://localhost:5173`, calling the backend at `http://localhost:8080`.
   status code.
 - **Secrets** (DB credentials, JWT signing key) are read from environment variables rather
   than committed to source.
+
+## Known trade-offs
+
+A few read paths in `LessonService`/`PaymentService` (e.g. counting lessons in a weekly slot,
+computing every student's debt) load full tables via `findAll()`/`Student` lists and filter or
+aggregate in Java rather than pushing the filtering into the query, and `@ManyToOne`/`@OneToOne`
+associations default to eager fetching, so listing lessons can trigger extra per-row queries.
+At one tutor's data volume this doesn't matter and the derived-query style stays readable;
+`getBusySlots` — the one hot path a student hits on every schedule page load — has been scoped
+to a date range instead of loading every lesson ever booked, but the rest are left as-is
+pending real scale.

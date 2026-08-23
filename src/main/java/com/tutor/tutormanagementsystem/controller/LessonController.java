@@ -20,9 +20,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -67,12 +69,16 @@ public class LessonController {
         return ResponseEntity.ok(lessonService.getLessonsForStudent(caller.id()));
     }
 
-    // every booked slot across all students, with no student-identifying info - lets
-    // a student's schedule view gray out times already taken by someone else
+    // every booked slot across all students within the given date range, with no
+    // student-identifying info - lets a student's schedule view gray out times
+    // already taken by someone else. scoped to the week the caller is viewing rather
+    // than every lesson ever booked
     @PreAuthorize("hasRole('STUDENT')")
     @GetMapping("/student/busy-slots")
-    public ResponseEntity<List<BusySlotResponse>> getBusySlots() {
-        return ResponseEntity.ok(lessonService.getBusySlots());
+    public ResponseEntity<List<BusySlotResponse>> getBusySlots(
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate) {
+        return ResponseEntity.ok(lessonService.getBusySlots(startDate, endDate));
     }
 
     // teacher views a given student's lessons

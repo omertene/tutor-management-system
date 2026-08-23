@@ -231,13 +231,14 @@ public class LessonService {
                 .toList();
     }
 
-    // every booked (SCHEDULED or COMPLETED) lesson's date/time across every student,
-    // with no student-identifying info - lets a student see which slots are already
-    // taken by someone else (grayed out on their own schedule view) without exposing
-    // whose lesson it is or what subject it's for
-    public List<BusySlotResponse> getBusySlots() {
-        return lessonRepository.findAll().stream()
-                .filter(lesson -> lesson.getStatus() != LessonStatus.CANCELLED)
+    // every booked (SCHEDULED or COMPLETED) lesson's date/time within the given range
+    // across every student, with no student-identifying info - lets a student see
+    // which slots are already taken by someone else (grayed out on their own schedule
+    // view) without exposing whose lesson it is or what subject it's for. scoped to a
+    // date range (the caller passes the visible week) instead of loading every lesson
+    // ever booked - this endpoint is hit on every student schedule page load
+    public List<BusySlotResponse> getBusySlots(LocalDate startDate, LocalDate endDate) {
+        return lessonRepository.findAllByStatusNotAndDateBetween(LessonStatus.CANCELLED, startDate, endDate).stream()
                 .map(lesson -> new BusySlotResponse(lesson.getDate(), lesson.getStartTime(), lesson.getEndTime()))
                 .toList();
     }

@@ -30,6 +30,10 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     List<Lesson> findAllByDateAndStartTimeLessThanAndEndTimeGreaterThanAndStatusNot(
             LocalDate date, LocalTime endTime, LocalTime startTime, LessonStatus statusNot);
 
+    // every non-cancelled lesson whose date falls within the visible week - backs
+    // getBusySlots, which used to findAll() the whole lessons table on every load
+    List<Lesson> findAllByStatusNotAndDateBetween(LessonStatus statusNot, LocalDate startDate, LocalDate endDate);
+
 
     @Query(value = "SELECT pg_advisory_xact_lock(:key)", nativeQuery = true)
     void acquireDateLock(@Param("key") long key);

@@ -126,11 +126,20 @@ function StudentScheduleGrid() {
     }
 
     // other students' booked slots, shown as blocked/gray so this student doesn't
-    // try to double-book a time that's actually already taken
-    async function loadBusySlots() {
-        const response = await fetch(`${API_BASE_URL}/student/busy-slots`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+    // try to double-book a time that's actually already taken. scoped to the visible
+    // week only - this endpoint used to return every non-cancelled lesson ever
+    // booked, which meant it got slower every time any student booked a lesson,
+    // forever, even though the grid only ever shows one week at a time
+    async function loadBusySlots(weekStartDate: Date) {
+        const rangeStart = toDateString(weekStartDate);
+        const rangeEndDate = new Date(weekStartDate);
+        rangeEndDate.setDate(weekStartDate.getDate() + 6);
+        const rangeEnd = toDateString(rangeEndDate);
+
+        const response = await fetch(
+            `${API_BASE_URL}/student/busy-slots?startDate=${rangeStart}&endDate=${rangeEnd}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
         if (!response.ok) return;
         const data: BusySlot[] = await response.json();
         setBusySlots(data);
@@ -140,10 +149,16 @@ function StudentScheduleGrid() {
         loadRules();
         loadOverrides();
         loadLessons();
-        loadBusySlots();
         loadSubjects();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // re-fetches whenever the visible week changes, since busy slots are now
+    // scoped server-side to a date range instead of covering all time
+    useEffect(() => {
+        loadBusySlots(weekStart);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [weekStart]);
 
     const weekDates = useMemo(() => {
         return days.map((_, index) => {
