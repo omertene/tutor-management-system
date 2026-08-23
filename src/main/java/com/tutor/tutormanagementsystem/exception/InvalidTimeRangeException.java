@@ -1,7 +1,11 @@
 package com.tutor.tutormanagementsystem.exception;
 
-public class InvalidTimeRangeException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+// start/end times are out of order or off the 15-minute grid
+public class InvalidTimeRangeException extends ApiException {
+
     public InvalidTimeRangeException(String message) {
-        super(message);
+        super(message, HttpStatus.BAD_REQUEST);
     }
 }

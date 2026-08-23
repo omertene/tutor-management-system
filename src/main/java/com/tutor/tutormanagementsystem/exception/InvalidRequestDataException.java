@@ -1,7 +1,11 @@
 package com.tutor.tutormanagementsystem.exception;
 
-public class InvalidRequestDataException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+// a required request field is missing or invalid
+public class InvalidRequestDataException extends ApiException {
+
     public InvalidRequestDataException(String message) {
-        super(message);
+        super(message, HttpStatus.BAD_REQUEST);
     }
 }

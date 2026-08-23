@@ -1,7 +1,11 @@
 package com.tutor.tutormanagementsystem.exception;
 
-public class ScheduleRuleNotFoundException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+// no schedule rule with this id
+public class ScheduleRuleNotFoundException extends ApiException {
+
     public ScheduleRuleNotFoundException(String message) {
-        super(message);
+        super(message, HttpStatus.NOT_FOUND);
     }
 }

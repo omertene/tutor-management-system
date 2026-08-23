@@ -1,9 +1,11 @@
 package com.tutor.tutormanagementsystem.exception;
 
-// thrown when login fails because the email doesn't exist or the password is wrong
-public class InvalidCredentialsException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+// login failed - the email doesn't exist or the password is wrong
+public class InvalidCredentialsException extends ApiException {
 
     public InvalidCredentialsException(String message) {
-        super(message);
+        super(message, HttpStatus.UNAUTHORIZED);
     }
 }

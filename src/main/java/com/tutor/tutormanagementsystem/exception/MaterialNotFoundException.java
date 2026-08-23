@@ -1,7 +1,11 @@
 package com.tutor.tutormanagementsystem.exception;
 
-public class MaterialNotFoundException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+// no material with this id
+public class MaterialNotFoundException extends ApiException {
+
     public MaterialNotFoundException(String message) {
-        super(message);
+        super(message, HttpStatus.NOT_FOUND);
     }
 }

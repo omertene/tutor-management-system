@@ -1,7 +1,11 @@
 package com.tutor.tutormanagementsystem.exception;
 
-public class ScheduleOverrideNotFoundException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+// no schedule override with this id
+public class ScheduleOverrideNotFoundException extends ApiException {
+
     public ScheduleOverrideNotFoundException(String message) {
-        super(message);
+        super(message, HttpStatus.NOT_FOUND);
     }
 }

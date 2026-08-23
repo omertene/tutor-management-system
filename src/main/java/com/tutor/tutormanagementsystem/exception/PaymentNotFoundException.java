@@ -1,7 +1,11 @@
 package com.tutor.tutormanagementsystem.exception;
 
-public class PaymentNotFoundException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+// no payment with this id
+public class PaymentNotFoundException extends ApiException {
+
     public PaymentNotFoundException(String message) {
-        super(message);
+        super(message, HttpStatus.NOT_FOUND);
     }
 }

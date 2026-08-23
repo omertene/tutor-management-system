@@ -1,7 +1,11 @@
 package com.tutor.tutormanagementsystem.exception;
 
-public class UserNotFoundException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+// no user with this id
+public class UserNotFoundException extends ApiException {
+
     public UserNotFoundException(String message) {
-        super(message);
+        super(message, HttpStatus.NOT_FOUND);
     }
 }

@@ -1,7 +1,11 @@
 package com.tutor.tutormanagementsystem.exception;
 
-public class InvalidLessonStateException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+// the lesson's current status doesn't allow this action
+public class InvalidLessonStateException extends ApiException {
+
     public InvalidLessonStateException(String message) {
-        super(message);
+        super(message, HttpStatus.BAD_REQUEST);
     }
 }

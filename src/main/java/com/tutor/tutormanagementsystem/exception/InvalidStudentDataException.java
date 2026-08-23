@@ -1,7 +1,11 @@
 package com.tutor.tutormanagementsystem.exception;
 
-public class InvalidStudentDataException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+// a student field failed validation
+public class InvalidStudentDataException extends ApiException {
+
     public InvalidStudentDataException(String message) {
-        super(message);
+        super(message, HttpStatus.BAD_REQUEST);
     }
 }

@@ -1,7 +1,11 @@
 package com.tutor.tutormanagementsystem.exception;
 
-public class LessonNotFoundException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+// no lesson with this id
+public class LessonNotFoundException extends ApiException {
+
     public LessonNotFoundException(String message) {
-        super(message);
+        super(message, HttpStatus.NOT_FOUND);
     }
 }

@@ -1,7 +1,11 @@
 package com.tutor.tutormanagementsystem.exception;
 
-public class SubjectNotFoundException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+// no subject with this id
+public class SubjectNotFoundException extends ApiException {
+
     public SubjectNotFoundException(String message) {
-        super(message);
+        super(message, HttpStatus.NOT_FOUND);
     }
 }

@@ -1,7 +1,11 @@
 package com.tutor.tutormanagementsystem.exception;
 
-public class LessonAccessDeniedException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+// the caller may only act on their own lesson/material
+public class LessonAccessDeniedException extends ApiException {
+
     public LessonAccessDeniedException(String message) {
-        super(message);
+        super(message, HttpStatus.FORBIDDEN);
     }
 }
