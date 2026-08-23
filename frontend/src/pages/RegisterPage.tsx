@@ -170,6 +170,11 @@ function RegisterPage() {
   async function handleSaveEdit(studentId: number) {
     setListErrorMessage("");
 
+    if (!editFirstName.trim() || !editLastName.trim()) {
+      setListErrorMessage("First and last name are required");
+      return;
+    }
+
     const fieldError = validatePhoneField(editPhone) || validateHourlyRateField(editHourlyRate);
     if (fieldError) {
       setListErrorMessage(fieldError);
