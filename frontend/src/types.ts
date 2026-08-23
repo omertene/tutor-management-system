@@ -3,6 +3,11 @@ export type Subject = {
     name: string;
 }
 
+export type LoginResponse = {
+    token: string;
+    role: "TEACHER" | "STUDENT";
+}
+
 export type Student = {
     id: number;
     email: string;

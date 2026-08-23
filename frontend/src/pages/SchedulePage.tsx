@@ -153,7 +153,8 @@ function SchedulePage() {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) return;
-        setScheduleOverrides(await response.json());
+        const data: ScheduleOverride[] = await response.json();
+        setScheduleOverrides(data);
     }
 
     async function loadLessons() {
@@ -172,7 +173,8 @@ function SchedulePage() {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) return;
-        setStudents(await response.json());
+        const data: Student[] = await response.json();
+        setStudents(data);
     }
 
     async function loadSubjects() {
@@ -181,7 +183,8 @@ function SchedulePage() {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) return;
-        setSubjects(await response.json());
+        const data: Subject[] = await response.json();
+        setSubjects(data);
     }
 
     useEffect(() => {
@@ -527,7 +530,7 @@ function SchedulePage() {
             return;
         }
 
-        const savedLesson = await response.json();
+        const savedLesson: Lesson = await response.json();
         setLessons(isEditing ? lessons.map((lesson) => (lesson.id === savedLesson.id ? savedLesson : lesson)) : [...lessons, savedLesson]);
         if (!isEditing && bookingOutsideHours) loadOverrides();
         setAddLessonDate(null);
@@ -564,7 +567,7 @@ function SchedulePage() {
             return;
         }
 
-        const savedOverride = await response.json();
+        const savedOverride: ScheduleOverride = await response.json();
         setScheduleOverrides(
             isEditing
                 ? scheduleOverrides.map((override) => (override.id === savedOverride.id ? savedOverride : override))
@@ -603,7 +606,7 @@ function SchedulePage() {
             return;
         }
 
-        const updatedLesson = await response.json();
+        const updatedLesson: Lesson = await response.json();
         setLessons(lessons.map((lesson) => (lesson.id === updatedLesson.id ? updatedLesson : lesson)));
         setViewingLesson(updatedLesson);
     }
@@ -622,7 +625,7 @@ function SchedulePage() {
             return;
         }
 
-        const updatedLesson = await response.json();
+        const updatedLesson: Lesson = await response.json();
         setLessons(lessons.map((lesson) => (lesson.id === updatedLesson.id ? updatedLesson : lesson)));
         setViewingLesson(null);
     }
@@ -1130,7 +1133,7 @@ function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: Schedule
                 },
                 body: JSON.stringify({ dayOfWeek, startTime, endTime }),
             });
-            const affectedCount = countResponse.ok ? await countResponse.json() : 0;
+            const affectedCount: number = countResponse.ok ? await countResponse.json() : 0;
 
             if (affectedCount > 0) {
                 const confirmed = window.confirm(
@@ -1154,7 +1157,7 @@ function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: Schedule
                 return;
             }
 
-            const savedRule = await response.json();
+            const savedRule: ScheduleRule = await response.json();
             onRulesChanged(sortRules(scheduleRules.map((rule) => (rule.id === savedRule.id ? savedRule : rule))));
             resetForm();
             return;
@@ -1183,7 +1186,8 @@ function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: Schedule
                 return;
             }
 
-            createdRules.push(await response.json());
+            const createdRule: ScheduleRule = await response.json();
+            createdRules.push(createdRule);
         }
 
         onRulesChanged(sortRules([...scheduleRules, ...createdRules]));
@@ -1197,7 +1201,7 @@ function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: Schedule
         const countResponse = await fetch(`${API_BASE_URL}/teacher/schedule-rules/${ruleId}/affected-lessons-count`, {
             headers: { Authorization: `Bearer ${token}` },
         });
-        const affectedCount = countResponse.ok ? await countResponse.json() : 0;
+        const affectedCount: number = countResponse.ok ? await countResponse.json() : 0;
 
         if (affectedCount > 0) {
             const confirmed = window.confirm(

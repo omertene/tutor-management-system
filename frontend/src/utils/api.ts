@@ -11,4 +11,19 @@ export function apiFetch(path: string, options?: RequestInit): Promise<Response>
     return fetch(`${API_BASE_URL}${path}`, options);
 }
 
+// every caller used to do `localStorage.getItem("token")!`, asserting a token
+// is always there. ProtectedRoute normally guarantees that, but a token can
+// still disappear mid-session (cleared in another tab, expired and removed
+// elsewhere) - in that case the assertion just lied and every subsequent
+// fetch silently sent "Authorization: Bearer null". send the user back to
+// login instead of pretending nothing's wrong.
+export function getToken(): string {
+    const token = localStorage.getItem("token");
+    if (!token) {
+        window.location.href = "/login";
+        throw new Error("Not authenticated");
+    }
+    return token;
+}
+
 export { readErrorMessage } from "./httpError";

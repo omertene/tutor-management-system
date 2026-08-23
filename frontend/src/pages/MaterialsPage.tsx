@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { decodeToken } from "../utils/jwt";
-import { API_BASE_URL, readErrorMessage } from "../utils/api";
+import { API_BASE_URL, readErrorMessage, getToken } from "../utils/api";
 import type { Student, Subject } from "../types";
 
 const teacherLinks = [
@@ -73,7 +73,7 @@ function formatLessonDateTime(date: string, time: string): string {
 
 function MaterialsPage() {
 
-    const token = localStorage.getItem("token")!;
+    const token = getToken();
     const { role } = decodeToken(token);
 
     const [materials, setMaterials] = useState<Material[]>([]);
@@ -126,7 +126,7 @@ function MaterialsPage() {
             return;
         }
 
-        const data = await response.json();
+        const data: Student[] = await response.json();
         setStudents(data);
     }
 
@@ -177,7 +177,7 @@ function MaterialsPage() {
             return;
         }
 
-        const data = await response.json();
+        const data: Material[] = await response.json();
         setMaterials(data);
     }
 
@@ -196,7 +196,7 @@ function MaterialsPage() {
             return;
         }
 
-        const data = await response.json();
+        const data: Material[] = await response.json();
         setMaterials(data);
     }
 
@@ -205,7 +205,8 @@ function MaterialsPage() {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) return;
-        setSubjects(await response.json());
+        const data: Subject[] = await response.json();
+        setSubjects(data);
     }
 
     useEffect(() => {
@@ -254,7 +255,7 @@ function MaterialsPage() {
             return;
         }
 
-        const createdMaterial = await response.json();
+        const createdMaterial: Material = await response.json();
         setMaterials([...materials, createdMaterial]);
         resetAddForm();
     }
@@ -282,7 +283,7 @@ function MaterialsPage() {
             return;
         }
 
-        const createdMaterial = await response.json();
+        const createdMaterial: Material = await response.json();
         setMaterials([...materials, createdMaterial]);
         resetAddForm();
     }
@@ -316,7 +317,7 @@ function MaterialsPage() {
             return;
         }
 
-        const createdMaterial = await response.json();
+        const createdMaterial: Material = await response.json();
         setMaterials([...materials, createdMaterial]);
         resetAddForm();
     }
@@ -411,8 +412,12 @@ function MaterialsPage() {
         .filter((material) => {
             if (!lessonFilterQuery.trim()) return true;
             const query = lessonFilterQuery.trim().toLowerCase();
-            if (!material.lessonDate) return false;
-            const lessonLabel = `${formatLessonDateTime(material.lessonDate, material.lessonStartTime!)} ${material.lessonSubject}`.toLowerCase();
+            // lessonDate and lessonStartTime are always set together (both come from
+            // the same optional linked Lesson on the backend - see MaterialService),
+            // but TypeScript can't know that from two independently-nullable fields,
+            // so both are checked explicitly instead of asserting the second away
+            if (!material.lessonDate || !material.lessonStartTime) return false;
+            const lessonLabel = `${formatLessonDateTime(material.lessonDate, material.lessonStartTime)} ${material.lessonSubject}`.toLowerCase();
             return lessonLabel.includes(query);
         })
         .sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
@@ -659,11 +664,17 @@ function MaterialsPage() {
                                         </a>
                                     )}
 
-                                    {material.type === "FILE" && material.fileName && (
-                                        <button onClick={() => handleDownload(material.id, material.fileName!)} className={smallSecondaryButtonClass}>
-                                            Download
-                                        </button>
-                                    )}
+                                    {material.type === "FILE" && material.fileName && (() => {
+                                        // captured in a local so the closure below still sees it as
+                                        // `string`, not `string | null` - narrowing from the JSX
+                                        // condition above doesn't carry into a nested arrow function
+                                        const fileName = material.fileName;
+                                        return (
+                                            <button onClick={() => handleDownload(material.id, fileName)} className={smallSecondaryButtonClass}>
+                                                Download
+                                            </button>
+                                        );
+                                    })()}
 
                                     {role === "TEACHER" && (
                                         <button

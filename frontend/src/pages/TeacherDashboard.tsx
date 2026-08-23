@@ -95,7 +95,8 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!response.ok) return null;
-    return response.json();
+    const data: Student[] = await response.json();
+    return data;
   }
 
   async function loadLessonsData(token: string | null): Promise<{ upcoming: Lesson[]; needsCompletion: Lesson[]; thisWeekCount: number; thisWeekMinutes: number; studentsThisMonth: number } | null> {
@@ -164,7 +165,8 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!response.ok) return null;
-    return response.json();
+    const data: number = await response.json();
+    return data;
   }
 
   async function refreshDashboard() {
@@ -207,7 +209,8 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!response.ok) return;
-    setSubjects(await response.json());
+    const data: Subject[] = await response.json();
+    setSubjects(data);
   }
 
   function handleOpenAddLessonModal() {

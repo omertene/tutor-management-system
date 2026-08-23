@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { decodeToken } from "../utils/jwt";
-import { API_BASE_URL, readErrorMessage } from "../utils/api";
+import { API_BASE_URL, readErrorMessage, getToken } from "../utils/api";
 import type { Student } from "../types";
 
 const teacherLinks = [
@@ -77,7 +77,7 @@ function todayDateString(): string {
 
 function PaymentsPage() {
 
-    const token = localStorage.getItem("token")!;
+    const token = getToken();
     const { role } = decodeToken(token);
 
     const [payments, setPayments] = useState<Payment[]>([]);
@@ -134,7 +134,7 @@ function PaymentsPage() {
             return;
         }
 
-        const data = await response.json();
+        const data: Student[] = await response.json();
         setStudents(data);
     }
 
@@ -153,7 +153,7 @@ function PaymentsPage() {
             return;
         }
 
-        const data = await response.json();
+        const data: Payment[] = await response.json();
         setPayments(data);
     }
 
@@ -172,7 +172,7 @@ function PaymentsPage() {
             return;
         }
 
-        const data = await response.json();
+        const data: Payment[] = await response.json();
         setPayments(data);
     }
 
@@ -191,7 +191,7 @@ function PaymentsPage() {
             return;
         }
 
-        const data = await response.json();
+        const data: Debt = await response.json();
         setOwnDebt(data);
     }
 
@@ -210,7 +210,7 @@ function PaymentsPage() {
             return;
         }
 
-        const data = await response.json();
+        const data: Debt[] = await response.json();
         setAllDebts(data);
     }
 
@@ -255,7 +255,7 @@ function PaymentsPage() {
             return;
         }
 
-        const createdPayment = await response.json();
+        const createdPayment: Payment = await response.json();
         setPayments([...payments, createdPayment]);
         setSelectedStudentId("");
         setAmount("");
@@ -313,7 +313,7 @@ function PaymentsPage() {
             return;
         }
 
-        const savedPayment = await response.json();
+        const savedPayment: Payment = await response.json();
         setPayments(payments.map((p) => (p.id === savedPayment.id ? savedPayment : p)));
         setEditingPaymentId(null);
 

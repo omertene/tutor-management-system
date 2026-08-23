@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
-import { API_BASE_URL, readErrorMessage } from "../utils/api";
+import { API_BASE_URL, readErrorMessage, getToken } from "../utils/api";
 import type { Subject } from "../types";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,7 +30,7 @@ const teacherLinks = [
 // here now, alongside whatever else gets added later, and subjects can also be
 // created inline straight from the lesson booking dropdown on the Lessons page
 function SettingsPage() {
-    const token = localStorage.getItem("token")!;
+    const token = getToken();
 
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [newSubject, setNewSubject] = useState("");
@@ -58,7 +58,8 @@ function SettingsPage() {
             return;
         }
 
-        setSubjects(await response.json());
+        const data: Subject[] = await response.json();
+        setSubjects(data);
     }
 
     useEffect(() => {
@@ -83,7 +84,7 @@ function SettingsPage() {
             return;
         }
 
-        const createdSubject = await response.json();
+        const createdSubject: Subject = await response.json();
         setSubjects([...subjects, createdSubject]);
         setNewSubject("");
     }

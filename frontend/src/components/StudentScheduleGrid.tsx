@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Modal from "./Modal";
 import TimeSelect from "./TimeSelect";
 import WeekGrid from "./WeekGrid";
-import { API_BASE_URL, readErrorMessage } from "../utils/api";
+import { API_BASE_URL, readErrorMessage, getToken } from "../utils/api";
 import {
     days,
     DEFAULT_HOUR_START, DEFAULT_HOUR_END, ROW_HEIGHT,
@@ -57,7 +57,7 @@ type Subject = {
 // view/cancel it. shared between the dedicated /student/schedule page and the
 // student dashboard, which embeds this same grid.
 function StudentScheduleGrid() {
-    const token = localStorage.getItem("token")!;
+    const token = getToken();
 
     const [weekStart, setWeekStart] = useState(() => getStartOfWeek(new Date()));
     const [hourStart, setHourStart] = useState(DEFAULT_HOUR_START);
@@ -90,7 +90,8 @@ function StudentScheduleGrid() {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) return;
-        setScheduleRules(await response.json());
+        const data: ScheduleRule[] = await response.json();
+        setScheduleRules(data);
     }
 
     // the student-facing endpoint returns date/time/type only - no id, no note.
@@ -101,7 +102,8 @@ function StudentScheduleGrid() {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) return;
-        setScheduleOverrides(await response.json());
+        const data: ScheduleOverride[] = await response.json();
+        setScheduleOverrides(data);
     }
 
     // a student only ever sees their own lessons - the backend scopes this by caller id
@@ -119,7 +121,8 @@ function StudentScheduleGrid() {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) return;
-        setSubjects(await response.json());
+        const data: Subject[] = await response.json();
+        setSubjects(data);
     }
 
     // other students' booked slots, shown as blocked/gray so this student doesn't
@@ -129,7 +132,8 @@ function StudentScheduleGrid() {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) return;
-        setBusySlots(await response.json());
+        const data: BusySlot[] = await response.json();
+        setBusySlots(data);
     }
 
     useEffect(() => {
@@ -400,7 +404,7 @@ function StudentScheduleGrid() {
             return;
         }
 
-        const createdLesson = await response.json();
+        const createdLesson: Lesson = await response.json();
         setLessons([...lessons, createdLesson]);
         setBusySlots([...busySlots, { date: createdLesson.date, startTime: createdLesson.startTime, endTime: createdLesson.endTime }]);
         setBookDate(null);

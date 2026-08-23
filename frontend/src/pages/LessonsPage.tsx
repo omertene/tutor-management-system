@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import TimeSelect from "../components/TimeSelect";
 import { decodeToken } from "../utils/jwt";
-import { API_BASE_URL, readErrorMessage } from "../utils/api";
+import { API_BASE_URL, readErrorMessage, getToken } from "../utils/api";
 import type { Subject, Student } from "../types";
 
 const teacherLinks = [
@@ -106,7 +106,7 @@ type Lesson = {
 
 function LessonsPage() {
 
-    const token = localStorage.getItem("token")!;
+    const token = getToken();
     const {role} = decodeToken(token);
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [errorMessage, setErrorMessage] = useState("");
@@ -171,7 +171,7 @@ function LessonsPage() {
             return;
         }
 
-        const data = await response.json();
+        const data: Lesson[] = await response.json();
 
         setLessons(data);
     }
@@ -191,7 +191,7 @@ function LessonsPage() {
             return;
         }
 
-        const data = await response.json();
+        const data: Subject[] = await response.json();
         setSubjects(data);
     }
 
@@ -218,7 +218,7 @@ function LessonsPage() {
             return;
         }
 
-        const createdSubject = await response.json();
+        const createdSubject: Subject = await response.json();
         setSubjects((current) => [...current, createdSubject]);
         setSelectedSubjectId(String(createdSubject.id));
         setNewSubjectName("");
@@ -239,7 +239,7 @@ function LessonsPage() {
             return;
         }
 
-        const data = await response.json();
+        const data: Student[] = await response.json();
         setStudents(data);
     }
 
@@ -288,7 +288,7 @@ function LessonsPage() {
             return;
         }
 
-        const createdLesson = await response.json();
+        const createdLesson: Lesson = await response.json();
         setLessons([...lessons, createdLesson]);
     }
 
@@ -332,7 +332,7 @@ function LessonsPage() {
             return;
         }
 
-        const cancelledLesson = await response.json();
+        const cancelledLesson: Lesson = await response.json();
         setLessons(lessons.map((l) => l.id === lesson.id ? cancelledLesson : l));
     }
 
@@ -353,7 +353,7 @@ function LessonsPage() {
             return;
         }
 
-        const completedLesson = await response.json();
+        const completedLesson: Lesson = await response.json();
         setLessons(lessons.map((lesson) => lesson.id == lessonId ? completedLesson : lesson));
     }
 

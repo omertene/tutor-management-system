@@ -5,8 +5,11 @@
 // so the UI just does nothing and the user sees no feedback at all.
 export async function readErrorMessage(response: Response, fallback: string): Promise<string> {
     try {
-        const data = await response.json();
-        return data?.message || fallback;
+        const data: unknown = await response.json();
+        if (data && typeof data === "object" && "message" in data && typeof data.message === "string" && data.message) {
+            return data.message;
+        }
+        return fallback;
     } catch {
         return fallback;
     }

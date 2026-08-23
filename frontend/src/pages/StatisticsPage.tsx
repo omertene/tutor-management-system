@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import NavBar from "../components/NavBar";
-import { API_BASE_URL } from "../utils/api";
+import { API_BASE_URL, getToken } from "../utils/api";
 import type { Subject } from "../types";
 import {
     ResponsiveContainer,
@@ -127,7 +127,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 }
 
 function StatisticsPage() {
-    const token = localStorage.getItem("token")!;
+    const token = getToken();
 
     const [statistics, setStatistics] = useState<DashboardStatistics | null>(null);
     const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -150,7 +150,8 @@ function StatisticsPage() {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!response.ok) return;
-            setSubjects(await response.json());
+            const data: Subject[] = await response.json();
+            setSubjects(data);
         } catch {
             // subject filter is a non-essential enhancement - fail quietly and
             // just leave the dropdown showing "All subjects"
@@ -191,7 +192,8 @@ function StatisticsPage() {
                 return;
             }
 
-            setStatistics(await response.json());
+            const data: DashboardStatistics = await response.json();
+            setStatistics(data);
         } catch {
             setErrorMessage("Could not reach the server. Please try again.");
         }

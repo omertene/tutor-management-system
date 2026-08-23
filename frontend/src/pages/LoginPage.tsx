@@ -2,6 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { API_BASE_URL, readErrorMessage } from "../utils/api";
+import type { LoginResponse } from "../types";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -23,14 +24,13 @@ function LoginPage() {
       return;
     }
 
-    const data = await response.json();
+    const data: LoginResponse = await response.json();
     localStorage.setItem("token", data.token);
     if (data.role === "TEACHER") {
         navigate("/teacher");
     } else if (data.role === "STUDENT") {
         navigate("/student");
     }
-    console.log(data);
   }
 
   return (

@@ -200,7 +200,7 @@ function RegisterPage() {
         return;
       }
 
-      const updatedStudent = await response.json();
+      const updatedStudent: Student = await response.json();
       setStudents(students.map((student) => (student.id === studentId ? updatedStudent : student)));
       setEditingStudentId(null);
     } catch {
@@ -248,7 +248,7 @@ function RegisterPage() {
         return;
       }
 
-      const updatedStudent = await response.json();
+      const updatedStudent: Student = await response.json();
       setStudents(students.map((student) => (student.id === updatedStudent.id ? updatedStudent : student)));
       setCredentialsStudent(updatedStudent);
       setCredentialsSuccessMessage("Email updated");
