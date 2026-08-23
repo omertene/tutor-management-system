@@ -1,11 +1,6 @@
 import NavBar from "../components/NavBar";
 import StudentScheduleGrid from "../components/StudentScheduleGrid";
-
-const studentLinks = [
-  { label: "Lessons", to: "/student/lessons" },
-  { label: "Payments", to: "/student/payments" },
-  { label: "Materials", to: "/student/materials" },
-];
+import { studentLinks } from "../constants/navLinks";
 
 // Lessons/Payments/Materials are already one click away in the navbar above, so
 // this page doesn't repeat them as buttons - it's just the welcome text and the

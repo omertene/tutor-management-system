@@ -3,19 +3,10 @@ import NavBar from "../components/NavBar";
 import Modal from "../components/Modal";
 import AddStudentModal from "../components/AddStudentModal";
 import TimeSelect from "../components/TimeSelect";
-import { API_BASE_URL, readErrorMessage } from "../utils/api";
+import { apiFetch, readErrorMessage } from "../utils/api";
 import { timeToMinutes, toDateString } from "../utils/time";
 import type { Student, Subject } from "../types";
-
-const teacherLinks = [
-  { label: "Students", to: "/teacher/register" },
-  { label: "Schedule", to: "/teacher/schedule-rules" },
-  { label: "Lessons", to: "/teacher/lessons" },
-  { label: "Payments", to: "/teacher/payments" },
-  { label: "Materials", to: "/teacher/materials" },
-  { label: "Statistics", to: "/teacher/statistics" },
-  { label: "Settings", to: "/teacher/settings" },
-];
+import { teacherLinks } from "../constants/navLinks";
 
 type Lesson = {
   id: number;
@@ -81,7 +72,6 @@ function TeacherDashboard() {
   const [newLessonEndTime, setNewLessonEndTime] = useState("");
   const [addLessonError, setAddLessonError] = useState("");
 
-
   function handleNewLessonStartTimeChange(value: string) {
     setNewLessonStartTime(value);
 
@@ -91,19 +81,15 @@ function TeacherDashboard() {
     setNewLessonEndTime(`${String(endHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`);
   }
 
-async function loadStudentsList(token: string | null): Promise<Student[] | null> {
-    const response = await fetch(`${API_BASE_URL}/teacher/students`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+async function loadStudentsList(): Promise<Student[] | null> {
+    const response = await apiFetch(`/teacher/students`);
     if (!response.ok) return null;
     const data: Student[] = await response.json();
     return data;
   }
 
-  async function loadLessonsData(token: string | null): Promise<{ upcoming: Lesson[]; needsCompletion: Lesson[]; thisWeekCount: number; thisWeekMinutes: number; studentsThisMonth: number } | null> {
-    const response = await fetch(`${API_BASE_URL}/teacher/lessons`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  async function loadLessonsData(): Promise<{ upcoming: Lesson[]; needsCompletion: Lesson[]; thisWeekCount: number; thisWeekMinutes: number; studentsThisMonth: number } | null> {
+    const response = await apiFetch(`/teacher/lessons`);
     if (!response.ok) return null;
 
     const data: Lesson[] = await response.json();
@@ -151,33 +137,28 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
     return { upcoming, needsCompletion, thisWeekCount, thisWeekMinutes, studentsThisMonth };
   }
 
-  async function loadDebtsList(token: string | null): Promise<Debt[] | null> {
-    const response = await fetch(`${API_BASE_URL}/teacher/debts`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  async function loadDebtsList(): Promise<Debt[] | null> {
+    const response = await apiFetch(`/teacher/debts`);
     if (!response.ok) return null;
 
     const data: Debt[] = await response.json();
     return data.filter((debt) => debt.debt > 0);
   }
 
-  async function loadRevenueThisMonth(token: string | null): Promise<number | null> {
-    const response = await fetch(`${API_BASE_URL}/teacher/revenue/current-month`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  async function loadRevenueThisMonth(): Promise<number | null> {
+    const response = await apiFetch(`/teacher/revenue/current-month`);
     if (!response.ok) return null;
     const data: number = await response.json();
     return data;
   }
 
   async function refreshDashboard() {
-    const token = localStorage.getItem("token");
 
     const [studentsData, lessonsData, debtsData, revenueData] = await Promise.all([
-      loadStudentsList(token),
-      loadLessonsData(token),
-      loadDebtsList(token),
-      loadRevenueThisMonth(token),
+      loadStudentsList(),
+      loadLessonsData(),
+      loadDebtsList(),
+      loadRevenueThisMonth(),
     ]);
 
     if (studentsData) {
@@ -204,11 +185,8 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
 
   // POST /teacher/register - used by the "add student" modal
   async function handleLoadSubjects() {
-    const token = localStorage.getItem("token");
 
-    const response = await fetch(`${API_BASE_URL}/subjects`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await apiFetch(`/subjects`);
     if (!response.ok) return;
     const data: Subject[] = await response.json();
     setSubjects(data);
@@ -229,14 +207,8 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
       return;
     }
 
-    const token = localStorage.getItem("token");
-
-    const response = await fetch(`${API_BASE_URL}/teacher/lessons`, {
+    const response = await apiFetch(`/teacher/lessons`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify({
         studentId: Number(newLessonStudentId),
         subjectId: Number(newLessonSubjectId),
@@ -262,11 +234,9 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
 
   async function handleCompleteLesson(lessonId: number) {
     setErrorMessage("");
-    const token = localStorage.getItem("token");
 
-    const response = await fetch(`${API_BASE_URL}/teacher/lessons/${lessonId}/complete`, {
+    const response = await apiFetch(`/teacher/lessons/${lessonId}/complete`, {
       method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (!response.ok) {
@@ -281,11 +251,9 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
   // confirmation only matters when reversing an already-COMPLETED lesson's debt/revenue
   async function handleCancelLesson(lessonId: number) {
     setErrorMessage("");
-    const token = localStorage.getItem("token");
 
-    const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
+    const response = await apiFetch(`/lessons/${lessonId}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (!response.ok) {
