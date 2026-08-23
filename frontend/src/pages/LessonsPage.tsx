@@ -354,7 +354,7 @@ function LessonsPage() {
         }
 
         const completedLesson: Lesson = await response.json();
-        setLessons(lessons.map((lesson) => lesson.id == lessonId ? completedLesson : lesson));
+        setLessons(lessons.map((lesson) => lesson.id === lessonId ? completedLesson : lesson));
     }
 
     const inputClass = "rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
