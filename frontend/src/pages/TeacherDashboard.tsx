@@ -52,6 +52,7 @@ function formatDate(date: string): string {
 
 function TeacherDashboard() {
   const [students, setStudents] = useState<Student[]>([]);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [upcomingLessons, setUpcomingLessons] = useState<Lesson[]>([]);
   const [needsCompletionLessons, setNeedsCompletionLessons] = useState<Lesson[]>([]);
@@ -260,6 +261,7 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
   }
 
   async function handleCompleteLesson(lessonId: number) {
+    setErrorMessage("");
     const token = localStorage.getItem("token");
 
     const response = await fetch(`${API_BASE_URL}/teacher/lessons/${lessonId}/complete`, {
@@ -267,7 +269,10 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!response.ok) return;
+    if (!response.ok) {
+      setErrorMessage(await readErrorMessage(response, "Failed to mark lesson as completed"));
+      return;
+    }
     refreshDashboard();
   }
 
@@ -275,6 +280,7 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
   // confirm needed (same as everywhere else a SCHEDULED lesson gets cancelled) -
   // confirmation only matters when reversing an already-COMPLETED lesson's debt/revenue
   async function handleCancelLesson(lessonId: number) {
+    setErrorMessage("");
     const token = localStorage.getItem("token");
 
     const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
@@ -282,7 +288,10 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!response.ok) return;
+    if (!response.ok) {
+      setErrorMessage(await readErrorMessage(response, "Failed to cancel lesson"));
+      return;
+    }
     refreshDashboard();
   }
 
@@ -306,6 +315,8 @@ async function loadStudentsList(token: string | null): Promise<Student[] | null>
       <main className="max-w-6xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-semibold text-slate-900">Teacher Dashboard</h1>
         <p className="text-slate-500 mt-1">Here's an overview of your students.</p>
+
+        {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
         <div className="mt-6 flex flex-wrap gap-3">
           <button
