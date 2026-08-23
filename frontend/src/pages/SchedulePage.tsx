@@ -3,38 +3,17 @@ import NavBar from "../components/NavBar";
 import Modal from "../components/Modal";
 import TimeSelect from "../components/TimeSelect";
 import WeekGrid from "../components/WeekGrid";
-import { API_BASE_URL, readErrorMessage } from "../utils/api";
+import ScheduleRulesModal from "../components/ScheduleRulesModal";
+import { sortRules } from "../types/schedule";
+import type { ScheduleRule, ScheduleOverride } from "../types/schedule";
+import { apiFetch, readErrorMessage } from "../utils/api";
+import { inputClassFull, labelClass } from "../constants/formStyles";
+import { teacherLinks } from "../constants/navLinks";
 import {
     days,
     DEFAULT_HOUR_START, DEFAULT_HOUR_END, ROW_HEIGHT,
     addOneHour, getStartOfWeek, toDateString, timeToMinutes, minutesSinceMidnight,
 } from "../utils/time";
-
-const teacherLinks = [
-    { label: "Students", to: "/teacher/register" },
-    { label: "Schedule", to: "/teacher/schedule-rules" },
-    { label: "Lessons", to: "/teacher/lessons" },
-    { label: "Payments", to: "/teacher/payments" },
-    { label: "Materials", to: "/teacher/materials" },
-    { label: "Statistics", to: "/teacher/statistics" },
-    { label: "Settings", to: "/teacher/settings" },
-];
-
-type ScheduleRule = {
-    id: number;
-    dayOfWeek: string;
-    startTime: string;
-    endTime: string;
-};
-
-type ScheduleOverride = {
-    id: number;
-    date: string;
-    startTime: string;
-    endTime: string;
-    type: string;
-    note: string;
-};
 
 type Lesson = {
     id: number;
@@ -138,50 +117,35 @@ function SchedulePage() {
     const [isDragging, setIsDragging] = useState(false);
 
     async function loadRules() {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${API_BASE_URL}/teacher/schedule-rules`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch(`/teacher/schedule-rules`);
         if (!response.ok) return;
         const data: ScheduleRule[] = await response.json();
         setScheduleRules(sortRules(data));
     }
 
     async function loadOverrides() {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${API_BASE_URL}/teacher/schedule-overrides`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch(`/teacher/schedule-overrides`);
         if (!response.ok) return;
         const data: ScheduleOverride[] = await response.json();
         setScheduleOverrides(data);
     }
 
     async function loadLessons() {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${API_BASE_URL}/teacher/lessons`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch(`/teacher/lessons`);
         if (!response.ok) return;
         const data: Lesson[] = await response.json();
         setLessons(data.filter((lesson) => lesson.status !== "CANCELLED"));
     }
 
     async function loadStudents() {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${API_BASE_URL}/teacher/students`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch(`/teacher/students`);
         if (!response.ok) return;
         const data: Student[] = await response.json();
         setStudents(data);
     }
 
     async function loadSubjects() {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${API_BASE_URL}/subjects`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch(`/subjects`);
         if (!response.ok) return;
         const data: Subject[] = await response.json();
         setSubjects(data);
@@ -219,7 +183,6 @@ function SchedulePage() {
         for (let hour = hourStart; hour < hourEnd; hour++) result.push(hour);
         return result;
     }, [hourStart, hourEnd]);
-
 
     // which of the 4 quarter-hour slots within this cell are covered by a rule -
     // rule times always land on 15-minute marks, so this is exact, not approximated.
@@ -497,24 +460,18 @@ function SchedulePage() {
             setAddLessonError("Please fill in all fields");
             return;
         }
-
-        const token = localStorage.getItem("token");
         const isEditing = editingLessonId !== null;
 
         const url = isEditing
-            ? `${API_BASE_URL}/teacher/lessons/${editingLessonId}`
+            ? `/teacher/lessons/${editingLessonId}`
             : bookingOutsideHours
-                ? `${API_BASE_URL}/teacher/lessons/book-outside-hours`
-                : `${API_BASE_URL}/teacher/lessons`;
+                ? `/teacher/lessons/book-outside-hours`
+                : `/teacher/lessons`;
 
-        const response = await fetch(
+        const response = await apiFetch(
             url,
             {
                 method: isEditing ? "PUT" : "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify({
                     studentId: Number(addLessonStudentId),
                     subjectId: Number(addLessonSubjectId),
@@ -540,18 +497,12 @@ function SchedulePage() {
 
     async function handleCreateOverride() {
         setAddOverrideError("");
-
-        const token = localStorage.getItem("token");
         const isEditing = editingOverrideId !== null;
 
-        const response = await fetch(
-            isEditing ? `${API_BASE_URL}/teacher/schedule-overrides/${editingOverrideId}` : `${API_BASE_URL}/teacher/schedule-overrides`,
+        const response = await apiFetch(
+            isEditing ? `/teacher/schedule-overrides/${editingOverrideId}` : `/teacher/schedule-overrides`,
             {
                 method: isEditing ? "PUT" : "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify({
                     date: addOverrideDate,
                     startTime: addOverrideStartTime,
@@ -588,14 +539,8 @@ function SchedulePage() {
     async function handleSaveNotes(lessonId: number) {
         setErrorMessage("");
         setSavingNotes(true);
-
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${API_BASE_URL}/teacher/lessons/${lessonId}/notes`, {
+        const response = await apiFetch(`/teacher/lessons/${lessonId}/notes`, {
             method: "PATCH",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
             body: JSON.stringify({ notes: notesDraft }),
         });
 
@@ -613,11 +558,8 @@ function SchedulePage() {
 
     async function handleCompleteLesson(lessonId: number) {
         setErrorMessage("");
-
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${API_BASE_URL}/teacher/lessons/${lessonId}/complete`, {
+        const response = await apiFetch(`/teacher/lessons/${lessonId}/complete`, {
             method: "PATCH",
-            headers: { Authorization: `Bearer ${token}` },
         });
 
         if (!response.ok) {
@@ -635,11 +577,8 @@ function SchedulePage() {
     // from this screen since cancelled lessons no longer occupy any time
     async function handleCancelLesson(lessonId: number) {
         setErrorMessage("");
-
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
+        const response = await apiFetch(`/lessons/${lessonId}`, {
             method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
         });
 
         if (!response.ok) {
@@ -653,11 +592,8 @@ function SchedulePage() {
 
     async function handleDeleteOverride(overrideId: number) {
         setErrorMessage("");
-
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${API_BASE_URL}/teacher/schedule-overrides/${overrideId}`, {
+        const response = await apiFetch(`/teacher/schedule-overrides/${overrideId}`, {
             method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
         });
 
         if (!response.ok) {
@@ -684,9 +620,6 @@ function SchedulePage() {
         // indigo/gray) and reads calmly as "done, nothing to act on"
         COMPLETED: "bg-teal-100 hover:bg-teal-200",
     };
-
-    const inputClass = "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
-    const labelClass = "text-sm font-medium text-slate-700";
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -828,7 +761,7 @@ function SchedulePage() {
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-1">
                             <label className={labelClass}>Student</label>
-                            <select value={addLessonStudentId} onChange={(e) => setAddLessonStudentId(e.target.value)} className={inputClass}>
+                            <select value={addLessonStudentId} onChange={(e) => setAddLessonStudentId(e.target.value)} className={inputClassFull}>
                                 <option value="">Select student</option>
                                 {students.map((student) => (
                                     <option key={student.id} value={student.id}>
@@ -840,7 +773,7 @@ function SchedulePage() {
 
                         <div className="flex flex-col gap-1">
                             <label className={labelClass}>Subject</label>
-                            <select value={addLessonSubjectId} onChange={(e) => setAddLessonSubjectId(e.target.value)} className={inputClass}>
+                            <select value={addLessonSubjectId} onChange={(e) => setAddLessonSubjectId(e.target.value)} className={inputClassFull}>
                                 <option value="">Select subject</option>
                                 {subjects.map((subject) => (
                                     <option key={subject.id} value={subject.id}>
@@ -852,17 +785,17 @@ function SchedulePage() {
 
                         <div className="flex flex-col gap-1">
                             <label className={labelClass}>Date</label>
-                            <input type="date" value={addLessonDate} onChange={(e) => setAddLessonDate(e.target.value)} className={inputClass} />
+                            <input type="date" value={addLessonDate} onChange={(e) => setAddLessonDate(e.target.value)} className={inputClassFull} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="flex flex-col gap-1">
                                 <label className={labelClass}>Start time</label>
-                                <TimeSelect value={addLessonStartTime} onChange={handleAddLessonStartTimeChange} className={inputClass} />
+                                <TimeSelect value={addLessonStartTime} onChange={handleAddLessonStartTimeChange} className={inputClassFull} />
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className={labelClass}>End time</label>
-                                <TimeSelect value={addLessonEndTime} onChange={setAddLessonEndTime} className={inputClass} />
+                                <TimeSelect value={addLessonEndTime} onChange={setAddLessonEndTime} className={inputClassFull} />
                             </div>
                         </div>
 
@@ -883,17 +816,17 @@ function SchedulePage() {
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-1">
                             <label className={labelClass}>Date</label>
-                            <input type="date" value={addOverrideDate} onChange={(e) => setAddOverrideDate(e.target.value)} className={inputClass} />
+                            <input type="date" value={addOverrideDate} onChange={(e) => setAddOverrideDate(e.target.value)} className={inputClassFull} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="flex flex-col gap-1">
                                 <label className={labelClass}>Start time</label>
-                                <TimeSelect value={addOverrideStartTime} onChange={setAddOverrideStartTime} className={inputClass} />
+                                <TimeSelect value={addOverrideStartTime} onChange={setAddOverrideStartTime} className={inputClassFull} />
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className={labelClass}>End time</label>
-                                <TimeSelect value={addOverrideEndTime} onChange={setAddOverrideEndTime} className={inputClass} />
+                                <TimeSelect value={addOverrideEndTime} onChange={setAddOverrideEndTime} className={inputClassFull} />
                             </div>
                         </div>
 
@@ -904,7 +837,7 @@ function SchedulePage() {
                         ) : (
                             <div className="flex flex-col gap-1">
                                 <label className={labelClass}>Type</label>
-                                <select value={addOverrideType} onChange={(e) => setAddOverrideType(e.target.value)} className={inputClass}>
+                                <select value={addOverrideType} onChange={(e) => setAddOverrideType(e.target.value)} className={inputClassFull}>
                                     <option value="BLOCK">Block (mark unavailable)</option>
                                     <option value="ADD">Add (extra availability)</option>
                                 </select>
@@ -913,7 +846,7 @@ function SchedulePage() {
 
                         <div className="flex flex-col gap-1">
                             <label className={labelClass}>Note (optional)</label>
-                            <input value={addOverrideNote} onChange={(e) => setAddOverrideNote(e.target.value)} placeholder="Reason..." className={inputClass} />
+                            <input value={addOverrideNote} onChange={(e) => setAddOverrideNote(e.target.value)} placeholder="Reason..." className={inputClassFull} />
                         </div>
 
                         {addOverrideError && <p className="text-sm text-red-600">{addOverrideError}</p>}
@@ -1057,289 +990,6 @@ function SchedulePage() {
                 />
             )}
         </div>
-    );
-}
-
-type ScheduleRulesModalProps = {
-    scheduleRules: ScheduleRule[];
-    onRulesChanged: (rules: ScheduleRule[]) => void;
-    onClose: () => void;
-};
-
-function sortRules(rules: ScheduleRule[]): ScheduleRule[] {
-    return [...rules].sort((a, b) => {
-        const dayDiff = days.indexOf(a.dayOfWeek) - days.indexOf(b.dayOfWeek);
-        if (dayDiff !== 0) return dayDiff;
-        return a.startTime.localeCompare(b.startTime);
-    });
-}
-
-function formatTime(time: string): string {
-    return time.slice(0, 5);
-}
-
-// the recurring weekly availability template - separate from the calendar since
-// rules are day-of-week based, not tied to a specific date
-type TimeRangeDraft = { startTime: string; endTime: string };
-
-// most teaching hours fall in this window, so a new/blank range starts here instead
-// of empty - saves a click in the common case, still fully editable
-const DEFAULT_RULE_RANGE: TimeRangeDraft = { startTime: "08:00", endTime: "16:00" };
-
-function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: ScheduleRulesModalProps) {
-    const [dayOfWeek, setDayOfWeek] = useState(days[0]);
-    const [ranges, setRanges] = useState<TimeRangeDraft[]>([{ ...DEFAULT_RULE_RANGE }]);
-    const [errorMessage, setErrorMessage] = useState("");
-    const [editingRuleId, setEditingRuleId] = useState<number | null>(null);
-
-    const inputClass = "rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
-
-    function resetForm() {
-        setEditingRuleId(null);
-        setDayOfWeek(days[0]);
-        setRanges([{ ...DEFAULT_RULE_RANGE }]);
-    }
-
-    function startEditRule(rule: ScheduleRule) {
-        setErrorMessage("");
-        setEditingRuleId(rule.id);
-        setDayOfWeek(rule.dayOfWeek);
-        setRanges([{ startTime: formatTime(rule.startTime), endTime: formatTime(rule.endTime) }]);
-    }
-
-    function updateRange(index: number, field: "startTime" | "endTime", value: string) {
-        setRanges(ranges.map((range, i) => (i === index ? { ...range, [field]: value } : range)));
-    }
-
-    function addRange() {
-        setRanges([...ranges, { ...DEFAULT_RULE_RANGE }]);
-    }
-
-    function removeRange(index: number) {
-        setRanges(ranges.filter((_, i) => i !== index));
-    }
-
-    async function handleSaveRule() {
-        setErrorMessage("");
-        const token = localStorage.getItem("token");
-        const isEditing = editingRuleId !== null;
-
-        if (ranges.some((range) => !range.startTime || !range.endTime)) {
-            setErrorMessage("Please fill in every time range, or remove the empty one");
-            return;
-        }
-
-        if (isEditing) {
-            const { startTime, endTime } = ranges[0];
-            const countResponse = await fetch(`${API_BASE_URL}/teacher/schedule-rules/${editingRuleId}/affected-lessons-count-for-edit`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ dayOfWeek, startTime, endTime }),
-            });
-            const affectedCount: number = countResponse.ok ? await countResponse.json() : 0;
-
-            if (affectedCount > 0) {
-                const confirmed = window.confirm(
-                    `${affectedCount} upcoming lesson${affectedCount === 1 ? "" : "s"} would no longer fall inside this slot. ` +
-                    `${affectedCount === 1 ? "It" : "They"} will stay scheduled, just outside your regular hours. Save anyway?`
-                );
-                if (!confirmed) return;
-            }
-
-            const response = await fetch(`${API_BASE_URL}/teacher/schedule-rules/${editingRuleId}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ dayOfWeek, startTime, endTime }),
-            });
-
-            if (!response.ok) {
-                setErrorMessage(await readErrorMessage(response, "Failed to save rule"));
-                return;
-            }
-
-            const savedRule: ScheduleRule = await response.json();
-            onRulesChanged(sortRules(scheduleRules.map((rule) => (rule.id === savedRule.id ? savedRule : rule))));
-            resetForm();
-            return;
-        }
-
-        // create mode - each range in the list is saved as its own rule, one request
-        // at a time, so a conflict on one range doesn't silently drop the others
-        const createdRules: ScheduleRule[] = [];
-        for (const range of ranges) {
-            const response = await fetch(`${API_BASE_URL}/teacher/schedule-rules`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ dayOfWeek, startTime: range.startTime, endTime: range.endTime }),
-            });
-
-            if (!response.ok) {
-                const baseMessage = await readErrorMessage(response, "Failed to add rule");
-                setErrorMessage(
-                    baseMessage +
-                    (createdRules.length > 0 ? ` (${createdRules.length} of ${ranges.length} range(s) were saved before this one failed)` : "")
-                );
-                if (createdRules.length > 0) onRulesChanged(sortRules([...scheduleRules, ...createdRules]));
-                return;
-            }
-
-            const createdRule: ScheduleRule = await response.json();
-            createdRules.push(createdRule);
-        }
-
-        onRulesChanged(sortRules([...scheduleRules, ...createdRules]));
-        resetForm();
-    }
-
-    async function handleDeleteRule(ruleId: number) {
-        setErrorMessage("");
-        const token = localStorage.getItem("token");
-
-        const countResponse = await fetch(`${API_BASE_URL}/teacher/schedule-rules/${ruleId}/affected-lessons-count`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-        const affectedCount: number = countResponse.ok ? await countResponse.json() : 0;
-
-        if (affectedCount > 0) {
-            const confirmed = window.confirm(
-                `${affectedCount} upcoming lesson${affectedCount === 1 ? "" : "s"} fall inside this slot. ` +
-                `Deleting this rule won't cancel ${affectedCount === 1 ? "it" : "them"} - ${affectedCount === 1 ? "it" : "they"} will stay scheduled, just outside your regular hours. Delete anyway?`
-            );
-            if (!confirmed) return;
-        }
-
-        const response = await fetch(`${API_BASE_URL}/teacher/schedule-rules/${ruleId}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to delete rule"));
-            return;
-        }
-
-        onRulesChanged(scheduleRules.filter((rule) => rule.id !== ruleId));
-    }
-
-    return (
-        <Modal title="Weekly availability" onClose={onClose}>
-            <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                    <select
-                        value={dayOfWeek}
-                        onChange={(e) => {
-                            if (editingRuleId !== null) {
-                                resetForm();
-                            }
-                            setDayOfWeek(e.target.value);
-                        }}
-                        className={inputClass}
-                    >
-                        {days.map((day) => (
-                            <option key={day} value={day}>{day}</option>
-                        ))}
-                    </select>
-
-                    {ranges.map((range, index) => (
-                        <div key={index} className="flex flex-wrap gap-2 items-center">
-                            <TimeSelect
-                                value={range.startTime}
-                                onChange={(value) => updateRange(index, "startTime", value)}
-                                className={inputClass}
-                            />
-                            <TimeSelect
-                                value={range.endTime}
-                                onChange={(value) => updateRange(index, "endTime", value)}
-                                className={inputClass}
-                            />
-                            {editingRuleId === null && ranges.length > 1 && (
-                                <button
-                                    onClick={() => removeRange(index)}
-                                    className="px-2 py-1 rounded-md bg-white border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors"
-                                >
-                                    Remove
-                                </button>
-                            )}
-                        </div>
-                    ))}
-
-                    {editingRuleId === null && (
-                        <button
-                            onClick={addRange}
-                            className="self-start text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-                        >
-                            + Add another time range for {dayOfWeek}
-                        </button>
-                    )}
-
-                    <div className="flex flex-wrap gap-2 items-center mt-1">
-                        <button
-                            onClick={handleSaveRule}
-                            className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
-                        >
-                            {editingRuleId !== null ? "Save changes" : ranges.length > 1 ? `Add ${ranges.length} rules` : "Add rule"}
-                        </button>
-                        {editingRuleId !== null && (
-                            <button
-                                onClick={resetForm}
-                                className="px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
-
-                <div className="border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-64 overflow-y-auto">
-                    {scheduleRules.length === 0 && (
-                        <p className="px-4 py-6 text-sm text-slate-500 text-center">No rules yet.</p>
-                    )}
-                    {days
-                        .filter((day) => scheduleRules.some((rule) => rule.dayOfWeek === day))
-                        .map((day) => (
-                            <div key={day} className="px-4 py-2">
-                                <p className="text-xs font-semibold text-slate-500 mb-1">{day}</p>
-                                <div className="flex flex-col gap-1">
-                                    {scheduleRules
-                                        .filter((rule) => rule.dayOfWeek === day)
-                                        .map((rule) => (
-                                            <div key={rule.id} className="flex items-center justify-between">
-                                                <span className="text-sm text-slate-900">
-                                                    {formatTime(rule.startTime)} to {formatTime(rule.endTime)}
-                                                </span>
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => startEditRule(rule)}
-                                                        className="px-2 py-1 rounded-md bg-white border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors"
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteRule(rule.id)}
-                                                        className="px-2 py-1 rounded-md bg-white border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                </div>
-                            </div>
-                        ))}
-                </div>
-            </div>
-        </Modal>
     );
 }
 

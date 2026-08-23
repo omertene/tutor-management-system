@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import Modal from "./Modal";
 import TimeSelect from "./TimeSelect";
 import WeekGrid from "./WeekGrid";
-import { API_BASE_URL, readErrorMessage, getToken } from "../utils/api";
+import { apiFetch, readErrorMessage } from "../utils/api";
+import { inputClassFull, labelClass } from "../constants/formStyles";
+import type { ScheduleRule, AvailabilityWindow, BusySlot } from "../types/schedule";
 import {
     days,
     DEFAULT_HOUR_START, DEFAULT_HOUR_END, ROW_HEIGHT,
@@ -12,21 +14,9 @@ import {
 const STUDENT_MIN_BOOKING_NOTICE_HOURS = 2;
 const STUDENT_MIN_CANCEL_NOTICE_HOURS = 6;
 
-type ScheduleRule = {
-    id: number;
-    dayOfWeek: string;
-    startTime: string;
-    endTime: string;
-};
 
 // student-facing shape only - GET /student/schedule-overrides deliberately omits
 // id and note (the teacher's private text), see StudentAvailabilityController
-type ScheduleOverride = {
-    date: string;
-    startTime: string;
-    endTime: string;
-    type: string;
-};
 
 type Lesson = {
     id: number;
@@ -40,11 +30,6 @@ type Lesson = {
 
 // a booked slot belonging to another student - no name/subject, used only to gray
 // out the grid so this student doesn't try to book over it
-type BusySlot = {
-    date: string;
-    startTime: string;
-    endTime: string;
-};
 
 type Subject = {
     id: number;
@@ -57,13 +42,12 @@ type Subject = {
 // view/cancel it. shared between the dedicated /student/schedule page and the
 // student dashboard, which embeds this same grid.
 function StudentScheduleGrid() {
-    const token = getToken();
 
     const [weekStart, setWeekStart] = useState(() => getStartOfWeek(new Date()));
     const [hourStart, setHourStart] = useState(DEFAULT_HOUR_START);
     const [hourEnd, setHourEnd] = useState(DEFAULT_HOUR_END);
     const [scheduleRules, setScheduleRules] = useState<ScheduleRule[]>([]);
-    const [scheduleOverrides, setScheduleOverrides] = useState<ScheduleOverride[]>([]);
+    const [scheduleOverrides, setScheduleOverrides] = useState<AvailabilityWindow[]>([]);
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [busySlots, setBusySlots] = useState<BusySlot[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -86,40 +70,32 @@ function StudentScheduleGrid() {
     }, []);
 
     async function loadRules() {
-        const response = await fetch(`${API_BASE_URL}/student/schedule-rules`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch(`/student/schedule-rules`);
         if (!response.ok) return;
         const data: ScheduleRule[] = await response.json();
         setScheduleRules(data);
     }
 
     // the student-facing endpoint returns date/time/type only - no id, no note.
-    // ScheduleOverride here is typed with id/note as optional since the response
+    // AvailabilityWindow here is typed with id/note as optional since the response
     // won't include them, but nothing in this component reads either field
     async function loadOverrides() {
-        const response = await fetch(`${API_BASE_URL}/student/schedule-overrides`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch(`/student/schedule-overrides`);
         if (!response.ok) return;
-        const data: ScheduleOverride[] = await response.json();
+        const data: AvailabilityWindow[] = await response.json();
         setScheduleOverrides(data);
     }
 
     // a student only ever sees their own lessons - the backend scopes this by caller id
     async function loadLessons() {
-        const response = await fetch(`${API_BASE_URL}/student/lessons`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch(`/student/lessons`);
         if (!response.ok) return;
         const data: Lesson[] = await response.json();
         setLessons(data.filter((lesson) => lesson.status !== "CANCELLED"));
     }
 
     async function loadSubjects() {
-        const response = await fetch(`${API_BASE_URL}/subjects`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch(`/subjects`);
         if (!response.ok) return;
         const data: Subject[] = await response.json();
         setSubjects(data);
@@ -136,9 +112,8 @@ function StudentScheduleGrid() {
         rangeEndDate.setDate(weekStartDate.getDate() + 6);
         const rangeEnd = toDateString(rangeEndDate);
 
-        const response = await fetch(
-            `${API_BASE_URL}/student/busy-slots?startDate=${rangeStart}&endDate=${rangeEnd}`,
-            { headers: { Authorization: `Bearer ${token}` } }
+        const response = await apiFetch(
+            `/student/busy-slots?startDate=${rangeStart}&endDate=${rangeEnd}`
         );
         if (!response.ok) return;
         const data: BusySlot[] = await response.json();
@@ -405,12 +380,8 @@ function StudentScheduleGrid() {
             return;
         }
 
-        const response = await fetch(`${API_BASE_URL}/student/lessons`, {
+        const response = await apiFetch(`/student/lessons`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
             body: JSON.stringify({
                 subjectId: Number(bookSubjectId),
                 date: bookDate,
@@ -436,9 +407,8 @@ function StudentScheduleGrid() {
     async function handleCancelLesson(lessonId: number) {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
+        const response = await apiFetch(`/lessons/${lessonId}`, {
             method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
         });
 
         if (!response.ok) {
@@ -464,8 +434,6 @@ function StudentScheduleGrid() {
         COMPLETED: "bg-blue-100 hover:bg-blue-200",
     };
 
-    const inputClass = "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
-    const labelClass = "text-sm font-medium text-slate-700";
 
     return (
         <>
@@ -569,7 +537,7 @@ function StudentScheduleGrid() {
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-1">
                             <label className={labelClass}>Subject</label>
-                            <select value={bookSubjectId} onChange={(e) => setBookSubjectId(e.target.value)} className={inputClass}>
+                            <select value={bookSubjectId} onChange={(e) => setBookSubjectId(e.target.value)} className={inputClassFull}>
                                 <option value="">Select subject</option>
                                 {subjects.map((subject) => (
                                     <option key={subject.id} value={subject.id}>
@@ -581,17 +549,17 @@ function StudentScheduleGrid() {
 
                         <div className="flex flex-col gap-1">
                             <label className={labelClass}>Date</label>
-                            <input type="date" value={bookDate} min={toDateString(new Date())} onChange={(e) => setBookDate(e.target.value)} className={inputClass} />
+                            <input type="date" value={bookDate} min={toDateString(new Date())} onChange={(e) => setBookDate(e.target.value)} className={inputClassFull} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="flex flex-col gap-1">
                                 <label className={labelClass}>Start time</label>
-                                <TimeSelect value={bookStartTime} onChange={handleBookStartTimeChange} className={inputClass} />
+                                <TimeSelect value={bookStartTime} onChange={handleBookStartTimeChange} className={inputClassFull} />
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className={labelClass}>End time</label>
-                                <TimeSelect value={bookEndTime} onChange={setBookEndTime} className={inputClass} />
+                                <TimeSelect value={bookEndTime} onChange={setBookEndTime} className={inputClassFull} />
                             </div>
                         </div>
 
