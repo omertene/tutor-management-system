@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
-import { API_BASE_URL, readErrorMessage, getToken } from "../utils/api";
+import { apiFetch, readErrorMessage } from "../utils/api";
 import type { Subject } from "../types";
+import { teacherLinks } from "../constants/navLinks";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -15,22 +16,11 @@ function validatePasswordField(password: string): string | null {
     return null;
 }
 
-const teacherLinks = [
-    { label: "Students", to: "/teacher/register" },
-    { label: "Schedule", to: "/teacher/schedule-rules" },
-    { label: "Lessons", to: "/teacher/lessons" },
-    { label: "Payments", to: "/teacher/payments" },
-    { label: "Materials", to: "/teacher/materials" },
-    { label: "Statistics", to: "/teacher/statistics" },
-    { label: "Settings", to: "/teacher/settings" },
-];
-
 // teacher-only config page. subjects used to have their own standalone nav tab,
 // but a dedicated page just for "add a subject name" was overkill - it lives
 // here now, alongside whatever else gets added later, and subjects can also be
 // created inline straight from the lesson booking dropdown on the Lessons page
 function SettingsPage() {
-    const token = getToken();
 
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [newSubject, setNewSubject] = useState("");
@@ -49,9 +39,7 @@ function SettingsPage() {
     async function handleLoadSubjects() {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/subjects`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch(`/subjects`);
 
         if (!response.ok) {
             setErrorMessage("Failed to load subjects");
@@ -70,12 +58,8 @@ function SettingsPage() {
     async function handleAddSubject() {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/subjects`, {
+        const response = await apiFetch(`/subjects`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
             body: JSON.stringify({ name: newSubject }),
         });
 
@@ -96,9 +80,8 @@ function SettingsPage() {
             return;
         }
 
-        const response = await fetch(`${API_BASE_URL}/subjects/${subject.id}`, {
+        const response = await apiFetch(`/subjects/${subject.id}`, {
             method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
         });
 
         if (!response.ok) {
@@ -120,12 +103,8 @@ function SettingsPage() {
         }
 
         try {
-            const response = await fetch(`${API_BASE_URL}/teacher/me/email`, {
+            const response = await apiFetch(`/teacher/me/email`, {
                 method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify({ email: accountEmail }),
             });
 
@@ -152,12 +131,8 @@ function SettingsPage() {
         }
 
         try {
-            const response = await fetch(`${API_BASE_URL}/teacher/me/password`, {
+            const response = await apiFetch(`/teacher/me/password`, {
                 method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify({ newPassword: accountNewPassword }),
             });
 

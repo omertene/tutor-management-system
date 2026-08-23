@@ -2,24 +2,11 @@ import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import TimeSelect from "../components/TimeSelect";
 import { decodeToken } from "../utils/jwt";
-import { API_BASE_URL, readErrorMessage, getToken } from "../utils/api";
+import { apiFetch, readErrorMessage } from "../utils/api";
 import type { Subject, Student } from "../types";
-
-const teacherLinks = [
-    { label: "Students", to: "/teacher/register" },
-    { label: "Schedule", to: "/teacher/schedule-rules" },
-    { label: "Lessons", to: "/teacher/lessons" },
-    { label: "Payments", to: "/teacher/payments" },
-    { label: "Materials", to: "/teacher/materials" },
-    { label: "Statistics", to: "/teacher/statistics" },
-    { label: "Settings", to: "/teacher/settings" },
-];
-
-const studentLinks = [
-    { label: "Lessons", to: "/student/lessons" },
-    { label: "Payments", to: "/student/payments" },
-    { label: "Materials", to: "/student/materials" },
-];
+import { inputClass, labelClass, primaryButtonClass, smallSecondaryButtonClass } from "../constants/formStyles";
+import { formatShortDateString, formatTimeOfDay, monthNames, todayDateString } from "../utils/time";
+import { studentLinks, teacherLinks } from "../constants/navLinks";
 
 const statusStyles: Record<string, string> = {
     SCHEDULED: "bg-blue-50 text-blue-700",
@@ -44,24 +31,8 @@ function formatRelativeLessonDate(date: string, todayStr: string): string {
         return "Tomorrow";
     }
 
-    return formatLessonDate(date);
+    return formatShortDateString(date);
 }
-
-// "2026-10-07" -> "7/10/26"
-function formatLessonDate(date: string): string {
-    const [year, month, day] = date.split("-");
-    return `${Number(day)}/${Number(month)}/${year.slice(2)}`;
-}
-
-// "18:00:00" -> "18:00"
-function formatLessonTime(time: string): string {
-    return time.slice(0, 5);
-}
-
-const monthNames = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
 
 // "2025-08-17" -> "2025-08" - zero-padded so plain string sort (used below to
 // order the filter dropdown) matches chronological order. an unpadded "2025-8"
@@ -77,18 +48,7 @@ function monthLabel(key: string): string {
     return `${monthNames[month - 1]} ${year}`;
 }
 
-// today's date as "YYYY-MM-DD" using local date fields, not toISOString (which
-// converts through UTC first and can shift the date by a day near midnight)
-function todayDateString(): string {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-}
-
 const STUDENT_MIN_CANCEL_NOTICE_HOURS = 6;
-
 
 type Lesson = {
     id: number;
@@ -105,8 +65,9 @@ type Lesson = {
 }
 
 function LessonsPage() {
-
-    const token = getToken();
+    // ProtectedRoute guarantees a token before this page renders; the ?? "" keeps
+    // decodeToken's signature honest and its try/catch handles a malformed value
+    const token = localStorage.getItem("token") ?? "";
     const {role} = decodeToken(token);
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [errorMessage, setErrorMessage] = useState("");
@@ -160,11 +121,7 @@ function LessonsPage() {
 
         const endpoint = role === "TEACHER" ? "/teacher/lessons" : "/student/lessons";
 
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await apiFetch(`${endpoint}`);
 
         if (!response.ok) {
             setErrorMessage("Failed to load lessons");
@@ -176,15 +133,10 @@ function LessonsPage() {
         setLessons(data);
     }
 
-
     async function handleLoadSubjects() {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/subjects`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await apiFetch(`/subjects`);
 
         if (!response.ok) {
             setErrorMessage("Failed to load subjects");
@@ -204,12 +156,8 @@ function LessonsPage() {
 
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/subjects`, {
+        const response = await apiFetch(`/subjects`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
             body: JSON.stringify({ name }),
         });
 
@@ -228,11 +176,7 @@ function LessonsPage() {
     async function handleLoadStudents() {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/teacher/students`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await apiFetch(`/teacher/students`);
 
         if (!response.ok) {
             setErrorMessage("Failed to load students");
@@ -268,12 +212,8 @@ function LessonsPage() {
     async function handleCreateLessonForStudent() {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/teacher/lessons`, {
+        const response = await apiFetch(`/teacher/lessons`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
             body: JSON.stringify({
                 studentId: Number(selectedStudentId),
                 subjectId: Number(selectedSubjectId),
@@ -291,7 +231,6 @@ function LessonsPage() {
         const createdLesson: Lesson = await response.json();
         setLessons([...lessons, createdLesson]);
     }
-
 
     // a lesson can only be cancelled while SCHEDULED or (teacher-only) COMPLETED -
     // mirrors the backend rule in LessonService.cancelLesson, used to decide whether
@@ -320,11 +259,8 @@ function LessonsPage() {
             if (!confirmed) return;
         }
 
-        const response = await fetch(`${API_BASE_URL}/lessons/${lesson.id}`, {
+        const response = await apiFetch(`/lessons/${lesson.id}`, {
             method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
         });
 
         if (!response.ok) {
@@ -341,11 +277,8 @@ function LessonsPage() {
     async function handleCompleteLesson(lessonId: number) {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/teacher/lessons/${lessonId}/complete`, {
+        const response = await apiFetch(`/teacher/lessons/${lessonId}/complete`, {
             method: "PATCH",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
         });
 
         if (!response.ok) {
@@ -356,11 +289,6 @@ function LessonsPage() {
         const completedLesson: Lesson = await response.json();
         setLessons(lessons.map((lesson) => lesson.id === lessonId ? completedLesson : lesson));
     }
-
-    const inputClass = "rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
-    const labelClass = "text-sm font-medium text-slate-700";
-    const primaryButtonClass = "px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors";
-    const smallSecondaryButtonClass = "px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors";
 
     // every "YYYY-M" that actually has a lesson on it, newest first - built from
     // the teacher's own lessons rather than a fixed list, so only real months show up
@@ -539,7 +467,7 @@ function LessonsPage() {
                                 <div key={lesson.id} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="font-medium text-slate-900">
-                                            {formatLessonDate(lesson.date)} {formatLessonTime(lesson.startTime)}-{formatLessonTime(lesson.endTime)}
+                                            {formatShortDateString(lesson.date)} {formatTimeOfDay(lesson.startTime)}-{formatTimeOfDay(lesson.endTime)}
                                         </span>
                                         <span className="text-slate-500 text-sm">{lesson.subjectName}</span>
                                         <span className="text-slate-500 text-sm">
@@ -642,7 +570,7 @@ function LessonsPage() {
                                     <div key={lesson.id} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <span className="font-medium text-slate-900">
-                                                {formatRelativeLessonDate(lesson.date, today)} {formatLessonTime(lesson.startTime)}-{formatLessonTime(lesson.endTime)}
+                                                {formatRelativeLessonDate(lesson.date, today)} {formatTimeOfDay(lesson.startTime)}-{formatTimeOfDay(lesson.endTime)}
                                             </span>
                                             <span className="text-slate-500 text-sm">{lesson.subjectName}</span>
                                             <span className="text-slate-500 text-sm">₪{lesson.priceAtBooking}</span>
@@ -674,7 +602,7 @@ function LessonsPage() {
                                     <div key={lesson.id} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <span className="font-medium text-slate-900">
-                                                {formatLessonDate(lesson.date)} {formatLessonTime(lesson.startTime)}-{formatLessonTime(lesson.endTime)}
+                                                {formatShortDateString(lesson.date)} {formatTimeOfDay(lesson.startTime)}-{formatTimeOfDay(lesson.endTime)}
                                             </span>
                                             <span className="text-slate-500 text-sm">{lesson.subjectName}</span>
                                             <span className="text-slate-500 text-sm">₪{lesson.priceAtBooking}</span>
@@ -700,7 +628,7 @@ function LessonsPage() {
                                         {cancelledLessons.map((lesson) => (
                                             <div key={lesson.id} className="px-4 py-2 flex flex-wrap items-center gap-2 text-sm text-slate-400">
                                                 <span>
-                                                    {formatLessonDate(lesson.date)} {formatLessonTime(lesson.startTime)}-{formatLessonTime(lesson.endTime)}
+                                                    {formatShortDateString(lesson.date)} {formatTimeOfDay(lesson.startTime)}-{formatTimeOfDay(lesson.endTime)}
                                                 </span>
                                                 <span>{lesson.subjectName}</span>
                                             </div>

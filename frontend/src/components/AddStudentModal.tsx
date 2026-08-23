@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Modal from "./Modal";
-import { API_BASE_URL, readErrorMessage } from "../utils/api";
+import { apiFetch, readErrorMessage } from "../utils/api";
+import { inputClassFull, labelClass } from "../constants/formStyles";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^\d+$/;
@@ -72,15 +73,9 @@ function AddStudentModal({ onClose, onCreated }: AddStudentModalProps) {
             return;
         }
 
-        const token = localStorage.getItem("token");
-
         try {
-            const response = await fetch(`${API_BASE_URL}/teacher/register`, {
+            const response = await apiFetch(`/teacher/register`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify({
                     email,
                     password,
@@ -115,8 +110,6 @@ function AddStudentModal({ onClose, onCreated }: AddStudentModalProps) {
         }
     }
 
-    const inputClass = "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
-    const labelClass = "text-sm font-medium text-slate-700";
 
     return (
         <Modal title="Add student" onClose={onClose}>
@@ -124,42 +117,42 @@ function AddStudentModal({ onClose, onCreated }: AddStudentModalProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1">
                         <label className={labelClass}>Email *</label>
-                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
+                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClassFull} />
                     </div>
 
                     <div className="flex flex-col gap-1">
                         <label className={labelClass}>Password *</label>
-                        <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} />
+                        <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClassFull} />
                     </div>
 
                     <div className="flex flex-col gap-1">
                         <label className={labelClass}>First name *</label>
-                        <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputClass} />
+                        <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputClassFull} />
                     </div>
 
                     <div className="flex flex-col gap-1">
                         <label className={labelClass}>Last name *</label>
-                        <input value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputClass} />
+                        <input value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputClassFull} />
                     </div>
 
                     <div className="flex flex-col gap-1">
                         <label className={labelClass}>Phone *</label>
-                        <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
+                        <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClassFull} />
                     </div>
 
                     <div className="flex flex-col gap-1">
                         <label className={labelClass}>Hourly rate *</label>
-                        <input value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} className={inputClass} />
+                        <input value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} className={inputClassFull} />
                     </div>
 
                     <div className="flex flex-col gap-1">
                         <label className={labelClass}>Education level</label>
-                        <input value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)} className={inputClass} />
+                        <input value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)} className={inputClassFull} />
                     </div>
 
                     <div className="flex flex-col gap-1">
                         <label className={labelClass}>Notes (optional)</label>
-                        <input value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} />
+                        <input value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClassFull} />
                     </div>
                 </div>
 

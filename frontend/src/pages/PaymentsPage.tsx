@@ -1,24 +1,11 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { decodeToken } from "../utils/jwt";
-import { API_BASE_URL, readErrorMessage, getToken } from "../utils/api";
+import { apiFetch, readErrorMessage } from "../utils/api";
 import type { Student } from "../types";
-
-const teacherLinks = [
-    { label: "Students", to: "/teacher/register" },
-    { label: "Schedule", to: "/teacher/schedule-rules" },
-    { label: "Lessons", to: "/teacher/lessons" },
-    { label: "Payments", to: "/teacher/payments" },
-    { label: "Materials", to: "/teacher/materials" },
-    { label: "Statistics", to: "/teacher/statistics" },
-    { label: "Settings", to: "/teacher/settings" },
-];
-
-const studentLinks = [
-    { label: "Lessons", to: "/student/lessons" },
-    { label: "Payments", to: "/student/payments" },
-    { label: "Materials", to: "/student/materials" },
-];
+import { inputClass, labelClass, primaryButtonClass, smallSecondaryButtonClass } from "../constants/formStyles";
+import { formatDateTimeString, formatShortDateString, todayDateString } from "../utils/time";
+import { studentLinks, teacherLinks } from "../constants/navLinks";
 
 type PaymentMethod = "CASH" | "BANK_TRANSFER" | "BIT" | "CREDIT_CARD" | "PAYBOX";
 
@@ -53,31 +40,10 @@ const methodLabels: Record<PaymentMethod, string> = {
     CREDIT_CARD: "Credit card",
 };
 
-// "2026-10-07T18:00:00" -> "7/10/26 18:00"
-function formatPaymentDate(dateTime: string): string {
-    const [datePart, timePart] = dateTime.split("T");
-    const [year, month, day] = datePart.split("-");
-    const time = timePart ? timePart.slice(0, 5) : "";
-    return `${Number(day)}/${Number(month)}/${year.slice(2)} ${time}`;
-}
-
-// "2026-10-07" -> "7/10/26"
-function formatDateOnly(date: string): string {
-    const [year, month, day] = date.split("-");
-    return `${Number(day)}/${Number(month)}/${year.slice(2)}`;
-}
-
-// today as "YYYY-MM-DD", for defaulting the date input
-function todayDateString(): string {
-    const now = new Date();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    return `${now.getFullYear()}-${month}-${day}`;
-}
-
 function PaymentsPage() {
-
-    const token = getToken();
+    // ProtectedRoute guarantees a token before this page renders; the ?? "" keeps
+    // decodeToken's signature honest and its try/catch handles a malformed value
+    const token = localStorage.getItem("token") ?? "";
     const { role } = decodeToken(token);
 
     const [payments, setPayments] = useState<Payment[]>([]);
@@ -123,11 +89,7 @@ function PaymentsPage() {
     async function handleLoadStudents() {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/teacher/students`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await apiFetch(`/teacher/students`);
 
         if (!response.ok) {
             setErrorMessage("Failed to load students");
@@ -142,11 +104,7 @@ function PaymentsPage() {
     async function handleLoadAllPayments() {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/teacher/payments`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await apiFetch(`/teacher/payments`);
 
         if (!response.ok) {
             setErrorMessage("Failed to load payments");
@@ -161,11 +119,7 @@ function PaymentsPage() {
     async function handleLoadOwnPayments() {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/student/payments`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await apiFetch(`/student/payments`);
 
         if (!response.ok) {
             setErrorMessage("Failed to load payments");
@@ -180,11 +134,7 @@ function PaymentsPage() {
     async function handleLoadOwnDebt() {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/student/debt`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await apiFetch(`/student/debt`);
 
         if (!response.ok) {
             setErrorMessage("Failed to load debt");
@@ -199,11 +149,7 @@ function PaymentsPage() {
     async function handleLoadAllDebts() {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/teacher/debts`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await apiFetch(`/teacher/debts`);
 
         if (!response.ok) {
             setErrorMessage("Failed to load debts");
@@ -235,12 +181,8 @@ function PaymentsPage() {
     async function handleCreatePayment() {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/teacher/payments`, {
+        const response = await apiFetch(`/teacher/payments`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
             body: JSON.stringify({
                 studentId: Number(selectedStudentId),
                 amount: Number(amount),
@@ -293,12 +235,8 @@ function PaymentsPage() {
     async function handleSaveEdit(paymentId: number) {
         setEditErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/teacher/payments/${paymentId}`, {
+        const response = await apiFetch(`/teacher/payments/${paymentId}`, {
             method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
             body: JSON.stringify({
                 studentId: Number(editStudentId),
                 amount: Number(editAmount),
@@ -329,11 +267,8 @@ function PaymentsPage() {
         );
         if (!confirmed) return;
 
-        const response = await fetch(`${API_BASE_URL}/teacher/payments/${payment.id}`, {
+        const response = await apiFetch(`/teacher/payments/${payment.id}`, {
             method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
         });
 
         if (!response.ok) {
@@ -345,11 +280,6 @@ function PaymentsPage() {
 
         handleLoadAllDebts();
     }
-
-    const inputClass = "rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
-    const labelClass = "text-sm font-medium text-slate-700";
-    const primaryButtonClass = "px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
-    const smallSecondaryButtonClass = "px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
 
     const filteredPayments = payments
         .filter((payment) => {
@@ -495,7 +425,7 @@ function PaymentsPage() {
                                     )}
                                     <span className="text-slate-500 text-sm">{methodLabels[payment.method] ?? payment.method}</span>
                                     <span className="text-slate-400 text-sm">
-                                        {payment.paymentDate ? formatDateOnly(payment.paymentDate) : formatPaymentDate(payment.createdAt)}
+                                        {payment.paymentDate ? formatShortDateString(payment.paymentDate) : formatDateTimeString(payment.createdAt)}
                                     </span>
                                     {payment.notes && <span className="text-slate-500 text-sm">— {payment.notes}</span>}
                                 </div>

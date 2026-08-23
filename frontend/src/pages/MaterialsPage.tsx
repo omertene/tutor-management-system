@@ -1,24 +1,11 @@
 import { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { decodeToken } from "../utils/jwt";
-import { API_BASE_URL, readErrorMessage, getToken } from "../utils/api";
+import { apiFetch, readErrorMessage } from "../utils/api";
 import type { Student, Subject } from "../types";
-
-const teacherLinks = [
-    { label: "Students", to: "/teacher/register" },
-    { label: "Schedule", to: "/teacher/schedule-rules" },
-    { label: "Lessons", to: "/teacher/lessons" },
-    { label: "Payments", to: "/teacher/payments" },
-    { label: "Materials", to: "/teacher/materials" },
-    { label: "Statistics", to: "/teacher/statistics" },
-    { label: "Settings", to: "/teacher/settings" },
-];
-
-const studentLinks = [
-    { label: "Lessons", to: "/student/lessons" },
-    { label: "Payments", to: "/student/payments" },
-    { label: "Materials", to: "/student/materials" },
-];
+import { inputClass, labelClass, primaryButtonClass, smallSecondaryButtonClass } from "../constants/formStyles";
+import { formatDateAndTime, formatDateTimeString } from "../utils/time";
+import { studentLinks, teacherLinks } from "../constants/navLinks";
 
 const typeStyles: Record<string, string> = {
     FILE: "bg-purple-50 text-purple-700",
@@ -57,23 +44,10 @@ type Lesson = {
 // how many of the student's most recent lessons to offer in the "attach to lesson" dropdown
 const LESSON_PICKER_LIMIT = 50;
 
-// "2026-10-07T18:00:00" -> "7/10/26 18:00"
-function formatUploadedAt(dateTime: string): string {
-    const [datePart, timePart] = dateTime.split("T");
-    const [year, month, day] = datePart.split("-");
-    const time = timePart ? timePart.slice(0, 5) : "";
-    return `${Number(day)}/${Number(month)}/${year.slice(2)} ${time}`;
-}
-
-// "2026-10-07" + "18:00:00" -> "7/10/26 18:00"
-function formatLessonDateTime(date: string, time: string): string {
-    const [year, month, day] = date.split("-");
-    return `${Number(day)}/${Number(month)}/${year.slice(2)} ${time.slice(0, 5)}`;
-}
-
 function MaterialsPage() {
-
-    const token = getToken();
+    // ProtectedRoute guarantees a token before this page renders; the ?? "" keeps
+    // decodeToken's signature honest and its try/catch handles a malformed value
+    const token = localStorage.getItem("token") ?? "";
     const { role } = decodeToken(token);
 
     const [materials, setMaterials] = useState<Material[]>([]);
@@ -115,11 +89,7 @@ function MaterialsPage() {
     async function handleLoadStudents() {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/teacher/students`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await apiFetch(`/teacher/students`);
 
         if (!response.ok) {
             setErrorMessage("Failed to load students");
@@ -142,11 +112,7 @@ function MaterialsPage() {
             return;
         }
 
-        const response = await fetch(`${API_BASE_URL}/teacher/students/${studentId}/lessons`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await apiFetch(`/teacher/students/${studentId}/lessons`);
 
         if (!response.ok) {
             setErrorMessage("Failed to load lessons");
@@ -166,11 +132,7 @@ function MaterialsPage() {
     async function handleLoadAllMaterials() {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/teacher/materials`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await apiFetch(`/teacher/materials`);
 
         if (!response.ok) {
             setErrorMessage("Failed to load materials");
@@ -185,11 +147,7 @@ function MaterialsPage() {
     async function handleLoadOwnMaterials() {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/student/materials`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await apiFetch(`/student/materials`);
 
         if (!response.ok) {
             setErrorMessage("Failed to load materials");
@@ -201,9 +159,7 @@ function MaterialsPage() {
     }
 
     async function handleLoadSubjects() {
-        const response = await fetch(`${API_BASE_URL}/subjects`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiFetch(`/subjects`);
         if (!response.ok) return;
         const data: Subject[] = await response.json();
         setSubjects(data);
@@ -235,12 +191,8 @@ function MaterialsPage() {
 
     // teacher adds a link - POST /teacher/materials/link
     async function submitAddLink() {
-        const response = await fetch(`${API_BASE_URL}/teacher/materials/link`, {
+        const response = await apiFetch(`/teacher/materials/link`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
             body: JSON.stringify({
                 studentId: Number(selectedStudentId),
                 lessonId: lessonId ? Number(lessonId) : null,
@@ -264,12 +216,8 @@ function MaterialsPage() {
     // as "description" (that's what AddNoteRequest expects - there's no separate
     // field on the backend), but the form below labels it "Note text" for clarity
     async function submitAddNote() {
-        const response = await fetch(`${API_BASE_URL}/teacher/materials/note`, {
+        const response = await apiFetch(`/teacher/materials/note`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
             body: JSON.stringify({
                 studentId: Number(selectedStudentId),
                 lessonId: lessonId ? Number(lessonId) : null,
@@ -304,11 +252,8 @@ function MaterialsPage() {
         formData.append("description", description);
         formData.append("file", file);
 
-        const response = await fetch(`${API_BASE_URL}/teacher/materials/file`, {
+        const response = await apiFetch(`/teacher/materials/file`, {
             method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
             body: formData,
         });
 
@@ -340,11 +285,7 @@ function MaterialsPage() {
     async function handleDownload(materialId: number, fileName: string) {
         setErrorMessage("");
 
-        const response = await fetch(`${API_BASE_URL}/materials/${materialId}/download`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        const response = await apiFetch(`/materials/${materialId}/download`);
 
         if (!response.ok) {
             setErrorMessage("Failed to download file");
@@ -380,11 +321,8 @@ function MaterialsPage() {
         const confirmed = window.confirm(`Delete "${material.title}"? This can't be undone.`);
         if (!confirmed) return;
 
-        const response = await fetch(`${API_BASE_URL}/teacher/materials/${material.id}`, {
+        const response = await apiFetch(`/teacher/materials/${material.id}`, {
             method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
         });
 
         if (!response.ok) {
@@ -394,11 +332,6 @@ function MaterialsPage() {
 
         setMaterials(materials.filter((m) => m.id !== material.id));
     }
-
-    const inputClass = "rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
-    const labelClass = "text-sm font-medium text-slate-700";
-    const primaryButtonClass = "px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
-    const smallSecondaryButtonClass = "px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
 
     const filteredMaterials = materials
         .filter((material) => typeFilter === "ALL" || material.type === typeFilter)
@@ -417,7 +350,7 @@ function MaterialsPage() {
             // but TypeScript can't know that from two independently-nullable fields,
             // so both are checked explicitly instead of asserting the second away
             if (!material.lessonDate || !material.lessonStartTime) return false;
-            const lessonLabel = `${formatLessonDateTime(material.lessonDate, material.lessonStartTime)} ${material.lessonSubject}`.toLowerCase();
+            const lessonLabel = `${formatDateAndTime(material.lessonDate, material.lessonStartTime)} ${material.lessonSubject}`.toLowerCase();
             return lessonLabel.includes(query);
         })
         .sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
@@ -470,7 +403,7 @@ function MaterialsPage() {
                                     <option value="">No specific lesson</option>
                                     {lessons.map((lesson) => (
                                         <option key={lesson.id} value={lesson.id}>
-                                            {formatLessonDateTime(lesson.date, lesson.startTime)} — {lesson.subjectName}
+                                            {formatDateAndTime(lesson.date, lesson.startTime)} — {lesson.subjectName}
                                         </option>
                                     ))}
                                 </select>
@@ -646,10 +579,10 @@ function MaterialsPage() {
                                     )}
                                     <span className="text-slate-400 text-xs italic">
                                         {material.lessonDate && material.lessonStartTime
-                                            ? `from lesson: ${formatLessonDateTime(material.lessonDate, material.lessonStartTime)} — ${material.lessonSubject}`
+                                            ? `from lesson: ${formatDateAndTime(material.lessonDate, material.lessonStartTime)} — ${material.lessonSubject}`
                                             : "general material"}
                                     </span>
-                                    <span className="text-slate-400 text-xs">{formatUploadedAt(material.uploadedAt)}</span>
+                                    <span className="text-slate-400 text-xs">{formatDateTimeString(material.uploadedAt)}</span>
                                 </div>
 
                                 <div className="flex gap-2 items-center">

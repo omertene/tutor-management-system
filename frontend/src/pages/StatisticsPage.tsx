@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import NavBar from "../components/NavBar";
-import { API_BASE_URL, getToken } from "../utils/api";
+import { apiFetch } from "../utils/api";
 import type { Subject } from "../types";
+import { cardClass, inputClass } from "../constants/formStyles";
+import { monthNames } from "../utils/time";
+import { teacherLinks } from "../constants/navLinks";
 import {
     ResponsiveContainer,
     ComposedChart,
@@ -16,21 +19,6 @@ import {
     Tooltip,
     Legend,
 } from "recharts";
-
-const teacherLinks = [
-    { label: "Students", to: "/teacher/register" },
-    { label: "Schedule", to: "/teacher/schedule-rules" },
-    { label: "Lessons", to: "/teacher/lessons" },
-    { label: "Payments", to: "/teacher/payments" },
-    { label: "Materials", to: "/teacher/materials" },
-    { label: "Statistics", to: "/teacher/statistics" },
-    { label: "Settings", to: "/teacher/settings" },
-];
-
-const monthNames = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
 
 const COLORS = {
     indigo: "#4f46e5",
@@ -130,7 +118,6 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 }
 
 function StatisticsPage() {
-    const token = getToken();
 
     const [statistics, setStatistics] = useState<DashboardStatistics | null>(null);
     const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -149,9 +136,7 @@ function StatisticsPage() {
 
     async function handleLoadSubjects() {
         try {
-            const response = await fetch(`${API_BASE_URL}/subjects`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await apiFetch(`/subjects`);
             if (!response.ok) return;
             const data: Subject[] = await response.json();
             setSubjects(data);
@@ -167,9 +152,7 @@ function StatisticsPage() {
     // there's no data at all yet
     async function handleLoadYears() {
         try {
-            const response = await fetch(`${API_BASE_URL}/teacher/statistics/years`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await apiFetch(`/teacher/statistics/years`);
             if (!response.ok) return;
             const data: number[] = await response.json();
             setYears(data);
@@ -186,9 +169,7 @@ function StatisticsPage() {
             const params = new URLSearchParams({ startDate, endDate });
             if (subjectId) params.set("subjectId", subjectId);
 
-            const response = await fetch(`${API_BASE_URL}/teacher/statistics/dashboard?${params.toString()}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await apiFetch(`/teacher/statistics/dashboard?${params.toString()}`);
 
             if (!response.ok) {
                 setErrorMessage("Failed to load statistics");
@@ -228,8 +209,6 @@ function StatisticsPage() {
         value: row.totalRevenue,
     }));
 
-    const inputClass = "rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
-    const cardClass = "bg-white rounded-xl border border-slate-200 shadow-sm p-6";
     const sectionTitleClass = "text-lg font-semibold text-slate-900 mb-3";
 
     return (

@@ -55,3 +55,42 @@ export function timeToMinutes(time: string): number {
 export function minutesSinceMidnight(date: Date): number {
     return date.getHours() * 60 + date.getMinutes();
 }
+
+// ---- display formatters ----
+// these were duplicated under different names per page: formatLessonDate and
+// formatDateOnly were the same function, as were formatUploadedAt and
+// formatPaymentDate. one implementation each now, named for what they produce.
+
+export const monthNames = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+// "2026-10-07" -> "7/10/26"
+export function formatShortDateString(date: string): string {
+    const [year, month, day] = date.split("-");
+    return `${Number(day)}/${Number(month)}/${year.slice(2)}`;
+}
+
+// "2026-10-07T18:00:00" -> "7/10/26 18:00"
+export function formatDateTimeString(dateTime: string): string {
+    const [datePart, timePart] = dateTime.split("T");
+    const time = timePart ? timePart.slice(0, 5) : "";
+    return `${formatShortDateString(datePart)} ${time}`;
+}
+
+// "2026-10-07" + "18:00:00" -> "7/10/26 18:00"
+export function formatDateAndTime(date: string, time: string): string {
+    return `${formatShortDateString(date)} ${time.slice(0, 5)}`;
+}
+
+// "18:00:00" -> "18:00"
+export function formatTimeOfDay(time: string): string {
+    return time.slice(0, 5);
+}
+
+// today as "YYYY-MM-DD" using local date fields, not toISOString (which converts
+// through UTC first and can shift the date by a day near midnight)
+export function todayDateString(): string {
+    return toDateString(new Date());
+}

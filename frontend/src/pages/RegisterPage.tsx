@@ -3,18 +3,10 @@ import NavBar from "../components/NavBar";
 import { Link } from "react-router-dom";
 import Modal from "../components/Modal";
 import AddStudentModal from "../components/AddStudentModal";
-import { API_BASE_URL, readErrorMessage } from "../utils/api";
+import { apiFetch, readErrorMessage } from "../utils/api";
 import type { Student } from "../types";
-
-const teacherLinks = [
-  { label: "Students", to: "/teacher/register" },
-  { label: "Schedule", to: "/teacher/schedule-rules" },
-  { label: "Lessons", to: "/teacher/lessons" },
-  { label: "Payments", to: "/teacher/payments" },
-  { label: "Materials", to: "/teacher/materials" },
-  { label: "Statistics", to: "/teacher/statistics" },
-  { label: "Settings", to: "/teacher/settings" },
-];
+import { inputClassFull, labelClass } from "../constants/formStyles";
+import { teacherLinks } from "../constants/navLinks";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^\d+$/;
@@ -71,13 +63,9 @@ function RegisterPage() {
   async function loadStudents(inactiveOnly: boolean) {
     setListErrorMessage("");
     setShowingInactive(inactiveOnly);
-
-    const token = localStorage.getItem("token");
     const endpoint = inactiveOnly ? "/teacher/students/all" : "/teacher/students";
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await apiFetch(`${endpoint}`);
 
     if (!response.ok) {
       setListErrorMessage("Failed to load students");
@@ -89,11 +77,8 @@ function RegisterPage() {
   }
 
   async function loadDebts() {
-    const token = localStorage.getItem("token");
 
-    const response = await fetch(`${API_BASE_URL}/teacher/debts`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await apiFetch(`/teacher/debts`);
     if (!response.ok) return;
 
     const data: { studentId: number; debt: number }[] = await response.json();
@@ -105,11 +90,8 @@ function RegisterPage() {
   }
 
   async function loadCounts() {
-    const token = localStorage.getItem("token");
 
-    const response = await fetch(`${API_BASE_URL}/teacher/students/all`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await apiFetch(`/teacher/students/all`);
     if (!response.ok) return;
 
     const data: Student[] = await response.json();
@@ -126,15 +108,9 @@ function RegisterPage() {
   async function handleToggleActive(student: Student) {
     setListErrorMessage("");
 
-    const token = localStorage.getItem("token");
-
     try {
-      const response = await fetch(`${API_BASE_URL}/teacher/students/${student.id}/active`, {
+      const response = await apiFetch(`/teacher/students/${student.id}/active`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({ active: !student.active }),
       });
 
@@ -181,15 +157,9 @@ function RegisterPage() {
       return;
     }
 
-    const token = localStorage.getItem("token");
-
     try {
-      const response = await fetch(`${API_BASE_URL}/teacher/students/${studentId}`, {
+      const response = await apiFetch(`/teacher/students/${studentId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({
           firstName: editFirstName,
           lastName: editLastName,
@@ -236,15 +206,9 @@ function RegisterPage() {
       return;
     }
 
-    const token = localStorage.getItem("token");
-
     try {
-      const response = await fetch(`${API_BASE_URL}/teacher/students/${credentialsStudent.id}/email`, {
+      const response = await apiFetch(`/teacher/students/${credentialsStudent.id}/email`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({ email: credentialsEmail }),
       });
 
@@ -273,15 +237,9 @@ function RegisterPage() {
       return;
     }
 
-    const token = localStorage.getItem("token");
-
     try {
-      const response = await fetch(`${API_BASE_URL}/teacher/students/${credentialsStudent.id}/password`, {
+      const response = await apiFetch(`/teacher/students/${credentialsStudent.id}/password`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({ newPassword: credentialsNewPassword }),
       });
 
@@ -302,9 +260,6 @@ function RegisterPage() {
     loadDebts();
     loadCounts();
   }
-
-  const inputClass = "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
-  const labelClass = "text-sm font-medium text-slate-700";
 
   const filteredStudents = students.filter((student) =>
     `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
@@ -519,7 +474,7 @@ function RegisterPage() {
                   type="email"
                   value={credentialsEmail}
                   onChange={(e) => setCredentialsEmail(e.target.value)}
-                  className={inputClass}
+                  className={inputClassFull}
                 />
                 <button
                   onClick={handleSaveEmail}
@@ -538,7 +493,7 @@ function RegisterPage() {
                   placeholder="New password"
                   value={credentialsNewPassword}
                   onChange={(e) => setCredentialsNewPassword(e.target.value)}
-                  className={inputClass}
+                  className={inputClassFull}
                 />
                 <button
                   onClick={handleResetPassword}
