@@ -391,7 +391,12 @@ function StudentScheduleGrid() {
         }
 
         const [bookHour, bookMinute] = bookStartTime.split(":").map(Number);
-        const requestedStart = new Date(bookDate);
+        // a plain "YYYY-MM-DD" string parses as UTC midnight, not local midnight -
+        // setHours() below would then apply local time to a UTC-based instant, which
+        // silently shifts the date west of Greenwich (harmless at UTC+3, wrong there).
+        // building from y/m/d components uses the local-time Date constructor instead
+        const [bookYear, bookMonthNum, bookDay] = bookDate.split("-").map(Number);
+        const requestedStart = new Date(bookYear, bookMonthNum - 1, bookDay);
         requestedStart.setHours(bookHour, bookMinute, 0, 0);
         const minBookingTime = new Date();
         minBookingTime.setHours(minBookingTime.getHours() + STUDENT_MIN_BOOKING_NOTICE_HOURS);
