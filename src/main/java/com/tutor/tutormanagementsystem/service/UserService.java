@@ -2,7 +2,6 @@ package com.tutor.tutormanagementsystem.service;
 
 import com.tutor.tutormanagementsystem.dto.UserResponse;
 import com.tutor.tutormanagementsystem.exception.DuplicateEmailException;
-import com.tutor.tutormanagementsystem.exception.InvalidStudentDataException;
 import com.tutor.tutormanagementsystem.exception.UserNotFoundException;
 import com.tutor.tutormanagementsystem.model.User;
 import com.tutor.tutormanagementsystem.repository.UserRepository;
@@ -11,7 +10,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.regex.Pattern;
 
 // self-service account changes for the logged-in user (currently only reachable
 // by the teacher - students don't manage their own credentials, the teacher
@@ -25,30 +23,10 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // same shape as StudentService's validation - kept here too rather than shared,
-    // since the two validate different entities (User here vs a student's fields there)
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
-
-    private String normalizeEmail(String email) {
-        return email == null ? null : email.trim().toLowerCase();
-    }
-
-    private void validateEmail(String email) {
-        if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
-            throw new InvalidStudentDataException("Please enter a valid email address");
-        }
-    }
-
-    private void validatePassword(String password) {
-        if (password == null || password.length() < 4) {
-            throw new InvalidStudentDataException("Password must be at least 4 characters");
-        }
-    }
-
     @Transactional
     public UserResponse updateOwnEmail(Long userId, String newEmail) {
-        String email = normalizeEmail(newEmail);
-        validateEmail(email);
+        String email = AccountValidation.normalizeEmail(newEmail);
+        AccountValidation.requireValidEmail(email);
 
         User user = getUserEntity(userId);
 
@@ -65,7 +43,7 @@ public class UserService {
 
     @Transactional
     public UserResponse resetOwnPassword(Long userId, String newPassword) {
-        validatePassword(newPassword);
+        AccountValidation.requireValidPassword(newPassword);
 
         User user = getUserEntity(userId);
         user.setPassword(passwordEncoder.encode(newPassword));

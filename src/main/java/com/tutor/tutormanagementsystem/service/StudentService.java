@@ -1,12 +1,9 @@
 package com.tutor.tutormanagementsystem.service;
 
 import com.tutor.tutormanagementsystem.dto.CreateStudentRequest;
-import com.tutor.tutormanagementsystem.dto.ResetStudentPasswordRequest;
 import com.tutor.tutormanagementsystem.dto.StudentResponse;
-import com.tutor.tutormanagementsystem.dto.UpdateStudentEmailRequest;
 import com.tutor.tutormanagementsystem.dto.UpdateStudentRequest;
 import com.tutor.tutormanagementsystem.exception.DuplicateEmailException;
-import com.tutor.tutormanagementsystem.exception.InvalidStudentDataException;
 import com.tutor.tutormanagementsystem.exception.StudentNotFoundException;
 import com.tutor.tutormanagementsystem.model.Role;
 import com.tutor.tutormanagementsystem.model.Student;
@@ -18,9 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -30,52 +25,17 @@ public class StudentService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
-    private static final Pattern PHONE_PATTERN = Pattern.compile("^\\d+$");
-
-    // null-safe so validateEmail below still produces the friendly message for a
-    // missing email instead of this throwing a NullPointerException first
-    private String normalizeEmail(String email) {
-        return email == null ? null : email.trim().toLowerCase();
-    }
-
-    private void validateEmail(String email) {
-        if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
-            throw new InvalidStudentDataException("Please enter a valid email address");
-        }
-    }
-
-    private void validatePassword(String password) {
-        if (password == null || password.length() < 4) {
-            throw new InvalidStudentDataException("Password must be at least 4 characters");
-        }
-    }
-
-    private void validatePhone(String phone) {
-        if (phone == null || !PHONE_PATTERN.matcher(phone).matches()) {
-            throw new InvalidStudentDataException("Phone number must contain digits only");
-        }
-    }
-
-    private void validateHourlyRate(BigDecimal hourlyRate) {
-        if (hourlyRate == null
-                || hourlyRate.stripTrailingZeros().scale() > 0
-                || hourlyRate.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new InvalidStudentDataException("Hourly rate must be a positive whole number");
-        }
-    }
-
     @Transactional
     public StudentResponse createStudent(CreateStudentRequest request) {
         // stored lowercased+trimmed so the DB's unique constraint on email actually
         // means "one account per address" - without it Foo@x.com and foo@x.com are
         // two separate rows that both satisfy the constraint
-        String email = normalizeEmail(request.email());
+        String email = AccountValidation.normalizeEmail(request.email());
 
-        validateEmail(email);
-        validatePassword(request.password());
-        validatePhone(request.phone());
-        validateHourlyRate(request.hourlyRate());
+        AccountValidation.requireValidEmail(email);
+        AccountValidation.requireValidPassword(request.password());
+        AccountValidation.requireValidPhone(request.phone());
+        AccountValidation.requireValidHourlyRate(request.hourlyRate());
 
         // checks user doesn't exist already
         if (userRepository.findByEmailIgnoreCase(email).isPresent()) {
@@ -111,8 +71,8 @@ public class StudentService {
 
     @Transactional
     public StudentResponse updateStudent(Long studentId, UpdateStudentRequest request) {
-        validatePhone(request.phone());
-        validateHourlyRate(request.hourlyRate());
+        AccountValidation.requireValidPhone(request.phone());
+        AccountValidation.requireValidHourlyRate(request.hourlyRate());
 
         Student student = getStudentEntity(studentId);
         User user = student.getUser();
@@ -133,8 +93,8 @@ public class StudentService {
 
     @Transactional
     public StudentResponse updateStudentEmail(Long studentId, String newEmail) {
-        String email = normalizeEmail(newEmail);
-        validateEmail(email);
+        String email = AccountValidation.normalizeEmail(newEmail);
+        AccountValidation.requireValidEmail(email);
 
         Student student = getStudentEntity(studentId);
         User user = student.getUser();
@@ -152,7 +112,7 @@ public class StudentService {
 
     @Transactional
     public StudentResponse resetStudentPassword(Long studentId, String newPassword) {
-        validatePassword(newPassword);
+        AccountValidation.requireValidPassword(newPassword);
 
         Student student = getStudentEntity(studentId);
         User user = student.getUser();
