@@ -28,44 +28,7 @@ public class ScheduleOverrideService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public ScheduleOverrideResponse createScheduleOverride(ScheduleOverrideRequest request) {
-
-        if (request.date().isBefore(LocalDate.now())) {
-            throw new PastDateException("Cannot create an override for a past date");
-        }
-
-        TimeValidation.requireValidRange(request.startTime(), request.endTime());
-
-        // taken before any of the checks below, for the same reason LessonService takes
-        // it before its availability check: everything from here to the save is a
-        // check-then-act sequence, and without the lock two concurrent writes on this
-        // date can both pass the checks and both insert
-        scheduleOverrideRepository.acquireDateLock(request.date().toEpochDay());
-
-        List<ScheduleOverride> overlapping = scheduleOverrideRepository
-                .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThan(
-                        request.date(), request.endTime(), request.startTime());
-
-        if (!overlapping.isEmpty()) {
-            throw new ScheduleConflictException("This time overlaps an existing override");
-        }
-
-        boolean coveredByRule = !scheduleRuleRepository
-                .findAllByDayOfWeekAndStartTimeLessThanAndEndTimeGreaterThan(
-                        request.date().getDayOfWeek(), request.endTime(), request.startTime())
-                .isEmpty();
-
-        if (request.type() == OverrideType.BLOCK && !coveredByRule) {
-            throw new ScheduleConflictException("This time is already unavailable - no need to block it");
-        }
-
-        if (request.type() == OverrideType.ADD && coveredByRule) {
-            throw new ScheduleConflictException("This time is already available - no need to add it");
-        }
-
-        if (request.type() == OverrideType.BLOCK
-                && lessonService.hasScheduledLessonInRange(request.date(), request.startTime(), request.endTime())) {
-            throw new ScheduleConflictException("This time has a scheduled lesson - cancel it before blocking this time");
-        }
+        requireWritableSlot(request, null, "Cannot create an override for a past date");
 
         ScheduleOverride scheduleOverride = ScheduleOverride.builder()
                 .date(request.date())
@@ -77,9 +40,7 @@ public class ScheduleOverrideService {
 
         scheduleOverrideRepository.save(scheduleOverride);
 
-        return new ScheduleOverrideResponse(scheduleOverride.getId(), scheduleOverride.getDate(),
-                scheduleOverride.getStartTime(), scheduleOverride.getEndTime(),
-                scheduleOverride.getType(), scheduleOverride.getNote());
+        return toResponse(scheduleOverride);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -87,19 +48,44 @@ public class ScheduleOverrideService {
         ScheduleOverride scheduleOverride = scheduleOverrideRepository.findById(overrideId)
                 .orElseThrow(() -> new ScheduleOverrideNotFoundException("Schedule override not found"));
 
+        requireWritableSlot(request, overrideId, "Cannot move an override to a past date");
+
+        scheduleOverride.setDate(request.date());
+        scheduleOverride.setStartTime(request.startTime());
+        scheduleOverride.setEndTime(request.endTime());
+        scheduleOverride.setType(request.type());
+        scheduleOverride.setNote(request.note());
+
+        scheduleOverrideRepository.save(scheduleOverride);
+
+        return toResponse(scheduleOverride);
+    }
+
+    // every rule an override has to satisfy before it can be written, shared by create
+    // and update since the two only ever differed in two places: the wording of the
+    // past-date message, and whether the overlap check ignores the row being edited.
+    //
+    // excludeOverrideId is null when creating (nothing to exclude) and the override's
+    // own id when updating, so moving an override within its own time range doesn't
+    // report itself as an overlap.
+    private void requireWritableSlot(ScheduleOverrideRequest request, Long excludeOverrideId, String pastDateMessage) {
         if (request.date().isBefore(LocalDate.now())) {
-            throw new PastDateException("Cannot move an override to a past date");
+            throw new PastDateException(pastDateMessage);
         }
 
         TimeValidation.requireValidRange(request.startTime(), request.endTime());
 
+        // taken before any of the checks below, for the same reason LessonService takes
+        // it before its availability check: everything from here to the save is a
+        // check-then-act sequence, and without the lock two concurrent writes on this
+        // date can both pass the checks and both insert
         scheduleOverrideRepository.acquireDateLock(request.date().toEpochDay());
 
         boolean overlapping = scheduleOverrideRepository
                 .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThan(
                         request.date(), request.endTime(), request.startTime())
                 .stream()
-                .anyMatch(other -> !other.getId().equals(overrideId));
+                .anyMatch(other -> !other.getId().equals(excludeOverrideId));
 
         if (overlapping) {
             throw new ScheduleConflictException("This time overlaps an existing override");
@@ -122,15 +108,9 @@ public class ScheduleOverrideService {
                 && lessonService.hasScheduledLessonInRange(request.date(), request.startTime(), request.endTime())) {
             throw new ScheduleConflictException("This time has a scheduled lesson - cancel it before blocking this time");
         }
+    }
 
-        scheduleOverride.setDate(request.date());
-        scheduleOverride.setStartTime(request.startTime());
-        scheduleOverride.setEndTime(request.endTime());
-        scheduleOverride.setType(request.type());
-        scheduleOverride.setNote(request.note());
-
-        scheduleOverrideRepository.save(scheduleOverride);
-
+    private ScheduleOverrideResponse toResponse(ScheduleOverride scheduleOverride) {
         return new ScheduleOverrideResponse(scheduleOverride.getId(), scheduleOverride.getDate(),
                 scheduleOverride.getStartTime(), scheduleOverride.getEndTime(),
                 scheduleOverride.getType(), scheduleOverride.getNote());
@@ -138,8 +118,7 @@ public class ScheduleOverrideService {
 
     public List<ScheduleOverrideResponse> getAllScheduleOverrides() {
         return scheduleOverrideRepository.findAll().stream()
-                .map(o -> new ScheduleOverrideResponse(o.getId(), o.getDate(), o.getStartTime(),
-                        o.getEndTime(), o.getType(), o.getNote()))
+                .map(this::toResponse)
                 .toList();
     }
 
@@ -153,8 +132,7 @@ public class ScheduleOverrideService {
 
     public List<ScheduleOverrideResponse> getOverridesForDate(LocalDate date) {
         return scheduleOverrideRepository.findAllByDate(date).stream()
-                .map(o -> new ScheduleOverrideResponse(o.getId(), o.getDate(), o.getStartTime(),
-                        o.getEndTime(), o.getType(), o.getNote()))
+                .map(this::toResponse)
                 .toList();
     }
 
