@@ -1,6 +1,6 @@
 import { smallSecondaryButtonClass } from "../../constants/formStyles";
 import { formatShortDateString, formatTimeOfDay } from "../../utils/time";
-import { statusStyles } from "../../types/lesson";
+import { hasLessonStarted, statusStyles } from "../../types/lesson";
 import type { Lesson } from "../../types/lesson";
 
 type TeacherLessonRowProps = {
@@ -37,7 +37,10 @@ export default function TeacherLessonRow({
             </div>
 
             <div className="flex gap-2 relative">
-                {lesson.status === "SCHEDULED" && (
+                {/* only offered once the lesson has actually started - the backend
+                    refuses earlier, so showing it on a future lesson just produced a
+                    failed request. the schedule page's lesson modal gates the same way */}
+                {lesson.status === "SCHEDULED" && hasLessonStarted(lesson) && (
                     <button onClick={() => onComplete(lesson.id)} className={smallSecondaryButtonClass}>
                         Mark completed
                     </button>

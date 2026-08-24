@@ -52,3 +52,14 @@ export function lessonMonthKey(date: string): string {
     const [year, month] = date.split("-");
     return `${year}-${month.padStart(2, "0")}`;
 }
+
+// a lesson can only be marked completed once it's actually started - matches the
+// backend check in LessonService.completeLesson. takes the date/time fields rather
+// than a whole Lesson so both the teacher's schedule modal and the lessons list
+// row can share it, despite holding differently-shaped lesson objects
+export function hasLessonStarted(lesson: { date: string; startTime: string }): boolean {
+    const [year, month, day] = lesson.date.split("-").map(Number);
+    const [hours, minutes] = lesson.startTime.slice(0, 5).split(":").map(Number);
+    const lessonStart = new Date(year, month - 1, day, hours, minutes, 0, 0);
+    return lessonStart <= new Date();
+}

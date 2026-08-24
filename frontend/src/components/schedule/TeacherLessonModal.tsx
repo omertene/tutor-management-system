@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Modal from "../Modal";
 import type { TeacherLesson } from "../../types/schedule";
+import { hasLessonStarted } from "../../types/lesson";
 
 type TeacherLessonModalProps = {
     lesson: TeacherLesson;
@@ -10,15 +11,6 @@ type TeacherLessonModalProps = {
     onEdit: (lesson: TeacherLesson) => void;
     onCancel: (lessonId: number) => void;
 };
-
-// a lesson can only be marked completed once it's actually started - matches the
-// backend check in LessonService.completeLesson
-function hasLessonStarted(lesson: TeacherLesson): boolean {
-    const [year, month, day] = lesson.date.split("-").map(Number);
-    const [hours, minutes] = lesson.startTime.slice(0, 5).split(":").map(Number);
-    const lessonStart = new Date(year, month - 1, day, hours, minutes, 0, 0);
-    return lessonStart <= new Date();
-}
 
 export default function TeacherLessonModal({
     lesson, onClose, onSaveNotes, onComplete, onEdit, onCancel,
