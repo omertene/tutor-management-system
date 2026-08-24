@@ -15,11 +15,12 @@ type BookLessonFormProps = {
         endTime: string;
     }) => Promise<boolean>;
     onCreateSubject: (name: string) => Promise<Subject | null>;
+    onValidationError: (message: string) => void;
 };
 
 // the teacher's booking form. date/time default to today 08:00-09:00 instead of
 // blank, since most bookings only need the student/subject changed
-export default function BookLessonForm({ students, subjects, onBook, onCreateSubject }: BookLessonFormProps) {
+export default function BookLessonForm({ students, subjects, onBook, onCreateSubject, onValidationError }: BookLessonFormProps) {
     const [selectedStudentId, setSelectedStudentId] = useState("");
     const [selectedSubjectId, setSelectedSubjectId] = useState("");
     const [date, setDate] = useState(todayDateString());
@@ -51,6 +52,14 @@ export default function BookLessonForm({ students, subjects, onBook, onCreateSub
     }
 
     function handleBook() {
+        // same guard as the schedule page's booking modal - without it an empty
+        // dropdown posts studentId 0 and the backend answers "Student not found",
+        // which reads like a data problem rather than an unfilled field
+        if (!selectedStudentId || !selectedSubjectId || !date || !startTime || !endTime) {
+            onValidationError("Please fill in all fields");
+            return;
+        }
+
         onBook({
             studentId: Number(selectedStudentId),
             subjectId: Number(selectedSubjectId),

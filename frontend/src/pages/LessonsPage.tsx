@@ -29,7 +29,7 @@ function LessonsPage() {
 
     const {
         lessons, subjects, students,
-        errorMessage,
+        errorMessage, setErrorMessage,
         createLesson, createSubject,
         canCancelLesson, cancelLesson, completeLesson,
     } = useLessons(role);
@@ -107,6 +107,7 @@ function LessonsPage() {
                         subjects={subjects}
                         onBook={createLesson}
                         onCreateSubject={createSubject}
+                        onValidationError={setErrorMessage}
                     />
                 )}
 
