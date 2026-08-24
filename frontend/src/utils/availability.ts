@@ -117,3 +117,54 @@ export function toPositionedBlock<T extends Span>(
 export function dayDateString(weekDates: Date[], dayIndex: number): string {
     return toDateString(weekDates[dayIndex]);
 }
+
+// the TEACHER grid's coverage: weekly rules only. deliberately NOT the same as
+// getRuleCoverageQuarters above, which also folds in ADD/BLOCK overrides - the
+// teacher sees overrides as their own colored blocks drawn on top, so shading the
+// cell by them too would double-count. keeping these as two named functions is
+// what stops a change to one silently altering the other view.
+export function getRuleOnlyCoverageQuarters(
+    dayIndex: number,
+    hour: number,
+    scheduleRules: ScheduleRule[],
+): boolean[] {
+    const cellStart = hour * 60;
+
+    return [0, 1, 2, 3].map((quarter) => {
+        const quarterStart = cellStart + quarter * 15;
+        const quarterEnd = quarterStart + 15;
+
+        return scheduleRules.some(
+            (rule) => rule.dayOfWeek === days[dayIndex] && contains(rule, quarterStart, quarterEnd)
+        );
+    });
+}
+
+// whether a rule overlaps this day/[startHour, endHour) range AT ALL - matches
+// the backend's own "coveredByRule" check in ScheduleOverrideService exactly
+// (start < requestedEnd AND end > requestedStart). this has to be the same
+// "any overlap" definition the backend uses, not "every quarter individually
+// covered" - an override is a single flat range and the override table can't
+// represent partial-hour coverage, so offering "Add availability"/"Block this
+// time" based on a stricter frontend-only definition led the server to reject
+// the exact action the popup had just offered (e.g. a rule starting at 08:15
+// means the 08:00 cell isn't "fully available" by quarters, but the backend still
+// sees 08:00-09:00 as already covered and refuses to add it again)
+export function isRangeCoveredByRule(
+    dayIndex: number,
+    startHour: number,
+    endHour: number,
+    scheduleRules: ScheduleRule[],
+): boolean {
+    const rangeStart = startHour * 60;
+    const rangeEnd = endHour * 60;
+
+    return scheduleRules.some(
+        (rule) => rule.dayOfWeek === days[dayIndex] && overlaps(rule, rangeStart, rangeEnd)
+    );
+}
+
+// "08:00" for hour 8 - the whole-hour boundary a drag-selected range snaps to
+export function hourToTime(hour: number): string {
+    return `${String(hour).padStart(2, "0")}:00`;
+}

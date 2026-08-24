@@ -1,0 +1,121 @@
+import { useEffect, useState } from "react";
+import Modal from "../Modal";
+import type { TeacherLesson } from "../../types/schedule";
+
+type TeacherLessonModalProps = {
+    lesson: TeacherLesson;
+    onClose: () => void;
+    onSaveNotes: (lessonId: number, notes: string) => Promise<TeacherLesson | null>;
+    onComplete: (lessonId: number) => void;
+    onEdit: (lesson: TeacherLesson) => void;
+    onCancel: (lessonId: number) => void;
+};
+
+// a lesson can only be marked completed once it's actually started - matches the
+// backend check in LessonService.completeLesson
+function hasLessonStarted(lesson: TeacherLesson): boolean {
+    const [year, month, day] = lesson.date.split("-").map(Number);
+    const [hours, minutes] = lesson.startTime.slice(0, 5).split(":").map(Number);
+    const lessonStart = new Date(year, month - 1, day, hours, minutes, 0, 0);
+    return lessonStart <= new Date();
+}
+
+export default function TeacherLessonModal({
+    lesson, onClose, onSaveNotes, onComplete, onEdit, onCancel,
+}: TeacherLessonModalProps) {
+    // the notes textarea's own draft value, kept separate from the lesson so typing
+    // doesn't need to round-trip through a lesson-list update on every keystroke -
+    // resynced whenever a different lesson (or a freshly saved one) is shown
+    const [notesDraft, setNotesDraft] = useState(lesson.notes ?? "");
+    const [savingNotes, setSavingNotes] = useState(false);
+
+    useEffect(() => {
+        setNotesDraft(lesson.notes ?? "");
+    }, [lesson.id, lesson.notes]);
+
+    async function handleSaveNotes() {
+        setSavingNotes(true);
+        await onSaveNotes(lesson.id, notesDraft);
+        setSavingNotes(false);
+    }
+
+    return (
+        <Modal title="Lesson" onClose={onClose}>
+            <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-slate-900">
+                    {lesson.studentFirstName} {lesson.studentLastName}
+                </p>
+                <p className="text-sm text-slate-700">{lesson.subjectName}</p>
+                <p className="text-sm text-slate-500">
+                    {lesson.date} &middot; {lesson.startTime.slice(0, 5)}&ndash;{lesson.endTime.slice(0, 5)}
+                </p>
+                <p className="text-sm text-slate-500">Status: {lesson.status}</p>
+
+                {lesson.status !== "CANCELLED" && (
+                    <div className="flex flex-col gap-1 mt-2">
+                        <label className="text-sm font-medium text-slate-700">Notes</label>
+                        <textarea
+                            value={notesDraft}
+                            onChange={(e) => setNotesDraft(e.target.value)}
+                            placeholder="What was covered, homework assigned, anything worth remembering..."
+                            rows={3}
+                            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                        />
+                        <button
+                            onClick={handleSaveNotes}
+                            disabled={savingNotes || notesDraft === (lesson.notes ?? "")}
+                            className="self-end px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+                        >
+                            {savingNotes ? "Saving..." : "Save notes"}
+                        </button>
+                    </div>
+                )}
+
+                {lesson.status === "SCHEDULED" && (
+                    <div className="flex flex-col gap-2 mt-2">
+                        {hasLessonStarted(lesson) ? (
+                            <button
+                                onClick={() => onComplete(lesson.id)}
+                                className="w-full rounded-lg bg-indigo-600 text-white text-sm font-medium py-2.5 hover:bg-indigo-700 transition-colors"
+                            >
+                                Mark completed
+                            </button>
+                        ) : (
+                            <p className="text-xs text-slate-400">Can be marked completed once it starts.</p>
+                        )}
+                        <button
+                            onClick={() => onEdit(lesson)}
+                            className="w-full rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium py-2.5 hover:bg-slate-50 transition-colors"
+                        >
+                            Edit lesson
+                        </button>
+                        <button
+                            onClick={() => onCancel(lesson.id)}
+                            className="w-full rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium py-2.5 hover:bg-red-50 transition-colors"
+                        >
+                            Cancel lesson
+                        </button>
+                    </div>
+                )}
+
+                {lesson.status === "COMPLETED" && (
+                    <div className="flex flex-col gap-2 mt-2">
+                        <p className="text-xs text-slate-400">
+                            Cancelling a completed lesson removes it from the student's debt and this month's revenue.
+                        </p>
+                        <button
+                            onClick={() => {
+                                if (window.confirm("Cancel this completed lesson? This will reverse its effect on debt and revenue.")) {
+                                    onCancel(lesson.id);
+                                }
+                            }}
+                            className="w-full rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium py-2.5 hover:bg-red-50 transition-colors"
+                        >
+                            Cancel lesson
+                        </button>
+                    </div>
+                )}
+            </div>
+        </Modal>
+    );
+}

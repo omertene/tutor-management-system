@@ -67,3 +67,25 @@ export type Subject = {
     id: number;
     name: string;
 };
+
+// a lesson as the TEACHER's schedule receives it - includes the student's name and
+// id (the teacher has many students) and the private per-lesson notes
+export type TeacherLesson = {
+    id: number;
+    studentId: number;
+    studentFirstName: string;
+    studentLastName: string;
+    subjectName: string;
+    subjectId: number;
+    date: string;
+    startTime: string;
+    endTime: string;
+    status: string;
+    notes: string | null;
+};
+
+export type TeacherStudent = {
+    id: number;
+    firstName: string;
+    lastName: string;
+};
