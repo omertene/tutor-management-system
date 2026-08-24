@@ -50,3 +50,20 @@ export function sortRules(rules: ScheduleRule[]): ScheduleRule[] {
         return a.startTime.localeCompare(b.startTime);
     });
 }
+
+// one of the student's own lessons as the student grid receives it - no student
+// name (they're the only student it can be) and no price
+export type StudentLesson = {
+    id: number;
+    subjectName: string;
+    subjectId: number;
+    date: string;
+    startTime: string;
+    endTime: string;
+    status: string;
+};
+
+export type Subject = {
+    id: number;
+    name: string;
+};
