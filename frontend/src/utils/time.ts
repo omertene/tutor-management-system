@@ -94,3 +94,8 @@ export function formatTimeOfDay(time: string): string {
 export function todayDateString(): string {
     return toDateString(new Date());
 }
+
+// 1.5 -> "1.5", 2 -> "2". keeps whole hours clean instead of showing "2.0"
+export function formatHours(hours: number): string {
+    return hours % 1 === 0 ? String(hours) : hours.toFixed(1);
+}
