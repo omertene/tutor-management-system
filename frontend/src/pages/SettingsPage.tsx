@@ -3,18 +3,7 @@ import NavBar from "../components/NavBar";
 import { apiFetch, readErrorMessage } from "../utils/api";
 import type { Subject } from "../types";
 import { teacherLinks } from "../constants/navLinks";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function validateEmailField(email: string): string | null {
-    if (!EMAIL_PATTERN.test(email)) return "Please enter a valid email address";
-    return null;
-}
-
-function validatePasswordField(password: string): string | null {
-    if (password.length < 4) return "Password must be at least 4 characters";
-    return null;
-}
+import { validateEmailField, validatePasswordField } from "../utils/fieldValidation";
 
 // teacher-only config page. subjects used to have their own standalone nav tab,
 // but a dedicated page just for "add a subject name" was overkill - it lives

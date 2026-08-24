@@ -2,31 +2,7 @@ import { useState } from "react";
 import Modal from "./Modal";
 import { apiFetch, readErrorMessage } from "../utils/api";
 import { inputClassFull, labelClass } from "../constants/formStyles";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_PATTERN = /^\d+$/;
-
-function validateEmailField(email: string): string | null {
-    if (!EMAIL_PATTERN.test(email)) return "Please enter a valid email address";
-    return null;
-}
-
-function validatePasswordField(password: string): string | null {
-    if (password.length < 4) return "Password must be at least 4 characters";
-    return null;
-}
-
-function validatePhoneField(phone: string): string | null {
-    if (!PHONE_PATTERN.test(phone)) return "Phone number must contain digits only";
-    return null;
-}
-
-function validateHourlyRateField(hourlyRate: string): string | null {
-    if (!/^\d+$/.test(hourlyRate) || Number(hourlyRate) <= 0) {
-        return "Hourly rate must be a positive whole number";
-    }
-    return null;
-}
+import { validateEmailField, validatePasswordField, validatePhoneField, validateHourlyRateField } from "../utils/fieldValidation";
 
 type AddStudentModalProps = {
     onClose: () => void;
@@ -109,7 +85,6 @@ function AddStudentModal({ onClose, onCreated }: AddStudentModalProps) {
             setErrorMessage("Could not reach the server. Please try again.");
         }
     }
-
 
     return (
         <Modal title="Add student" onClose={onClose}>
