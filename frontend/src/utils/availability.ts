@@ -164,7 +164,14 @@ export function isRangeCoveredByRule(
     );
 }
 
-// "08:00" for hour 8 - the whole-hour boundary a drag-selected range snaps to
+// "08:00" for hour 8 - the whole-hour boundary a drag-selected range snaps to.
+//
+// selecting the last row of the day gives an end hour of 24, which is not a valid
+// LocalTime (00:00-23:59) - it failed to deserialize server-side and came back as a
+// generic "not valid JSON". a range ending at midnight is clamped to 23:45 instead:
+// lessons and overrides never wrap past midnight in this app, so the final quarter
+// hour is the honest end of the day.
 export function hourToTime(hour: number): string {
+    if (hour >= 24) return "23:45";
     return `${String(hour).padStart(2, "0")}:00`;
 }

@@ -18,11 +18,15 @@ export const ROW_HEIGHT = 48; // px, must match the h-12 cell height in WeekGrid
 export const HOUR_OPTIONS: string[] = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, "0"));
 export const MINUTE_OPTIONS: string[] = ["00", "15", "30", "45"];
 
-// adds 1 hour to a "HH:MM" time, wrapping past midnight if needed
+// adds 1 hour to a "HH:MM" time, stopping at the end of the day.
+//
+// this used to wrap with % 24, so a 23:00 start produced a 00:00 end - an end before
+// the start, which the backend rightly refused. nothing in this app runs past
+// midnight, so the last hour of the day clamps to 23:45 rather than wrapping.
 export function addOneHour(time: string): string {
     const [hours, minutes] = time.split(":").map(Number);
-    const nextHour = (hours + 1) % 24;
-    return `${String(nextHour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    if (hours >= 23) return "23:45";
+    return `${String(hours + 1).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
 // Monday-based week start isn't used here - the grid is Sunday-first to match
