@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { HOUR_OPTIONS, MINUTE_OPTIONS } from "../utils/time";
 
 type TimeSelectProps = {
@@ -9,49 +8,28 @@ type TimeSelectProps = {
 
 // hour + minute picked independently via two small dropdowns, instead of one long
 // scrolling list of all 96 quarter-hour times - value/onChange still work as a single
-// "HH:MM" string so nothing else needs to know this is two selects
+// "HH:MM" string so nothing else needs to know this is two selects.
+//
+// neither dropdown offers a blank option. a half-picked time ("--:00") can't be
+// expressed as a valid "HH:MM", and sending one posted an unparseable value that the
+// backend rejected with a generic "not valid JSON" long before any field validation
+// ran. making the blank state unreachable is the same approach MINUTE_OPTIONS already
+// takes with off-grid minutes: the picker can only produce values the server accepts.
 function TimeSelect({ value, onChange, className }: TimeSelectProps) {
-    // the two dropdowns keep their own half-picked state, because the value handed
-    // back to the form is "" until BOTH halves are chosen - without this, picking an
-    // hour while the minute is still "--" would immediately blank the hour select again
-    const [hour, setHour] = useState(() => (value ? value.split(":")[0] : ""));
-    const [minute, setMinute] = useState(() => (value ? value.split(":")[1] : ""));
-
-    // a parent that swaps in a different time (opening a modal on another lesson,
-    // auto-advancing the end time) has to win over the local state above
-    useEffect(() => {
-        const [nextHour, nextMinute] = value ? value.split(":") : ["", ""];
-        if (value) {
-            setHour(nextHour);
-            setMinute(nextMinute);
-        }
-    }, [value]);
-
-    // a half-picked time is reported to the form as no time at all. emitting ":00"
-    // or "23:" instead would satisfy a plain `!value` check, so the request went out
-    // with an unparseable time and came back as a generic "not valid JSON" - the form
-    // can't tell a partial time from a complete one unless this component refuses to
-    // invent the missing half
-    function updateHour(newHour: string) {
-        setHour(newHour);
-        onChange(newHour && minute ? `${newHour}:${minute}` : "");
-    }
-
-    function updateMinute(newMinute: string) {
-        setMinute(newMinute);
-        onChange(hour && newMinute ? `${hour}:${newMinute}` : "");
-    }
+    // an empty/partial incoming value falls back to a real time rather than rendering
+    // a select with nothing chosen, so the control always shows what it will submit
+    const [rawHour, rawMinute] = value ? value.split(":") : ["", ""];
+    const hour = HOUR_OPTIONS.includes(rawHour) ? rawHour : HOUR_OPTIONS[0];
+    const minute = MINUTE_OPTIONS.includes(rawMinute) ? rawMinute : MINUTE_OPTIONS[0];
 
     return (
         <div className="flex gap-1">
-            <select value={hour} onChange={(e) => updateHour(e.target.value)} className={className}>
-                <option value="">--</option>
+            <select value={hour} onChange={(e) => onChange(`${e.target.value}:${minute}`)} className={className}>
                 {HOUR_OPTIONS.map((h) => (
                     <option key={h} value={h}>{h}</option>
                 ))}
             </select>
-            <select value={minute} onChange={(e) => updateMinute(e.target.value)} className={className}>
-                <option value="">--</option>
+            <select value={minute} onChange={(e) => onChange(`${hour}:${e.target.value}`)} className={className}>
                 {MINUTE_OPTIONS.map((m) => (
                     <option key={m} value={m}>{m}</option>
                 ))}

@@ -19,8 +19,10 @@ export default function AddLessonModal({ students, onClose, onCreated }: AddLess
     const [studentId, setStudentId] = useState("");
     const [subjectId, setSubjectId] = useState("");
     const [date, setDate] = useState("");
-    const [startTime, setStartTime] = useState("");
-    const [endTime, setEndTime] = useState("");
+    // real defaults rather than "" - TimeSelect has no blank option, so an empty
+    // value would render as 00:00 while the form still submitted an empty string
+    const [startTime, setStartTime] = useState("08:00");
+    const [endTime, setEndTime] = useState("09:00");
     const [errorMessage, setErrorMessage] = useState("");
 
     useEffect(() => {
