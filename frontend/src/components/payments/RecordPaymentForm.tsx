@@ -23,6 +23,13 @@ export default function RecordPaymentForm({ students, onSubmit, onError }: Recor
     async function handleSubmit() {
         onError("");
 
+        // an unpicked student posts id 0 ("Student not found") and a cleared date
+        // posts "" (which fails to deserialize) - neither reads as a missing field
+        if (!studentId || !paymentDate) {
+            onError("Please fill in all fields");
+            return;
+        }
+
         const error = await onSubmit({
             studentId: Number(studentId),
             amount: Number(amount),

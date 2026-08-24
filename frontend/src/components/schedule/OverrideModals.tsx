@@ -55,6 +55,14 @@ export function OverrideFormModal({ draft, onClose, onSave }: OverrideFormModalP
     async function handleSave() {
         setError("");
 
+        // an empty time posts "" where the backend expects a LocalTime, which fails
+        // to deserialize before any validation runs - the reply is then a generic
+        // "not valid JSON" rather than anything about the missing field
+        if (!date || !startTime || !endTime) {
+            setError("Please fill in all fields");
+            return;
+        }
+
         const failure = await onSave({ date, startTime, endTime, type, note }, draft.overrideId);
 
         if (failure) {
