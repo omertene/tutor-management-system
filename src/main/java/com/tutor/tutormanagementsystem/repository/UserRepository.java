@@ -8,15 +8,11 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    // case-insensitive on purpose. emails are stored lowercased (see
-    // StudentService/UserService), but a user typing "Teacher@Example.com" at the
-    // login form must still match the stored "teacher@example.com" row - an exact
-    // match would just report "invalid email or password" for the right password
+    // case-insensitive on purpose. emails are stored lowercased
     Optional<User> findByEmailIgnoreCase(String email);
 
     // used by TeacherSeeder to decide whether a teacher account already exists -
-    // checked by role rather than by the fixed seed email, so renaming the
-    // teacher's own login email doesn't make the seeder think none exists yet
-    // and create a second, duplicate default-credentials account on next boot
+    // checked by role rather than by the fixed address, so renaming the
+    // teacher's email doesn't make a new teacher account
     boolean existsByRole(Role role);
 }
