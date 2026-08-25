@@ -7,6 +7,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -45,7 +46,16 @@ public class Student {
     private String notes;
 
 
+    // false = teacher deactivated this student instead of deleting them
+    // (deleting would break their lesson/payment history, so this is used instead)
+    // @Builder.Default is needed here or Lombok's builder ignores the "= true" and defaults to false
     @Builder.Default
     @Column(nullable = false)
     private boolean active = true;
+
+    // optimistic locking - in case the teacher edits
+    // a student's profile from two tabs/devices at once
+    @Version
+    @Column(nullable = false, columnDefinition = "bigint default 0")
+    private Long version;
 }
