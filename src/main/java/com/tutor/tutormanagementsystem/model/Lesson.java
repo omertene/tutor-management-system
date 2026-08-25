@@ -71,13 +71,10 @@ public class Lesson {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
-    // optimistic locking. two teacher tabs (or a teacher and a student) editing the
-    // same row at once used to silently overwrite each other - last write won and the
-    // earlier change vanished with no error. Hibernate now checks this column on every
-    // update and throws if the row changed since it was read, which
-    // GlobalExceptionHandler turns into a 409 the UI can show.
+    // optimistic locking in case the teacher (logged in on two devices/tabs) or a
+    // teacher and a student edit the same row at the same time.
     // columnDefinition carries the DEFAULT 0 so ddl-auto=update backfills existing
-    // rows instead of leaving them NULL (a NULL version breaks the next update)
+    // rows instead of leaving them NULL which will breaks the next update
     @Version
     @Column(nullable = false, columnDefinition = "bigint default 0")
     private Long version;
@@ -85,7 +82,6 @@ public class Lesson {
 
     // true once the "your lesson is coming up" reminder email has been sent for this
     // lesson - prevents the scheduled reminder job from emailing the same lesson twice.
-    // defaults to false for every new lesson booked from now on
     @Column(nullable = false)
     @Builder.Default
     private boolean reminderSent = false;
