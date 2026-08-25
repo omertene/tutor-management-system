@@ -11,8 +11,7 @@ import java.util.List;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
-    // cancelled payments are soft-deleted (see Payment.cancelled) - every normal read
-    // excludes them, same as a cancelled lesson disappearing from the schedule/list
+    // cancelled payments are soft-deleted - every normal read excludes them
     List<Payment> findAllByStudentIdAndCancelledFalse(Long studentId);
 
     List<Payment> findAllByCancelledFalse();
@@ -25,15 +24,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.cancelled = false")
     BigDecimal sumAllPayments();
 
-    // total amount actually received within a date range, keyed off paymentDate (the
-    // date the teacher says they were paid) rather than createdAt (when the record was
-    // entered) - used for the "this month" dashboard card
+    // total amount actually received within a date range
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.paymentDate BETWEEN :startDate AND :endDate AND p.cancelled = false")
     BigDecimal sumPaymentsByDateRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
-    // income received grouped by calendar month, keyed off paymentDate and scoped to
-    // a range (the statistics dashboard passes the last 12 months) - the "income
-    // received" half of the monthly trend chart
+    // income received grouped by calendar month
     @Query("SELECT YEAR(p.paymentDate), MONTH(p.paymentDate), COALESCE(SUM(p.amount), 0) FROM Payment p " +
             "WHERE p.paymentDate BETWEEN :startDate AND :endDate AND p.cancelled = false " +
             "GROUP BY YEAR(p.paymentDate), MONTH(p.paymentDate) ORDER BY YEAR(p.paymentDate), MONTH(p.paymentDate)")

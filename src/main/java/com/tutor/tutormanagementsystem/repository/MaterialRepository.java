@@ -14,17 +14,9 @@ public interface MaterialRepository extends JpaRepository<Material, Long> {
 
     List<Material> findAllByLessonId(Long lessonId);
 
-    // the three JPQL constructor-expression queries below back every "list materials"
-    // endpoint. they select metadata columns directly instead of loading full Material
-    // entities - a plain findAll()/findAllByX would still pull every file's bytes out
-    // of the `data` column for each row even though the list view never reads them,
-    // since @Lob byte[] is an eager basic mapping and @Basic(fetch = LAZY) on it is a
-    // silent no-op without Hibernate bytecode enhancement, which this project doesn't
-    // have configured. lesson/subject are LEFT JOINed since a material's lesson link
-    // is optional - JPQL returns null for those fields when there's no lesson, same as
-    // the ternaries the old Java-side mapping used to do. every join is aliased
-    // explicitly (JOIN m.student st JOIN st.user u) rather than dereferencing a path
-    // inside the join itself, which Hibernate accepts inconsistently
+    // We select specific metadata fields (DTO projection) instead of full entities
+    // to avoid loading heavy file bytes (`data` column) into memory for simple list views.
+    // Using LEFT JOIN for lesson/subject since a material doesn't have to be linked to a specific lesson.
     @Query("SELECT NEW com.tutor.tutormanagementsystem.dto.MaterialResponse(" +
             "m.id, st.id, u.firstName, u.lastName, " +
             "l.id, l.date, l.startTime, s.name, " +
