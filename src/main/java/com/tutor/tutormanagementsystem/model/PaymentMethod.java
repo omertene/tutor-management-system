@@ -1,5 +1,6 @@
 package com.tutor.tutormanagementsystem.model;
 
+// how a payment was made
 public enum PaymentMethod {
 
     CASH,
