@@ -8,17 +8,13 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-// handles DB access for the Material table (files/links/notes shared with students)
+/* Spring Data JPA repository for Material entities. Uses DTO constructor projections
+   to avoid loading heavy file byte arrays into memory on list views. */
+
 public interface MaterialRepository extends JpaRepository<Material, Long> {
 
-    /* all materials for one student, full entity (includes file bytes if it's a FILE) */
-    List<Material> findAllByStudentId(Long studentId);
-
-    /* all materials linked to one lesson, full entity */
-    List<Material> findAllByLessonId(Long lessonId);
-
     /* returns every material as a MaterialResponse DTO instead of the full entity, so
-       list views don't drag the file bytes (`data` column) into memory for nothing */
+       list views don't drag the file bytes (`data` column) into memory */
     @Query("SELECT NEW com.tutor.tutormanagementsystem.dto.MaterialResponse(" +
             "m.id, st.id, u.firstName, u.lastName, " +
             "l.id, l.date, l.startTime, s.name, " +

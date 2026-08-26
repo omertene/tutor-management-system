@@ -9,14 +9,16 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-// handles DB access for the Payment table
+/* Spring Data JPA repository for Payment entities.
+   Handles financial ledger queries, soft-deleted payment filtering, and revenue aggregations. */
+
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
-    /* all non-cancelled payments for one student - cancelled ones are soft-deleted
+    /* all non-canceled payments for one student - canceled ones are soft-deleted
        so every normal read excludes them */
     List<Payment> findAllByStudentIdAndCancelledFalse(Long studentId);
 
-    /* all non-cancelled payments, across every student */
+    /* all non-canceled payments, across every student */
     List<Payment> findAllByCancelledFalse();
 
     /* total amount this student has paid so far - the "paid" side of their balance */

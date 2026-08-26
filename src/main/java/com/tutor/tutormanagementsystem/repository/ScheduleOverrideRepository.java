@@ -9,20 +9,19 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-// handles DB access for the ScheduleOverride table (one-off changes to the weekly schedule)
+/* Spring Data JPA repository for ScheduleOverride entities (one-off schedule exceptions).
+   Shares transaction-scoped advisory locks with LessonRepository to synchronize booking and blocking operations. */
+
 public interface ScheduleOverrideRepository extends JpaRepository<ScheduleOverride, Long> {
 
-    /* same advisory lock LessonRepository.acquireDateLock takes, keyed the same way
-       (epoch day). sharing the key on purpose: booking a lesson and blocking/adding
-       availability on the same date are check-then-act writes over the same slot, so
-       they have to contend for one lock or a BLOCK can be written between a booking's
-       availability check and its insert. transaction-scoped, so it releases on commit */
+    /* Acquires a PostgreSQL transaction-scoped advisory lock keyed by epoch day.
+       Shared with LessonRepository to serialize booking vs schedule-blocking operations and prevent race conditions. */
     @Query(value = "SELECT pg_advisory_xact_lock(:key)", nativeQuery = true)
     void acquireDateLock(@Param("key") long key);
 
-    /* all overrides on a given date */
+    /* All overrides on a given date */
     List<ScheduleOverride> findAllByDate(LocalDate date);
 
-    /* overrides on a date whose time range overlaps the given range */
+    /* Finds overrides on a given date that overlap with the requested time window (StartA < EndB AND EndA > StartB) */
     List<ScheduleOverride> findAllByDateAndStartTimeLessThanAndEndTimeGreaterThan(LocalDate date, LocalTime endTime, LocalTime startTime);
 }

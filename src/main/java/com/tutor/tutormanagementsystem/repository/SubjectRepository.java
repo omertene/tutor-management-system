@@ -5,11 +5,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-// handles DB access for the Subject table
+/* Spring Data JPA repository for Subject entities.
+   Provides case-insensitive lookup to enforce subject uniqueness and avoid wrong analytics. */
+
 public interface SubjectRepository extends JpaRepository<Subject, Long> {
 
-    /* finds a subject by name, case-insensitive so "Math" and "math" can't both
-       be created as separate subjects, which would split every statistic that
-       groups by subject name */
+    /* Finds a subject by name ignoring case to prevent duplicates (e.g. 'Math' vs 'math') from splitting statistics */
     Optional<Subject> findByNameIgnoreCase(String name);
 }
