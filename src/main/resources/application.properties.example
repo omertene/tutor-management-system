@@ -21,6 +21,9 @@ jwt.secret=${JWT_SECRET}
 teacher.seed.email=${TEACHER_SEED_EMAIL:teacher@example.com}
 teacher.seed.password=${TEACHER_SEED_PASSWORD}
 
+# where to send the "a student booked a lesson" notification email
+teacher.notification.email=${TEACHER_NOTIFICATION_EMAIL:teacher@example.com}
+
 # gmail SMTP - used to send lesson reminder emails. MAIL_PASSWORD is the
 # 16-character Gmail "app password" (not your real Gmail password)
 spring.mail.host=smtp.gmail.com

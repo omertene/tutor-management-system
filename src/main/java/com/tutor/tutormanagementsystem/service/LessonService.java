@@ -15,6 +15,7 @@ import com.tutor.tutormanagementsystem.model.Student;
 import com.tutor.tutormanagementsystem.model.Subject;
 import com.tutor.tutormanagementsystem.repository.LessonRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -34,6 +36,13 @@ public class LessonService {
     private final StudentService studentService;
     private final SubjectService subjectService;
     private final AvailabilityService availabilityService;
+    private final EmailService emailService;
+
+    @Value("${teacher.notification.email}")
+    private String teacherNotificationEmail;
+
+    private static final DateTimeFormatter NOTIFICATION_DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter NOTIFICATION_TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
 
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -56,7 +65,27 @@ public class LessonService {
                     "Lessons must be booked at least " + STUDENT_MIN_BOOKING_NOTICE_HOURS + " hours in advance");
         }
 
-        return createLesson(student, request.subjectId(), request.date(), request.startTime(), request.endTime());
+        LessonResponse response = createLesson(student, request.subjectId(), request.date(), request.startTime(), request.endTime());
+
+        // only when the STUDENT books (not createLessonForStudent, which is the teacher
+        // booking on their own behalf - no need to notify yourself). sent after
+        // createLesson already succeeded, so a booking never fails just because the
+        // notification email failed to send
+        notifyTeacherOfNewBooking(response);
+
+        return response;
+    }
+
+    // lets the teacher know a student booked themselves in, without having to keep
+    // refreshing the schedule page
+    private void notifyTeacherOfNewBooking(LessonResponse lesson) {
+        String subject = "New lesson booked";
+        String body = lesson.studentFirstName() + " " + lesson.studentLastName() + " booked a "
+                + lesson.subjectName() + " lesson on " + lesson.date().format(NOTIFICATION_DATE_FORMAT)
+                + " at " + lesson.startTime().format(NOTIFICATION_TIME_FORMAT) + "-"
+                + lesson.endTime().format(NOTIFICATION_TIME_FORMAT) + ".";
+
+        emailService.sendEmail(teacherNotificationEmail, subject, body);
     }
 
 
