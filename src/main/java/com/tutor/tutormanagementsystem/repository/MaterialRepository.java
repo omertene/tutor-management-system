@@ -8,15 +8,17 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
+// handles DB access for the Material table (files/links/notes shared with students)
 public interface MaterialRepository extends JpaRepository<Material, Long> {
 
+    /* all materials for one student, full entity (includes file bytes if it's a FILE) */
     List<Material> findAllByStudentId(Long studentId);
 
+    /* all materials linked to one lesson, full entity */
     List<Material> findAllByLessonId(Long lessonId);
 
-    // We select specific metadata fields (DTO projection) instead of full entities
-    // to avoid loading heavy file bytes (`data` column) into memory for simple list views.
-    // Using LEFT JOIN for lesson/subject since a material doesn't have to be linked to a specific lesson.
+    /* returns every material as a MaterialResponse DTO instead of the full entity, so
+       list views don't drag the file bytes (`data` column) into memory for nothing */
     @Query("SELECT NEW com.tutor.tutormanagementsystem.dto.MaterialResponse(" +
             "m.id, st.id, u.firstName, u.lastName, " +
             "l.id, l.date, l.startTime, s.name, " +
@@ -24,6 +26,7 @@ public interface MaterialRepository extends JpaRepository<Material, Long> {
             "FROM Material m JOIN m.student st JOIN st.user u LEFT JOIN m.lesson l LEFT JOIN l.subject s")
     List<MaterialResponse> findAllProjected();
 
+    /* same DTO projection as findAllProjected, scoped to one student */
     @Query("SELECT NEW com.tutor.tutormanagementsystem.dto.MaterialResponse(" +
             "m.id, st.id, u.firstName, u.lastName, " +
             "l.id, l.date, l.startTime, s.name, " +
@@ -32,6 +35,7 @@ public interface MaterialRepository extends JpaRepository<Material, Long> {
             " WHERE st.id = :studentId")
     List<MaterialResponse> findAllByStudentIdProjected(@Param("studentId") Long studentId);
 
+    /* same DTO projection as findAllProjected, scoped to one lesson */
     @Query("SELECT NEW com.tutor.tutormanagementsystem.dto.MaterialResponse(" +
             "m.id, st.id, u.firstName, u.lastName, " +
             "l.id, l.date, l.startTime, s.name, " +

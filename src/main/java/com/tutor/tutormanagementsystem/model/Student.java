@@ -15,8 +15,9 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-// this holds the extra info that only students need (not the teacher)
-// the id and user fields link this back to the User row that has the login info
+/* this holds the extra info that only students need (not the teacher)
+   the id and user fields link this back to the User row that has the login info */
+
 @Entity
 @Table(name = "students")
 @Data
@@ -38,23 +39,21 @@ public class Student {
     @Column(nullable = false)
     private BigDecimal hourlyRate;
 
-    // not always a real grade (could be prep year, university, etc.), so keeping it as free text
-    // maybe i'll change to enum later
+    /* not always a real grade (could be prep year, university, etc.), so keeping it as free text
+       maybe i'll change to enum later */
     private String educationLevel;
 
     @Column(columnDefinition = "TEXT") // teacher's notes about the student, optional
     private String notes;
 
 
-    // false = teacher deactivated this student instead of deleting them
-    // (deleting would break their lesson/payment history, so this is used instead)
-    // @Builder.Default is needed here or Lombok's builder ignores the "= true" and defaults to false
+    /* false = teacher deactivated this student instead of deleting them
+       (deleting would break their lesson/payment history, so this is used instead) */
     @Builder.Default
     @Column(nullable = false)
     private boolean active = true;
 
-    // optimistic locking - in case the teacher edits
-    // a student's profile from two tabs/devices at once
+    // optimistic locking - in case the teacher edits a student's profile from two tabs/devices at once
     @Version
     @Column(nullable = false, columnDefinition = "bigint default 0")
     private Long version;

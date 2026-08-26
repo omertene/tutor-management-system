@@ -22,6 +22,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 
+/* Represents a payment transaction made by a student to the tutor.
+   Tracks payment details, method, and date, with support for soft-deletes (cancellations)
+   so financial history is never permanently wiped from the DB. */
+
+
+
 @Entity
 @Table(name = "payments")
 @Data
@@ -42,8 +48,7 @@ public class Payment {
     @Column(nullable = false)
     private BigDecimal amount;
 
-    // the date the payment was actually received - separate from createdAt (when the
-    // record was entered into the system)
+    // the date the payment was actually received - not createdAt (when the record was entered into the system)
     @Column(nullable = false)
     private LocalDate paymentDate;
 
@@ -59,17 +64,17 @@ public class Payment {
     private LocalDateTime createdAt;
 
 
-    // optimistic locking in case the teacher (logged in on two devices/tabs) editing in the same time
-    // columnDefinition carries the DEFAULT 0 so ddl-auto=update backfills existing
-    // rows instead of leaving them NULL which will breaks the next update
+    /* optimistic locking in case the teacher (logged in on two devices/tabs) editing in the same time
+       columnDefinition carries the DEFAULT 0 so ddl-auto=update backfills existing
+       rows instead of leaving them NULL which will breaks the next update */
     @Version
     @Column(nullable = false, columnDefinition = "bigint default 0")
     private Long version;
 
 
-    // soft delete - a canceled payment is the only trace that money changed
-    // hands and later got corrected/reversed. cancelled payments are excluded from
-    // every sum/list a normal read goes through, but the row itself survives.
+    /* soft delete - a canceled payment is the only trace that money changed
+       hands and later got corrected/reversed. canceled payments are excluded from
+       every sum/list a normal read goes through, but the row itself survives. */
     @Builder.Default
     @Column(nullable = false)
     private boolean cancelled = false;

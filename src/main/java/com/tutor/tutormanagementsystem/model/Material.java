@@ -12,16 +12,16 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
-// study material the teacher shares with a student - a FILE (bytes stored directly
-// in the DB, no filesystem/bucket involved), a LINK (external URL), or a NOTE (plain
-// text, uses only title/description). optionally tied to the lesson it covers.
-//
-// which fields are populated depends on `type`:
-//   FILE -> fileName, contentType, data are set; url is null
-//   LINK -> url is set; fileName/contentType/data are null
-//   NOTE -> none of the above are set - just title/description
-// this isn't enforced at the DB level (would need a CHECK constraint per type),
-// so MaterialService is responsible for only setting/expecting the right fields
+/* study material the teacher shares with a student - a FILE (bytes stored directly
+   in the DB), a LINK (external URL), or a NOTE (plain text).
+   optionally tied to the lesson it covers.
+
+   which fields are populated depends on `type`:
+   FILE -> fileName, contentType, data are set; url is null
+   LINK -> url is set; fileName/contentType/data are null
+   NOTE -> none of the above are set - just title/description */
+
+
 @Entity
 @Table(name = "materials")
 @Data

@@ -11,9 +11,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// a subject a lesson can be taught in (e.g. "Math", "English")
-// kept as its own table instead of a free-text field on Lesson so stats
-// (like "all math lessons") aren't broken by typos/inconsistent spelling
+/* a subject a lesson can be taught in (e.g. "Math", "English")
+   kept as its own table instead of a free-text field on Lesson so stats
+   (like "all math lessons") aren't broken by typos/inconsistent spelling */
 @Entity
 @Table(name = "subjects")
 @Data

@@ -58,8 +58,8 @@ public class Lesson {
     @Column(nullable = false)
     private LessonStatus status;
 
-    // snapshot of the student's hourly rate at the moment of booking,
-    // so a later rate change doesn't change the price of past lessons
+    /* snapshot of the student's hourly rate at the moment of booking,
+       so a later rate change doesn't change the price of past lessons */
     @Column(nullable = false)
     private BigDecimal priceAtBooking;
 
@@ -71,17 +71,17 @@ public class Lesson {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
-    // optimistic locking in case the teacher (logged in on two devices/tabs) or a
-    // teacher and a student edit the same row at the same time.
-    // columnDefinition carries the DEFAULT 0 so ddl-auto=update backfills existing
-    // rows instead of leaving them NULL which will breaks the next update
+    /* optimistic locking in case the teacher (logged in on two devices/tabs) or a
+       teacher and a student edit the same row at the same time.
+       columnDefinition carries the DEFAULT 0 so ddl-auto=update backfills existing
+       rows instead of leaving them NULL which will breaks the next update */
     @Version
     @Column(nullable = false, columnDefinition = "bigint default 0")
     private Long version;
 
 
-    // true once the "your lesson is coming up" reminder email has been sent for this
-    // lesson - prevents the scheduled reminder job from emailing the same lesson twice.
+    /* true once the "your lesson is coming up" reminder email has been sent for this
+       lesson - prevents the scheduled reminder job from emailing the same lesson twice. */
     @Column(nullable = false)
     @Builder.Default
     private boolean reminderSent = false;

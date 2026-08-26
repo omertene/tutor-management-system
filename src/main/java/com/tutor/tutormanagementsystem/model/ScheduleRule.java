@@ -16,9 +16,10 @@ import lombok.NoArgsConstructor;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 
-// the teacher's recurring weekly availability pattern (e.g. every sunday 08:00-16:00)
-// this is only the pattern - actual bookable time for a real date is worked out
-// by combining this with any ScheduleOverride rows for that date
+/* the teacher's recurring weekly availability pattern (e.g. every Sunday 08:00-16:00)
+   this is only the pattern - actual bookable time for a real date is worked out
+   by combining this with any ScheduleOverride rows for that date */
+
 @Entity
 @Table(name = "schedule_rules")
 @Data

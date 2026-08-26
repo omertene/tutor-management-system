@@ -16,9 +16,10 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-// overrides the recurring ScheduleRule for one specific date
-// BLOCK = removes time that would normally be free
-// ADD = adds extra free time on top of the normal weekly pattern
+/* overrides the recurring ScheduleRule for one specific date
+   BLOCK = removes time that would normally be free
+   ADD = adds extra free time on top of the normal weekly pattern */
+
 @Entity
 @Table(name = "schedule_overrides")
 @Data
@@ -43,7 +44,7 @@ public class ScheduleOverride {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private OverrideType type;
+    private OverrideType type; // ADD / BLOCK
 
     // optional note for the teacher, e.g. "dentist appointment"
     private String note;

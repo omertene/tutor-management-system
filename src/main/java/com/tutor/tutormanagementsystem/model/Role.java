@@ -1,6 +1,6 @@
 package com.tutor.tutormanagementsystem.model;
 
-// distinguishes teacher accounts from student accounts
+// distinguishes teacher account from student accounts
 public enum Role {
 
     TEACHER,

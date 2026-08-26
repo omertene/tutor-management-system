@@ -5,8 +5,9 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
-// base user for both teacher and students - login/identity fields only
-// anything student-specific (rate, education level) lives on the Student entity instead
+/* base user for both teacher and students - login/identity fields only
+ anything student-specific (rate, education level) lives on the Student entity instead */
+
 @Entity
 @Table(name = "users")
 @Data
