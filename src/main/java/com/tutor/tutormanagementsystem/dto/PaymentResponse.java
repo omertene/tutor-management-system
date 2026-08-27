@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/* A payment as returned to the client, with the student's name already resolved */
 public record PaymentResponse(
         Long id,
         Long studentId,

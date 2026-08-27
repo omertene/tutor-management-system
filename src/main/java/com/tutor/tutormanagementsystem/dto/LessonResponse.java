@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+/* A lesson as returned to the client, with student/subject names already resolved */
 public record LessonResponse(Long id, Long studentId, String studentFirstName, String studentLastName, String subjectName, LocalDate date,
                              LocalTime startTime, LocalTime endTime, LessonStatus status, Long subjectId, BigDecimal priceAtBooking,
                              String notes) {
