@@ -5,15 +5,16 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-// thin wrapper around Spring's mail sender - kept separate from any reminder logic so
-// it can be reused later for other emails (e.g. "payment received") without duplicating
-// the JavaMailSender setup
+/* Low-level infrastructure service wrapping Spring JavaMailSender.
+   Decoupled from specific domain events to allow reusable plain-text email delivery across the system. */
+
 @Service
 @RequiredArgsConstructor
 public class EmailService {
 
     private final JavaMailSender mailSender;
 
+    /* Builds and sends a simple text email */
     public void sendEmail(String to, String subject, String body) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);

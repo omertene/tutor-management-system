@@ -18,11 +18,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-// aggregates numbers already computed by PaymentService/LessonService into one
-// dashboard response. deliberately has no repository of its own and never injects
-// PaymentRepository/LessonRepository directly - it only asks the two domain services
-// for pre-summarized data, same "go through the owning service" rule used everywhere
-// else in this app (see MaterialService/PaymentService for the same pattern)
+/* Service for aggregating financial and pedagogical metrics into a unified statistics dashboard */
+
 @Service
 @RequiredArgsConstructor
 public class StatisticsService {
@@ -30,37 +27,36 @@ public class StatisticsService {
     private final PaymentService paymentService;
     private final LessonService lessonService;
 
-    // every year with at least one completed lesson - powers the dashboard's year
-    // picker (used directly for Year mode, and alongside a month for Month mode)
+
+    /* Returns all years that have at least one completed lesson to populate dashboard year filters */
     public List<Integer> getYearsWithData() {
         return lessonService.getYearsWithCompletedLessons();
     }
 
-    // the unified statistics dashboard: KPIs, subject breakdown, and top students are
-    // all scoped to request.startDate()-request.endDate() (and request.subjectId(),
-    // if one was picked); the monthly trend chart always covers the trailing 12
-    // months regardless of that range, per the dashboard spec
+
+    /* Computes full dashboard statistics: financial KPIs, subject breakdowns, top students, and 12-month trends */
     public DashboardStatisticsResponse getDashboardStatistics(DashboardStatisticsRequest request) {
         List<Lesson> lessonsInRange = lessonService.getCompletedLessonsInRange(
                 request.startDate(), request.endDate(), request.subjectId());
 
+        /* Calculate total revenue billed from completed lessons */
         BigDecimal totalRevenue = lessonsInRange.stream()
                 .map(Lesson::getPriceAtBooking)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        /* Sum total teaching hours */
         double totalHours = lessonsInRange.stream()
                 .mapToDouble(lessonService::lessonHours)
                 .sum();
 
         long totalLessons = lessonsInRange.size();
 
+        /* Calculate effective hourly rate (revenue / hours) rounded to 2 decimal places */
         BigDecimal effectiveHourlyRate = totalHours > 0
                 ? totalRevenue.divide(BigDecimal.valueOf(totalHours), 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
-        // income received isn't tied to a subject (a payment covers a student's
-        // balance generally, not one subject), so the subject filter doesn't apply
-        // here - it's always the student's total payments within the date range
+        /* Total payments received in the date range */
         BigDecimal incomeReceived = paymentService.getIncomeReceivedInRange(request.startDate(), request.endDate());
 
         List<SubjectPerformance> subjectBreakdown = buildSubjectBreakdown(lessonsInRange);
@@ -79,6 +75,8 @@ public class StatisticsService {
         );
     }
 
+
+    /* Groups lessons by subject and calculates lessons count, total hours, revenue, and average hourly rate */
     private List<SubjectPerformance> buildSubjectBreakdown(List<Lesson> lessons) {
         Map<String, List<Lesson>> bySubject = lessons.stream()
                 .collect(java.util.stream.Collectors.groupingBy(
@@ -100,6 +98,8 @@ public class StatisticsService {
                 .toList();
     }
 
+
+    /* Groups lessons by student and aggregates total completed lessons and billed amount */
     private List<StudentPerformance> buildTopStudents(List<Lesson> lessons) {
         Map<Long, List<Lesson>> byStudent = lessons.stream()
                 .collect(java.util.stream.Collectors.groupingBy(lesson -> lesson.getStudent().getId()));
@@ -122,6 +122,8 @@ public class StatisticsService {
                 .toList();
     }
 
+
+    /* Constructs a 12-month trend of billed revenue, collected income, and teaching hours */
     private List<MonthlyTrend> buildMonthlyTrend(Long subjectId) {
         LocalDate today = LocalDate.now();
         LocalDate start = today.minusMonths(11).withDayOfMonth(1);
@@ -132,8 +134,7 @@ public class StatisticsService {
         Map<String, BigDecimal> revenueByMonth = new LinkedHashMap<>();
         Map<String, Double> hoursByMonth = new LinkedHashMap<>();
 
-        // seed every one of the 12 months up front so months with zero lessons still
-        // show up as a zero bar instead of being skipped entirely
+        /* Initialize each month with 0 to ensure continuous chart rendering on the client */
         for (int i = 0; i < 12; i++) {
             LocalDate month = start.plusMonths(i);
             String key = month.getYear() + "-" + month.getMonthValue();
@@ -141,6 +142,7 @@ public class StatisticsService {
             hoursByMonth.put(key, 0.0);
         }
 
+        /* Accumulate lesson earnings and total teaching duration by month */
         for (Lesson lesson : lessons) {
             String key = lesson.getDate().getYear() + "-" + lesson.getDate().getMonthValue();
             revenueByMonth.merge(key, lesson.getPriceAtBooking(), BigDecimal::add);
@@ -152,11 +154,13 @@ public class StatisticsService {
             LocalDate month = start.plusMonths(i);
             incomeByMonth.put(month.getYear() + "-" + month.getMonthValue(), BigDecimal.ZERO);
         }
-        // subjectId is intentionally ignored here - payments aren't scoped to a subject
+
+        /* Merge actual cash receipts from payments across the full student balance */
         for (MonthlyAmount row : paymentService.getIncomeByMonthInRange(start, end)) {
             incomeByMonth.merge(row.year() + "-" + row.month(), row.total(), (a, b) -> b);
         }
 
+        /* Transform monthly mappings into ordered DTO data points */
         return revenueByMonth.keySet().stream()
                 .map(key -> {
                     String[] parts = key.split("-");

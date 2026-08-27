@@ -18,6 +18,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+/* Service for managing student payments, debt calculations, and revenue statistics */
+
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
@@ -26,17 +28,21 @@ public class PaymentService {
     private final LessonService lessonService;
     private final StudentService studentService;
 
-    // teacher records a payment received from a student
+
+    /* Records a new payment received from a student with input validations */
     @Transactional
     public PaymentResponse recordPayment(PaymentRequest request) {
 
+        /* Payment amount must be strictly positive */
         if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new InvalidPaymentAmountException("Payment amount must be greater than zero");
         }
 
+        /* Payment method (cash, bit, bank transfer) is mandatory */
         if (request.method() == null) {
             throw new InvalidRequestDataException("Payment method is required");
         }
+
 
         Student student = studentService.getStudentEntity(request.studentId());
 
@@ -53,14 +59,11 @@ public class PaymentService {
         return toResponse(payment);
     }
 
-    // teacher corrects an existing payment (amount, method, notes, date, or even
-    // which student it belongs to - e.g. it was logged against the wrong student).
-    // debt for both the old and new student is derived on read (sumPaymentsForStudent
-    // by studentId), so simply re-pointing the payment at a new student is enough -
-    // no separate debt total to patch up on either side.
+    /* Updates an active payment's details, amount, date, or associated student */
     @Transactional
     public PaymentResponse updatePayment(Long paymentId, PaymentRequest request) {
 
+        /* Ensure updated amount remains positive */
         if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new InvalidPaymentAmountException("Payment amount must be greater than zero");
         }
@@ -69,18 +72,22 @@ public class PaymentService {
             throw new InvalidRequestDataException("Payment method is required");
         }
 
+        /* Locate target payment */
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
 
+        /* Block editing historically canceled records */
         if (payment.isCancelled()) {
             throw new InvalidRequestDataException("A cancelled payment can't be edited");
         }
 
+        /* Re-assign payment to a different student if teacher logged it against the wrong student */
         if (request.studentId() != null && !request.studentId().equals(payment.getStudent().getId())) {
             Student newStudent = studentService.getStudentEntity(request.studentId());
             payment.setStudent(newStudent);
         }
 
+        /* Update payment fields */
         payment.setAmount(request.amount());
         payment.setMethod(request.method());
         payment.setNotes(request.notes());
@@ -91,43 +98,45 @@ public class PaymentService {
         return toResponse(payment);
     }
 
-    // soft delete - marks the payment cancelled instead of removing the row, so the
-    // record of it having existed (and having been reversed) survives for the books.
-    // every sum/list read excludes cancelled payments, so this still has the effect
-    // the teacher expects: the debt goes back up, the row drops off the visible history
+    /* Soft delete - marks payment canceled to maintain financial audit trail */
     @Transactional
     public void cancelPayment(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
 
+        /* Prevent cancelling an already cancelled record */
         if (payment.isCancelled()) {
             throw new InvalidRequestDataException("This payment is already cancelled");
         }
 
+        /* Flag as cancelled instead of deleting the DB row */
         payment.setCancelled(true);
         paymentRepository.save(payment);
     }
 
+    /* Returns all active payments made by a specific student */
     public List<PaymentResponse> getPaymentsForStudent(Long studentId) {
 
         return paymentRepository.findAllByStudentIdAndCancelledFalse(studentId).stream()
                 .map(payment -> toResponse(payment)).toList();
     }
 
-    // teacher views every payment across every student at once - the default
-    // "payment history" view, instead of requiring a student to be picked first
+    /* Returns all active payments across all students for main history view */
     public List<PaymentResponse> getAllPayments() {
         return paymentRepository.findAllByCancelledFalse().stream()
                 .map(this::toResponse)
                 .toList();
     }
 
+
+    /* Calculates total debt, paid amount, and owed amount for a specific student */
     @Transactional(readOnly = true)
     public DebtResponse getDebtForStudent(Long studentId) {
         Student student = studentService.getStudentEntity(studentId);
         return toDebtResponse(student);
     }
-    
+
+    /* Calculates and returns debt summaries for all students in the system */
     @Transactional(readOnly = true)
     public List<DebtResponse> getAllDebts() {
         return studentService.getAllStudentEntities().stream()
@@ -135,19 +144,17 @@ public class PaymentService {
                 .toList();
     }
 
-    // all-time total income, across every payment ever recorded
+    /* Returns all-time total income received across all recorded payments */
     public BigDecimal getTotalIncome() {
         return paymentRepository.sumAllPayments();
     }
 
-    // income actually received within an arbitrary range - the "Actual Income
-    // Received" KPI on the unified statistics dashboard, whatever range is selected
+    /* Calculates total income received within a specific date range */
     public BigDecimal getIncomeReceivedInRange(LocalDate startDate, LocalDate endDate) {
         return paymentRepository.sumPaymentsByDateRange(startDate, endDate);
     }
 
-    // income received per month within a range (the dashboard passes the trailing
-    // 12 months) - the "income received" half of the monthly trend chart
+    /* Returns monthly breakdown of received income for financial dashboard charts */
     public List<MonthlyAmount> getIncomeByMonthInRange(LocalDate startDate, LocalDate endDate) {
         return paymentRepository.sumPaymentsByPaymentDateGroupedByMonth(startDate, endDate).stream()
                 .map(row -> new MonthlyAmount(
@@ -157,6 +164,7 @@ public class PaymentService {
                 .toList();
     }
 
+    /* Calculates financial balance for a student by comparing lessons owed vs payments made */
     private DebtResponse toDebtResponse(Student student) {
         BigDecimal paid = paymentRepository.sumPaymentsForStudent(student.getId());
         BigDecimal owed = lessonService.sumCompletedLessonPricesForStudent(student.getId());
@@ -172,6 +180,7 @@ public class PaymentService {
         );
     }
 
+    /* Maps Payment entity to PaymentResponse DTO */
     private PaymentResponse toResponse(Payment payment) {
 
         return new PaymentResponse(

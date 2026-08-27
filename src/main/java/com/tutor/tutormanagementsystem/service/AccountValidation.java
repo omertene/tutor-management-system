@@ -5,9 +5,9 @@ import com.tutor.tutormanagementsystem.exception.InvalidStudentDataException;
 import java.math.BigDecimal;
 import java.util.regex.Pattern;
 
-/* shared validation for the account fields both StudentService and UserService write.
-   centralized here to avoid duplicating the same validation logic across services.
-   static because these are pure rules with no state and no dependencies, so there's nothing to inject. */
+/* Shared validation for the account fields both StudentService and UserService write.
+   Centralized here to avoid duplicating the same validation logic across services.
+   Static because these are pure rules with no state and no dependencies, so there's nothing to inject. */
 
 public final class AccountValidation {
 
@@ -22,7 +22,6 @@ public final class AccountValidation {
     /* Trims spaces and lowercases email to prevent duplicate accounts with different casing.
        Null-safe so missing emails throw a clean validation error instead of a NullPointerException. */
     public static String normalizeEmail(String email) {
-        // null-safe check prevents NullPointerException before validation
         return email == null ? null : email.trim().toLowerCase();
     }
 

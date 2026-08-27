@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
+/* Service for managing study subjects and enforcing referential integrity on deletions */
+
 @RequiredArgsConstructor
 @Service
 public class SubjectService {
@@ -22,6 +24,7 @@ public class SubjectService {
     private final SubjectRepository subjectRepository;
     private final LessonRepository lessonRepository;
 
+    /* Creates a new study subject with input trimming and case-insensitive uniqueness validation */
     @Transactional
     public SubjectResponse createSubject(SubjectRequest request) {
 
@@ -29,11 +32,10 @@ public class SubjectService {
             throw new InvalidRequestDataException("Subject name is required");
         }
 
-        // trimmed so " Math" and "Math " aren't stored as distinct subjects, and
-        // matched case-insensitively so "math" can't be added alongside "Math".
-        // the teacher's original capitalisation is what gets stored and displayed
+        /* Strip surrounding whitespace while keeping the original casing for display */
         String name = request.name().trim();
 
+        /* Prevent duplicate subject names regardless of letter case */
         if (subjectRepository.findByNameIgnoreCase(name).isPresent()) {
             throw new DuplicateSubjectException("Subject already exists");
         }
@@ -44,10 +46,14 @@ public class SubjectService {
         return new SubjectResponse(subject.getId(), subject.getName());
     }
 
+
+
+    /* Deletes a subject only if it has no associated lessons, preserving referential integrity */
     @Transactional
     public void deleteSubject(Long subjectId) {
         Subject subject = getSubjectEntity(subjectId);
 
+        /* Prevent deletion if historical or upcoming lessons are linked to this subject */
         long lessonCount = lessonRepository.countBySubjectId(subjectId);
         if (lessonCount > 0) {
             throw new SubjectInUseException(
@@ -57,12 +63,12 @@ public class SubjectService {
         subjectRepository.delete(subject);
     }
 
+    /* Returns all available subjects formatted as response DTOs */
     public List<SubjectResponse> getAllSubjects() {
         return subjectRepository.findAll().stream().map(subject -> new SubjectResponse(subject.getId(), subject.getName())).toList();
     }
 
-    // returns the raw entity for other services (e.g. LessonService) that need
-    // to work with the Subject entity directly instead of its DTO projection
+    /* Fetches raw subject entity for internal domain service operations */
     public Subject getSubjectEntity(Long subjectId) {
         return subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new SubjectNotFoundException("Subject not found"));

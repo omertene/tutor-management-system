@@ -13,6 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.DayOfWeek;
 import java.util.List;
 
+
+/* Service for managing recurring weekly availability rules for the teacher */
+
 @Service
 @RequiredArgsConstructor
 public class ScheduleRuleService {
@@ -20,10 +23,15 @@ public class ScheduleRuleService {
     private final ScheduleRuleRepository scheduleRuleRepository;
     private final LessonService lessonService;
 
+
+    /* Creates a new recurring weekly availability rule after validating time ranges and overlaps */
     @Transactional
     public ScheduleRuleResponse createScheduleRule(ScheduleRuleRequest request) {
 
+        /* Ensure start time is strictly before end time */
         TimeValidation.requireValidRange(request.startTime(), request.endTime());
+
+        /* Check for overlapping availability rules on the same day of the week */
         List<ScheduleRule> overlapping = scheduleRuleRepository
                 .findAllByDayOfWeekAndStartTimeLessThanAndEndTimeGreaterThan(
                         request.dayOfWeek(), request.endTime(), request.startTime());
@@ -41,12 +49,14 @@ public class ScheduleRuleService {
                 scheduleRule.getDayOfWeek(), scheduleRule.getStartTime(), scheduleRule.getEndTime());
     }
 
+    /* Returns all recurring weekly availability rules in the system */
     public List<ScheduleRuleResponse> getAllScheduleRules() {
         return scheduleRuleRepository.findAll().stream()
                 .map(rule -> new ScheduleRuleResponse(rule.getId(), rule.getDayOfWeek(), rule.getStartTime(), rule.getEndTime()))
                 .toList();
     }
 
+    /* Returns recurring availability rules for a specific day of the week */
     public List<ScheduleRuleResponse> getRulesForDay(DayOfWeek day) {
         return scheduleRuleRepository.findAllByDayOfWeek(day).stream()
                 .map(rule -> new ScheduleRuleResponse(rule.getId(), rule.getDayOfWeek(), rule.getStartTime(), rule.getEndTime()))
@@ -54,6 +64,7 @@ public class ScheduleRuleService {
     }
 
 
+    /* Counts how many future scheduled lessons will lose their recurring time slot if this rule is deleted */
     public long countUpcomingLessonsAffectedByDeletion(Long ruleId) {
         ScheduleRule rule = scheduleRuleRepository.findById(ruleId)
                 .orElseThrow(() -> new ScheduleRuleNotFoundException("Schedule rule not found"));
@@ -61,7 +72,9 @@ public class ScheduleRuleService {
         return lessonService.countUpcomingLessonsInWeeklySlot(rule.getDayOfWeek(), rule.getStartTime(), rule.getEndTime());
     }
 
+    /* Counts how many future scheduled lessons will fall outside the modified rule's time boundary */
     public long countUpcomingLessonsAffectedByEdit(Long ruleId, ScheduleRuleRequest newRequest) {
+
         ScheduleRule rule = scheduleRuleRepository.findById(ruleId)
                 .orElseThrow(() -> new ScheduleRuleNotFoundException("Schedule rule not found"));
 
@@ -70,6 +83,8 @@ public class ScheduleRuleService {
                 newRequest.dayOfWeek(), newRequest.startTime(), newRequest.endTime());
     }
 
+
+    /* Updates an existing recurring rule after validating ranges and checking for overlaps with other rules */
     @Transactional
     public ScheduleRuleResponse updateScheduleRule(Long ruleId, ScheduleRuleRequest request) {
         ScheduleRule rule = scheduleRuleRepository.findById(ruleId)
@@ -77,6 +92,7 @@ public class ScheduleRuleService {
 
         TimeValidation.requireValidRange(request.startTime(), request.endTime());
 
+        /* Check for overlaps on the new day/time, excluding the rule itself from self-overlap */
         boolean overlapping = scheduleRuleRepository
                 .findAllByDayOfWeekAndStartTimeLessThanAndEndTimeGreaterThan(
                         request.dayOfWeek(), request.endTime(), request.startTime())
@@ -96,6 +112,8 @@ public class ScheduleRuleService {
         return new ScheduleRuleResponse(rule.getId(), rule.getDayOfWeek(), rule.getStartTime(), rule.getEndTime());
     }
 
+
+    /* Permanently deletes a recurring schedule rule */
     @Transactional
     public void deleteScheduleRule(Long ruleId) {
         if (!scheduleRuleRepository.existsById(ruleId)) {

@@ -18,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
+
+/* Service for managing teacher schedule overrides (blocking times or opening extra availability) */
+
 @Service
 @RequiredArgsConstructor
 public class ScheduleOverrideService {
@@ -26,8 +29,12 @@ public class ScheduleOverrideService {
     private final ScheduleRuleRepository scheduleRuleRepository;
     private final LessonService lessonService;
 
+
+    /* Creates a new schedule override (block or add) after validating slot availability and locking the date */
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public ScheduleOverrideResponse createScheduleOverride(ScheduleOverrideRequest request) {
+
+        /* Run validations, acquire mutex date lock, and verify no conflicts exist */
         requireWritableSlot(request, null, "Cannot create an override for a past date");
 
         ScheduleOverride scheduleOverride = ScheduleOverride.builder()
@@ -43,11 +50,15 @@ public class ScheduleOverrideService {
         return toResponse(scheduleOverride);
     }
 
+
+    /* Updates an existing schedule override after validating changes and resolving overlaps */
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public ScheduleOverrideResponse updateScheduleOverride(Long overrideId, ScheduleOverrideRequest request) {
+
         ScheduleOverride scheduleOverride = scheduleOverrideRepository.findById(overrideId)
                 .orElseThrow(() -> new ScheduleOverrideNotFoundException("Schedule override not found"));
 
+        /* Validate new slot constraints while excluding the current override from self-overlap */
         requireWritableSlot(request, overrideId, "Cannot move an override to a past date");
 
         scheduleOverride.setDate(request.date());
@@ -61,26 +72,22 @@ public class ScheduleOverrideService {
         return toResponse(scheduleOverride);
     }
 
-    // every rule an override has to satisfy before it can be written, shared by create
-    // and update since the two only ever differed in two places: the wording of the
-    // past-date message, and whether the overlap check ignores the row being edited.
-    //
-    // excludeOverrideId is null when creating (nothing to exclude) and the override's
-    // own id when updating, so moving an override within its own time range doesn't
-    // report itself as an overlap.
+
+    /* Validates slot rules, acquires date mutex lock, and prevents conflicting schedule states */
     private void requireWritableSlot(ScheduleOverrideRequest request, Long excludeOverrideId, String pastDateMessage) {
+
+        /* Disallow operations on past dates */
         if (request.date().isBefore(LocalDate.now())) {
             throw new PastDateException(pastDateMessage);
         }
 
+        /* Validate that start time is strictly before end time */
         TimeValidation.requireValidRange(request.startTime(), request.endTime());
 
-        // taken before any of the checks below, for the same reason LessonService takes
-        // it before its availability check: everything from here to the save is a
-        // check-then-act sequence, and without the lock two concurrent writes on this
-        // date can both pass the checks and both insert
+        /* Acquire exclusive date lock to prevent concurrent write race conditions */
         scheduleOverrideRepository.acquireDateLock(request.date().toEpochDay());
 
+        /* Verify no overlap with existing overrides (ignoring current override if editing) */
         boolean overlapping = scheduleOverrideRepository
                 .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThan(
                         request.date(), request.endTime(), request.startTime())
@@ -91,53 +98,56 @@ public class ScheduleOverrideService {
             throw new ScheduleConflictException("This time overlaps an existing override");
         }
 
+        /* Check if the slot is already covered by a recurring weekly rule */
         boolean coveredByRule = !scheduleRuleRepository
                 .findAllByDayOfWeekAndStartTimeLessThanAndEndTimeGreaterThan(
                         request.date().getDayOfWeek(), request.endTime(), request.startTime())
                 .isEmpty();
 
+        /* Block redundant states*/
         if (request.type() == OverrideType.BLOCK && !coveredByRule) {
             throw new ScheduleConflictException("This time is already unavailable - no need to block it");
         }
-
         if (request.type() == OverrideType.ADD && coveredByRule) {
             throw new ScheduleConflictException("This time is already available - no need to add it");
         }
 
+        /* Prevent blocking hours that currently have an active booked lesson */
         if (request.type() == OverrideType.BLOCK
                 && lessonService.hasScheduledLessonInRange(request.date(), request.startTime(), request.endTime())) {
             throw new ScheduleConflictException("This time has a scheduled lesson - cancel it before blocking this time");
         }
     }
 
+    /* Maps ScheduleOverride entity to full ScheduleOverrideResponse DTO */
     private ScheduleOverrideResponse toResponse(ScheduleOverride scheduleOverride) {
         return new ScheduleOverrideResponse(scheduleOverride.getId(), scheduleOverride.getDate(),
                 scheduleOverride.getStartTime(), scheduleOverride.getEndTime(),
                 scheduleOverride.getType(), scheduleOverride.getNote());
     }
 
+    /* Returns all schedule overrides for the teacher's schedule view */
     public List<ScheduleOverrideResponse> getAllScheduleOverrides() {
         return scheduleOverrideRepository.findAll().stream()
                 .map(this::toResponse)
                 .toList();
     }
 
-    // student-facing: same rows as getAllScheduleOverrides, but with the id and
-    // teacher's private note stripped out - only date/time/type reach the student
+    /* Returns sanitized schedule overrides for students without exposing internal IDs or teacher notes */
     public List<AvailabilityOverrideResponse> getAllScheduleOverridesForStudent() {
         return scheduleOverrideRepository.findAll().stream()
                 .map(o -> new AvailabilityOverrideResponse(o.getDate(), o.getStartTime(), o.getEndTime(), o.getType()))
                 .toList();
     }
 
+    /* Returns all overrides defined for a specific date */
     public List<ScheduleOverrideResponse> getOverridesForDate(LocalDate date) {
         return scheduleOverrideRepository.findAllByDate(date).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
-    // undoes a mistaken override (e.g. blocked the wrong day). nothing else
-    // references a ScheduleOverride by FK, so this is a plain delete, no guard needed
+    /* Permanently deletes an override */
     @Transactional
     public void deleteScheduleOverride(Long overrideId) {
         if (!scheduleOverrideRepository.existsById(overrideId)) {

@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/* Service for managing student profiles, authentication credentials, and account statuses */
+
 @Service
 @RequiredArgsConstructor
 public class StudentService {
@@ -25,11 +27,11 @@ public class StudentService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /* Registers a new student account, creating both the base user identity and student profile */
     @Transactional
     public StudentResponse createStudent(CreateStudentRequest request) {
-        // stored lowercased+trimmed so the DB's unique constraint on email actually
-        // means "one account per address" - without it Foo@x.com and foo@x.com are
-        // two separate rows that both satisfy the constraint
+
+        /* Standardize email casing and whitespace to enforce strict uniqueness */
         String email = AccountValidation.normalizeEmail(request.email());
 
         AccountValidation.requireValidEmail(email);
@@ -37,12 +39,12 @@ public class StudentService {
         AccountValidation.requireValidPhone(request.phone());
         AccountValidation.requireValidHourlyRate(request.hourlyRate());
 
-        // checks user doesn't exist already
+        /* Ensure email is not already taken */
         if (userRepository.findByEmailIgnoreCase(email).isPresent()) {
             throw new DuplicateEmailException("email already registered");
         }
 
-        // builds new user with the information received
+        /* Build and persist base user entity with encrypted password and enforced STUDENT role */
         User user = User.builder()
                 .email(email)
                 .password(passwordEncoder.encode(request.password()))
@@ -52,11 +54,9 @@ public class StudentService {
                 .phone(request.phone())
                 .build();
 
-        // user needs its id generated before Student can borrow it via @MapsId
         userRepository.save(user);
 
-        // adds the student specific fields
-        Student student = Student.builder()
+        /* Build and persist student profile linked to the newly created user */        Student student = Student.builder()
                 .user(user)
                 .hourlyRate(request.hourlyRate())
                 .educationLevel(request.educationLevel())
@@ -69,19 +69,25 @@ public class StudentService {
     }
 
 
+    /* Updates student profile details and linked base user information */
     @Transactional
     public StudentResponse updateStudent(Long studentId, UpdateStudentRequest request) {
+
+        /* Validate input constraints for updated fields */
         AccountValidation.requireValidPhone(request.phone());
         AccountValidation.requireValidHourlyRate(request.hourlyRate());
 
+        /* Fetch existing student entity and its associated user */
         Student student = getStudentEntity(studentId);
         User user = student.getUser();
 
+        /* Update base user personal information */
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
         user.setPhone(request.phone());
         userRepository.save(user);
 
+        /* Update student-specific fields */
         student.setHourlyRate(request.hourlyRate());
         student.setEducationLevel(request.educationLevel());
         student.setNotes(request.notes());
@@ -91,6 +97,7 @@ public class StudentService {
     }
 
 
+    /* Updates the student's email address ensuring uniqueness and proper format */
     @Transactional
     public StudentResponse updateStudentEmail(Long studentId, String newEmail) {
         String email = AccountValidation.normalizeEmail(newEmail);
@@ -110,6 +117,7 @@ public class StudentService {
         return toResponse(student);
     }
 
+    /* Sets a new encrypted password for the student account */
     @Transactional
     public StudentResponse resetStudentPassword(Long studentId, String newPassword) {
         AccountValidation.requireValidPassword(newPassword);
@@ -117,25 +125,28 @@ public class StudentService {
         Student student = getStudentEntity(studentId);
         User user = student.getUser();
 
+        /* Hash new password before persisting */
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
         return toResponse(student);
     }
 
+    /* Returns all active students currently enrolled */
     public List<StudentResponse> getAllStudents() {
         return studentRepository.findAllByActive(true).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
+    /* Returns all students including archived or inactive accounts for management views */
     public List<StudentResponse> getAllStudentsIncludingInactive() {
         return studentRepository.findAll().stream()
                 .map(this::toResponse)
                 .toList();
     }
 
-
+    /* Activates or deactivates a student account */
     @Transactional
     public StudentResponse setStudentActive(Long studentId, boolean active) {
         Student student = getStudentEntity(studentId);
@@ -145,17 +156,19 @@ public class StudentService {
         return toResponse(student);
     }
 
-    // returns the raw entity for other services (e.g. LessonService) that need
-    // to work with the Student aggregate directly instead of its DTO projection
+    /* Fetches raw student entity for internal domain service communication */
     public Student getStudentEntity(Long studentId) {
         return studentRepository.findById(studentId)
                 .orElseThrow(() -> new StudentNotFoundException("Student not found"));
     }
 
+    /* Returns all raw student entities across the system for batch calculations */
     public List<Student> getAllStudentEntities() {
         return studentRepository.findAll();
     }
 
+
+    /* Maps Student entity and joined User details to an external StudentResponse DTO */
     private StudentResponse toResponse(Student student) {
         User user = student.getUser();
         return new StudentResponse(

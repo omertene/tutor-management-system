@@ -12,46 +12,42 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
-// everything about *when* a lesson reminder is due, split out of LessonService.
-// booking/cancelling/completing a lesson and deciding when to email about it are
-// unrelated concerns that just happened to share an entity, and keeping the quiet-hours
-// rules next to the booking rules made LessonService the biggest file in the project.
-//
-// the JMS side (LessonReminderScheduler queues, LessonReminderListener sends) talks to
-// this instead of LessonService now.
+/* Handles logic for finding upcoming lessons that need email reminders.
+   Includes quiet-hours rules so students don't get emails late at night. */
 @Service
 @RequiredArgsConstructor
 public class LessonReminderService {
 
     private final LessonRepository lessonRepository;
 
-    // reminders are never emailed between these hours - a 12-hours-before reminder for
-    // a 09:00 lesson would otherwise land at 21:00 the night before, which is fine, but
-    // an early-morning lesson would land in the middle of the night
+    /* Do not send reminder emails between 22:00 and 08:00 */
     private static final LocalTime QUIET_HOURS_START = LocalTime.of(22, 0);
     private static final LocalTime QUIET_HOURS_END = LocalTime.of(8, 0);
 
+    /* Finds all scheduled lessons that are due for a reminder right now */
     public List<Lesson> getLessonsAwaitingReminder(long hoursBefore) {
         LocalDateTime now = LocalDateTime.now();
 
+        /* Get active scheduled lessons that haven't received a reminder yet */
         return lessonRepository.findAllByStatusAndReminderSentFalse(LessonStatus.SCHEDULED).stream()
                 .filter(lesson -> {
                     LocalDateTime lessonStart = LocalDateTime.of(lesson.getDate(), lesson.getStartTime());
+
+                    /* Skip past or already started lessons */
                     if (!lessonStart.isAfter(now)) {
-                        return false; // lesson already started/passed - never remind
+                        return false;
                     }
 
+                    /* Calculate target reminder time and push it forward if it hits quiet hours */
                     LocalDateTime reminderTime = clampOutOfQuietHours(lessonStart.minusHours(hoursBefore));
 
-                    // due once "now" has reached the (possibly clamped) reminder time,
-                    // but only if the lesson hasn't started yet by then
+                    /* Ready to send if current time has reached or passed the target reminder time */
                     return !now.isBefore(reminderTime);
                 })
                 .toList();
     }
 
-    // if the given time falls inside quiet hours (22:00-08:00), pushes it forward to
-    // 08:00 the same morning (or the next morning, if it was already past midnight)
+    /* If a reminder time falls inside 22:00-08:00, moves it to 08:00 in the morning */
     private LocalDateTime clampOutOfQuietHours(LocalDateTime time) {
         LocalTime timeOfDay = time.toLocalTime();
 
@@ -61,13 +57,13 @@ public class LessonReminderService {
             return time;
         }
 
-
+        /* If after midnight use same date at 08:00, if before midnight roll over to tomorrow at 08:00 */
         LocalDate clampedDate = timeOfDay.isBefore(QUIET_HOURS_END) ? time.toLocalDate() : time.toLocalDate().plusDays(1);
 
         return LocalDateTime.of(clampedDate, QUIET_HOURS_END);
     }
 
-    // marks a lesson as reminded so the next scheduled check doesn't pick it up again
+    /* Flags lesson as reminded to avoid sending duplicate emails in future scheduler runs */
     @Transactional
     public void markReminderSent(Lesson lesson) {
         lesson.setReminderSent(true);

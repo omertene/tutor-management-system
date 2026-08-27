@@ -34,7 +34,6 @@ public class AuthService {
 
         User user = userRepository.findByEmailIgnoreCase(request.email())
                 .orElseThrow(() -> {
-                    // Record failure even if user doesn't exist to prevent user-enumeration attacks
                     loginRateLimiter.recordFailedAttempt(request.email());
                     return new InvalidCredentialsException("Invalid email or password");
                 });

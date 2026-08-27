@@ -11,11 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
-// self-service account changes for the logged-in user (currently only reachable
-// by the teacher - students don't manage their own credentials, the teacher
-// changes those for them via StudentService). identifies the row to update from
-// the JWT's own user id, never a path variable, so a caller can only ever change
-// their own email/password
+/* Service for managing self-service credential updates for authenticated users */
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -23,13 +20,16 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /* Updates the email address of the authenticated user after checking format and system uniqueness */
     @Transactional
     public UserResponse updateOwnEmail(Long userId, String newEmail) {
+
         String email = AccountValidation.normalizeEmail(newEmail);
         AccountValidation.requireValidEmail(email);
 
         User user = getUserEntity(userId);
 
+        /* Verify email is not already claimed by another account */
         if (!email.equalsIgnoreCase(user.getEmail())
                 && userRepository.findByEmailIgnoreCase(email).isPresent()) {
             throw new DuplicateEmailException("email already registered");
@@ -41,6 +41,7 @@ public class UserService {
         return toResponse(user);
     }
 
+    /* Hashes and updates the authenticated user's account password */
     @Transactional
     public UserResponse resetOwnPassword(Long userId, String newPassword) {
         AccountValidation.requireValidPassword(newPassword);
@@ -52,11 +53,13 @@ public class UserService {
         return toResponse(user);
     }
 
+    /* Retrieves user entity by ID or throws domain not-found exception */
     private User getUserEntity(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
     }
 
+    /* Projects User entity into clean UserResponse DTO */
     private UserResponse toResponse(User user) {
         return new UserResponse(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName());
     }

@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+/* Service for booking lessons outside the tutor's normal working hours.
+   Opens an ADD override first, then creates the lesson inside a single transaction. */
+
 @Service
 @RequiredArgsConstructor
 public class LessonBookingService {
@@ -16,19 +19,15 @@ public class LessonBookingService {
     private final LessonService lessonService;
     private final ScheduleOverrideService scheduleOverrideService;
 
-    // the ADD override has to be created BEFORE the lesson, not after: booking goes
-    // through AvailabilityService.isTimeAvailable, which only returns true if a rule
-    // or an existing ADD override covers the slot. outside regular hours neither is
-    // true yet, so booking first always fails with "This time is not available".
-    // creating the override first is safe here precisely because both writes share
-    // one transaction - if the booking then fails for any reason, the override is
-    // rolled back with it and no orphan availability window is left behind
+    /* Books a custom lesson by opening an availability slot first and then inserting the lesson */
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public LessonResponse createLessonOutsideHours(LessonRequest request) {
+        /* Step 1: Open an ADD override slot so AvailabilityService won't reject the lesson */
         scheduleOverrideService.createScheduleOverride(new ScheduleOverrideRequest(
                 request.date(), request.startTime(), request.endTime(),
                 OverrideType.ADD, "Lesson booked outside regular hours"));
-
+        /* Step 2: Book the lesson normally using the newly opened slot.
+           If this fails, @Transactional rolls back Step 1 automatically. */
         return lessonService.createLessonForStudent(request);
     }
 }

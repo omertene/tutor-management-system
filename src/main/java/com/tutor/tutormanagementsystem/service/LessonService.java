@@ -28,6 +28,8 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+/* Core business service for managing lessons (booking, editing, canceling, completing) */
+
 @Service
 @RequiredArgsConstructor
 public class LessonService {
@@ -44,7 +46,10 @@ public class LessonService {
     private static final DateTimeFormatter NOTIFICATION_DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter NOTIFICATION_TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
 
+    private static final long STUDENT_MIN_BOOKING_NOTICE_HOURS = 2;
+    private static final long STUDENT_MIN_CANCEL_NOTICE_HOURS = 6;
 
+    /* Teacher books a lesson for a student */
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public LessonResponse createLessonForStudent(LessonRequest request) {
         Student student = studentService.getStudentEntity(request.studentId());
@@ -52,13 +57,12 @@ public class LessonService {
         return createLesson(student, request.subjectId(), request.date(), request.startTime(), request.endTime());
     }
 
-    private static final long STUDENT_MIN_BOOKING_NOTICE_HOURS = 2;
-    private static final long STUDENT_MIN_CANCEL_NOTICE_HOURS = 6;
-
+    /* Student books a lesson for themselves with a minimum 2-hour advance notice check */
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public LessonResponse createLessonAsStudent(Long studentId, StudentLessonRequest request) {
         Student student = studentService.getStudentEntity(studentId);
 
+        /* Block last-minute bookings less than 2 hours before the start time */
         LocalDateTime requestedStart = LocalDateTime.of(request.date(), request.startTime());
         if (requestedStart.isBefore(LocalDateTime.now().plusHours(STUDENT_MIN_BOOKING_NOTICE_HOURS))) {
             throw new SlotNotAvailableException(
@@ -67,17 +71,13 @@ public class LessonService {
 
         LessonResponse response = createLesson(student, request.subjectId(), request.date(), request.startTime(), request.endTime());
 
-        // only when the STUDENT books (not createLessonForStudent, which is the teacher
-        // booking on their own behalf - no need to notify yourself). sent after
-        // createLesson already succeeded, so a booking never fails just because the
-        // notification email failed to send
+        /* Send email notification to teacher only when student books by themselves */
         notifyTeacherOfNewBooking(response);
 
         return response;
     }
 
-    // lets the teacher know a student booked themselves in, without having to keep
-    // refreshing the schedule page
+    /* Sends an email to teacher about a new student booking */
     private void notifyTeacherOfNewBooking(LessonResponse lesson) {
         String subject = "New lesson booked";
         String body = lesson.studentFirstName() + " " + lesson.studentLastName() + " booked a "
@@ -89,9 +89,7 @@ public class LessonService {
     }
 
 
-    // price = hourly rate x duration in hours, not the flat hourly rate - a 30-minute
-    // lesson costs half the rate, a 3-hour lesson costs 3x it. computed from whole
-    // minutes (not Duration/double) so the result is exact BigDecimal money math
+    /* Calculates exact price based on student hourly rate and lesson duration in minutes */
     private static BigDecimal priceForDuration(BigDecimal hourlyRate, LocalTime startTime, LocalTime endTime) {
         long minutes = java.time.Duration.between(startTime, endTime).toMinutes();
         return hourlyRate
@@ -99,18 +97,23 @@ public class LessonService {
                 .divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP);
     }
 
+    /* Core booking logic: validates time, acquires pessimistic lock on date, and saves lesson */
     private LessonResponse createLesson(Student student, Long subjectId, LocalDate date, LocalTime startTime, LocalTime endTime) {
 
         Subject subject = subjectService.getSubjectEntity(subjectId);
 
+        /* Ensure start time is strictly before end time */
         TimeValidation.requireValidRange(startTime, endTime);
 
+        /* Pessimistic lock for this specific date to stop double-booking race conditions */
         lessonRepository.acquireDateLock(date.toEpochDay());
 
+        /* Check if slot is open in tutor's weekly rules and overrides */
         if (!availabilityService.isTimeAvailable(date, startTime, endTime)) {
             throw new SlotNotAvailableException("This time is not available");
         }
 
+        /* Check if another active lesson is already booked in this time range */
         boolean alreadyBooked = !lessonRepository
                 .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThanAndStatusNot(date, endTime, startTime, LessonStatus.CANCELLED)
                 .isEmpty();
@@ -119,6 +122,7 @@ public class LessonService {
             throw new SlotNotAvailableException("This time is already booked");
         }
 
+        /* Build and save new scheduled lesson entity with locked-in booking price */
         Lesson lesson = Lesson.builder()
                 .student(student)
                 .subject(subject)
@@ -135,6 +139,7 @@ public class LessonService {
     }
 
 
+    /* Updates an existing scheduled lesson's date, time, subject, or student */
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public LessonResponse updateLesson(Long lessonId, LessonRequest request) {
         Lesson lesson = lessonRepository.findById(lessonId)
@@ -149,12 +154,14 @@ public class LessonService {
         Student student = studentService.getStudentEntity(request.studentId());
         Subject subject = subjectService.getSubjectEntity(request.subjectId());
 
+        /* Lock target date to safely check overlaps */
         lessonRepository.acquireDateLock(request.date().toEpochDay());
 
         if (!availabilityService.isTimeAvailable(request.date(), request.startTime(), request.endTime())) {
             throw new SlotNotAvailableException("This time is not available");
         }
 
+        /* Make sure no other lesson overlaps this slot (ignore current lesson being updated) */
         boolean alreadyBooked = lessonRepository
                 .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThanAndStatusNot(
                         request.date(), request.endTime(), request.startTime(), LessonStatus.CANCELLED)
@@ -177,6 +184,7 @@ public class LessonService {
         return toResponse(lesson, true);
     }
 
+    /* Cancels a lesson with permission and time-notice checks */
     @Transactional
     public LessonResponse cancelLesson(Long lessonId, Long callerId, Role callerRole) {
         Lesson lesson = lessonRepository.findById(lessonId)
@@ -184,11 +192,12 @@ public class LessonService {
 
         boolean isOwner = lesson.getStudent().getId().equals(callerId);
 
+        /* Students can only cancel their own lessons */
         if (callerRole == Role.STUDENT && !isOwner) {
             throw new LessonAccessDeniedException("You can only cancel your own lessons");
         }
 
-
+        /* Completed lessons can only be canceled by the teacher */
         if (lesson.getStatus() == LessonStatus.COMPLETED && callerRole != Role.TEACHER) {
             throw new LessonAccessDeniedException("Only a teacher can cancel a completed lesson");
         }
@@ -197,6 +206,7 @@ public class LessonService {
             throw new InvalidLessonStateException("This lesson can't be cancelled");
         }
 
+        /* Students must cancel at least 6 hours in advance */
         if (callerRole == Role.STUDENT) {
             LocalDateTime lessonStart = LocalDateTime.of(lesson.getDate(), lesson.getStartTime());
             if (lessonStart.isBefore(LocalDateTime.now().plusHours(STUDENT_MIN_CANCEL_NOTICE_HOURS))) {
@@ -212,6 +222,7 @@ public class LessonService {
     }
 
 
+    /* Marks a scheduled lesson as completed after its start time */
     @Transactional
     public LessonResponse completeLesson(Long lessonId) {
         Lesson lesson = lessonRepository.findById(lessonId)
@@ -232,10 +243,7 @@ public class LessonService {
         return toResponse(lesson, true);
     }
 
-    // teacher-only notes about a lesson (e.g. what was covered) - never shown to the
-    // student, same privacy rule toResponse already enforces for reading them.
-    // allowed on any lesson except a cancelled one, since there's nothing meaningful
-    // left to annotate about a lesson that never happened
+    /* Saves private notes for teacher on a lesson */
     @Transactional
     public LessonResponse updateLessonNotes(Long lessonId, String notes) {
         Lesson lesson = lessonRepository.findById(lessonId)
@@ -251,47 +259,46 @@ public class LessonService {
         return toResponse(lesson, true);
     }
 
+    /* Returns all lessons in the system for the teacher */
     public List<LessonResponse> getAllLessonsForTeacher() {
         return lessonRepository.findAll().stream()
                 .map(lesson -> toResponse(lesson, true))
                 .toList();
     }
 
+    /* Returns only lessons belonging to a specific student (hiding private teacher notes) */
     public List<LessonResponse> getLessonsForStudent(Long studentId) {
         return lessonRepository.findAllByStudentId(studentId).stream()
                 .map(lesson -> toResponse(lesson, false))
                 .toList();
     }
 
-    // every booked (SCHEDULED or COMPLETED) lesson's date/time within the given range
-    // across every student, with no student-identifying info - lets a student see
-    // which slots are already taken by someone else (grayed out on their own schedule
-    // view) without exposing whose lesson it is or what subject it's for. scoped to a
-    // date range (the caller passes the visible week) instead of loading every lesson
-    // ever booked - this endpoint is hit on every student schedule page load
+    /* Returns anonymized busy time intervals for students to see calendar availability */
     public List<BusySlotResponse> getBusySlots(LocalDate startDate, LocalDate endDate) {
         return lessonRepository.findAllByStatusNotAndDateBetween(LessonStatus.CANCELLED, startDate, endDate).stream()
                 .map(lesson -> new BusySlotResponse(lesson.getDate(), lesson.getStartTime(), lesson.getEndTime()))
                 .toList();
     }
 
-
+    /* Calculates total sum of completed lessons for a student */
     public BigDecimal sumCompletedLessonPricesForStudent(Long studentId) {
         return lessonRepository.sumLessonPricesForStudentByStatus(studentId, LessonStatus.COMPLETED);
     }
 
-
+    /* Gets a lesson entity by ID or throws exception */
     public Lesson getLessonEntity(Long lessonId) {
         return lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
     }
 
+    /* Checks if any scheduled lesson exists in a specific date and time interval */
     public boolean hasScheduledLessonInRange(LocalDate date, LocalTime startTime, LocalTime endTime) {
         return !lessonRepository
                 .findAllByDateAndStartTimeLessThanAndEndTimeGreaterThanAndStatus(date, endTime, startTime, LessonStatus.SCHEDULED)
                 .isEmpty();
     }
 
+    /* Counts how many upcoming lessons fall into a weekly slot */
     public long countUpcomingLessonsInWeeklySlot(DayOfWeek dayOfWeek, LocalTime startTime, LocalTime endTime) {
         LocalDate today = LocalDate.now();
 
@@ -303,6 +310,7 @@ public class LessonService {
                 .count();
     }
 
+    /* Counts upcoming lessons that will lose coverage if a weekly rule is edited */
     public long countUpcomingLessonsLosingCoverage(
             DayOfWeek dayOfWeek, LocalTime oldStartTime, LocalTime oldEndTime,
             DayOfWeek newDayOfWeek, LocalTime newStartTime, LocalTime newEndTime) {
@@ -322,30 +330,22 @@ public class LessonService {
     }
 
 
-    // every COMPLETED lesson in the given range, optionally scoped to one subject -
-    // the single fetch StatisticsService aggregates into KPIs, the subject table,
-    // and the top-students table for the unified statistics dashboard
+    /* Gets completed lessons in a date range (optionally filtered by subject) for statistics */
     public List<Lesson> getCompletedLessonsInRange(LocalDate startDate, LocalDate endDate, Long subjectId) {
         return lessonRepository.findCompletedInRange(LessonStatus.COMPLETED, startDate, endDate, subjectId);
     }
 
-    // every year that has at least one completed lesson - powers the statistics
-    // dashboard's year picker (Month mode needs a year too, Year mode picks
-    // straight from this list) so an empty year is never offered
+    /* Returns list of years that have at least one completed lesson for UI dropdowns */
     public List<Integer> getYearsWithCompletedLessons() {
         return lessonRepository.findDistinctYearsWithCompletedLessons(LessonStatus.COMPLETED);
     }
 
-    // hours a lesson lasted, as a double (e.g. 1.5 for a 90-minute lesson) - the
-    // common unit used throughout the statistics dashboard for "total hours" and
-    // effective hourly rate
+    /* Converts lesson duration to decimal hours (e.g. 90 minutes = 1.5 hours) */
     public double lessonHours(Lesson lesson) {
         return java.time.Duration.between(lesson.getStartTime(), lesson.getEndTime()).toMinutes() / 60.0;
     }
 
-    // total price of COMPLETED lessons that happened this calendar month - "revenue this
-    // month" means work actually done this month, not payments received this month.
-    // used by the teacher dashboard's revenue card (GET /teacher/revenue/current-month)
+    /* Calculates total revenue from completed lessons for the current month */
     public BigDecimal getCompletedLessonRevenueForCurrentMonth() {
         LocalDate today = LocalDate.now();
         LocalDate startOfMonth = today.withDayOfMonth(1);
@@ -354,7 +354,7 @@ public class LessonService {
         return lessonRepository.sumLessonPricesByStatusAndDateRange(LessonStatus.COMPLETED, startOfMonth, endOfMonth);
     }
 
-    // includeNotes controls whether the teacher-only notes field is exposed
+    /* Maps Lesson entity to LessonResponse DTO (hiding notes from students) */
     private LessonResponse toResponse(Lesson lesson, boolean includeNotes) {
         return new LessonResponse(
                 lesson.getId(),

@@ -24,31 +24,33 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+
+/* Service for managing learning materials (files, external links, and text notes) */
+
 public class MaterialService {
 
     private final MaterialRepository materialRepository;
     private final StudentService studentService;
     private final LessonService lessonService;
 
+
+    /* Returns all learning materials belonging to a specific student using DB projection */
     public List<MaterialResponse> getMaterialsForStudent(Long studentId) {
         return materialRepository.findAllByStudentIdProjected(studentId);
     }
 
-    // teacher views every material across every student at once - the default
-    // "materials" view, instead of requiring a student to be picked first
+    /* Returns every material across all students for the teacher's main materials view */
     public List<MaterialResponse> getAllMaterials() {
         return materialRepository.findAllProjected();
     }
 
-    // callerId/callerRole identify who is asking, same pattern as LessonService.cancelLesson.
-    // a teacher may view materials for any lesson; a student may only view materials for
-    // their own lesson - without this check, any logged-in student could see another
-    // student's materials by guessing/trying a different lessonId
+    /* Returns materials for a specific lesson with student ownership validation */
     public List<MaterialResponse> getMaterialsForLesson(Long lessonId, Long callerId, Role callerRole) {
         Lesson lesson = lessonService.getLessonEntity(lessonId);
 
         boolean isOwner = lesson.getStudent().getId().equals(callerId);
 
+        /* Block students from viewing materials of lessons that belong to others */
         if (callerRole == Role.STUDENT && !isOwner) {
             throw new LessonAccessDeniedException("You can only view materials for your own lessons");
         }
@@ -56,7 +58,8 @@ public class MaterialService {
         return materialRepository.findAllByLessonIdProjected(lessonId);
     }
 
-    // teacher attaches an external URL  to a student, optionally tied to a specific lesson
+
+    /* Teacher attaches an external web link for a student, optionally tied to a lesson */
     @Transactional
     public MaterialResponse addLink(AddLinkRequest request) {
 
@@ -68,9 +71,7 @@ public class MaterialService {
             throw new InvalidMaterialException("URL is required");
         }
 
-        // only http/https may be stored. the student's browser renders this straight
-        // into an anchor's href, so a "javascript:..." URL saved here would execute in
-        // their session when they click it
+        /* Prevent XSS vulnerabilities by strictly allowing only http and https protocols */
         String url = request.url().trim();
         String lowerUrl = url.toLowerCase();
         if (!lowerUrl.startsWith("http://") && !lowerUrl.startsWith("https://")) {
@@ -87,7 +88,7 @@ public class MaterialService {
         return toResponse(material);
     }
 
-    // teacher attaches a plain text note to a student, optionally tied to specific lesson
+    /* Teacher attaches a plain text note for a student, optionally tied to a lesson */
     @Transactional
     public MaterialResponse addNote(AddNoteRequest request) {
 
@@ -108,7 +109,7 @@ public class MaterialService {
         return toResponse(material);
     }
 
-    // teacher uploads an actual file for a student, optionally tied to a specific lesson.
+    /* Teacher uploads a binary file for a student, optionally tied to a lesson */
     @Transactional
     public MaterialResponse uploadFile(Long studentId, Long lessonId, String title, String description, MultipartFile file) {
 
@@ -139,16 +140,14 @@ public class MaterialService {
         return toResponse(material);
     }
 
-    // returns the raw entity (not the DTO) because the controller needs the actual
-    // bytes/fileName/contentType to stream back. a teacher may download any material;
-    // a student may only download their own - without this check, any logged-in student
-    // could download another student's file by guessing/incrementing the material id
+    /* Returns raw material entity for file streaming with student ownership verification */
     public Material getMaterialEntity(Long materialId, Long callerId, Role callerRole) {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new MaterialNotFoundException("Material not found"));
 
         boolean isOwner = material.getStudent().getId().equals(callerId);
 
+        /* Block students from downloading files belonging to other students */
         if (callerRole == Role.STUDENT && !isOwner) {
             throw new LessonAccessDeniedException("You can only download your own materials");
         }
@@ -160,7 +159,7 @@ public class MaterialService {
         return material;
     }
 
-    // teacher deletes a material - hard delete
+    /* Deletes a material entity completely from database */
     @Transactional
     public void deleteMaterial(Long materialId) {
 
@@ -172,6 +171,7 @@ public class MaterialService {
     }
 
 
+    /* Helper method to build common material attributes and prevent attaching to canceled lessons */
     private Material.MaterialBuilder newMaterialFor(Long studentId, Long lessonId, String title, String description) {
         Student student = studentService.getStudentEntity(studentId);
 
@@ -179,6 +179,7 @@ public class MaterialService {
                 ? lessonService.getLessonEntity(lessonId)
                 : null;
 
+        /* Prevent attaching study materials to a canceled lesson */
         if (lesson != null && lesson.getStatus() == LessonStatus.CANCELLED) {
             throw new InvalidMaterialException("Can't attach a material to a cancelled lesson");
         }
@@ -190,6 +191,7 @@ public class MaterialService {
                 .description(description);
     }
 
+    /* Maps Material entity to MaterialResponse DTO */
     private MaterialResponse toResponse(Material material) {
         Lesson lesson = material.getLesson();
 
