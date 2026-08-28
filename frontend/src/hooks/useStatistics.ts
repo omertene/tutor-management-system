@@ -4,10 +4,9 @@ import type { Subject } from "../types";
 import type { DashboardStatistics, RangeType } from "../types/statistics";
 import { toDateString } from "../utils/time";
 
-// resolves the range type (+ picked year/month, where relevant) into concrete
-// start/end dates the backend can query with. "All time" uses a wide-open
-// window rather than looking up the earliest lesson, which is simpler and has
-// no real downside
+/* Resolves the range type (and picked year/month) into concrete start/end
+   dates the backend can query with. "All time" just uses a wide-open window
+   instead of looking up the earliest lesson. */
 function resolveRange(rangeType: RangeType, year: number, month: number): { startDate: string; endDate: string } {
     if (rangeType === "month") {
         const start = new Date(year, month - 1, 1);
@@ -21,16 +20,14 @@ function resolveRange(rangeType: RangeType, year: number, month: number): { star
         return { startDate: toDateString(start), endDate: toDateString(end) };
     }
 
-    // allTime - end date is intentionally far in the future rather than "today", since
-    // a lesson or payment can be dated ahead (a booked-in-advance lesson, a payment
-    // logged for next month) and would otherwise silently fall outside "all time"
+    /* allTime - end date is intentionally far in the future rather than "today",
+       since a lesson or payment dated ahead would otherwise fall outside "all time" */
     const today = new Date();
     return { startDate: "2000-01-01", endDate: toDateString(new Date(today.getFullYear() + 10, 11, 31)) };
 }
 
-// all the data-fetching and filter state behind the statistics dashboard, kept out of
-// the page so the page itself is only layout. the page reads these values and renders;
-// nothing here touches the DOM.
+/* All the data-fetching and filter state behind the statistics dashboard - the
+   page just reads these values and renders */
 export function useStatistics() {
     const [statistics, setStatistics] = useState<DashboardStatistics | null>(null);
     const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -47,6 +44,8 @@ export function useStatistics() {
         [rangeType, selectedYear, selectedMonth]
     );
 
+    /* Loads subjects (for the filter dropdown) and the years with data (for the
+       year picker) once on mount */
     useEffect(() => {
         async function loadSubjects() {
             try {
@@ -55,15 +54,14 @@ export function useStatistics() {
                 const data: Subject[] = await response.json();
                 setSubjects(data);
             } catch {
-                // subject filter is a non-essential enhancement - fail quietly and
-                // just leave the dropdown showing "All subjects"
+                /* Subject filter is a non-essential enhancement - fail quietly and
+                   just leave the dropdown showing "All subjects" */
             }
         }
 
-        // years that actually have completed lessons - populates the year picker (used
-        // directly in Year mode, and alongside a month in Month mode) and defaults the
-        // selection to the most recent year with data, falling back to this year if
-        // there's no data at all yet
+        /* Years that actually have completed lessons - populates the year picker
+           and defaults the selection to the most recent year with data, falling
+           back to this year if there's no data yet */
         async function loadYears() {
             try {
                 const response = await apiFetch(`/teacher/statistics/years`);
@@ -80,9 +78,10 @@ export function useStatistics() {
         loadYears();
     }, []);
 
+    /* Reloads the statistics whenever the date range or subject filter changes */
     useEffect(() => {
-        // wait for the year picker to finish loading before querying, so Month/Year
-        // mode don't briefly query with the wrong (default) year
+        /* Waits for the year picker to finish loading, so Month/Year mode don't
+           briefly query with the wrong (default) year */
         if (selectedYear === null) return;
 
         async function loadStatistics() {

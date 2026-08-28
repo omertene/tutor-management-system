@@ -3,6 +3,9 @@ import { formatDateAndTime, formatDateTimeString } from "../../utils/time";
 import { typeStyles } from "../../types/material";
 import type { Material } from "../../types/material";
 
+/* One row in the materials list - shows the material info plus the action
+   button that fits its type (open link / download file / delete). */
+
 type MaterialRowProps = {
     material: Material;
     isTeacher: boolean;
@@ -10,6 +13,8 @@ type MaterialRowProps = {
     onDelete: (material: Material) => void;
 };
 
+/* isTeacher shows the student name (teacher sees materials for everyone)
+   and shows the Delete button, which students don't get */
 export default function MaterialRow({ material, isTeacher, onDownload, onDelete }: MaterialRowProps) {
     return (
         <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
@@ -40,9 +45,7 @@ export default function MaterialRow({ material, isTeacher, onDownload, onDelete 
                 )}
 
                 {material.type === "FILE" && material.fileName && (() => {
-                    // captured in a local so the closure below still sees it as
-                    // `string`, not `string | null` - narrowing from the JSX
-                    // condition above doesn't carry into a nested arrow function
+                    /* TS needs this in a local var to know it's not null here */
                     const fileName = material.fileName;
                     return (
                         <button onClick={() => onDownload(material.id, fileName)} className={smallSecondaryButtonClass}>

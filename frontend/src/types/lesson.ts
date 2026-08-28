@@ -1,5 +1,6 @@
 import { formatShortDateString } from "../utils/time";
 
+/* Lesson shape and the small helpers/constants that work with it */
 export type Lesson = {
     id: number;
     studentFirstName: string;
@@ -20,17 +21,17 @@ export const statusStyles: Record<string, string> = {
     CANCELLED: "bg-slate-100 text-slate-500",
 };
 
-// the teacher's list shows the raw status; a student sees friendlier wording
+/* The teacher's list shows the raw status; a student sees friendlier wording */
 export const studentStatusLabels: Record<string, string> = {
     SCHEDULED: "Upcoming",
     COMPLETED: "Done",
     CANCELLED: "Cancelled",
 };
 
-// students can't cancel a lesson that starts within this many hours
+/* Students can't cancel a lesson that starts within this many hours */
 export const STUDENT_MIN_CANCEL_NOTICE_HOURS = 6;
 
-// "2026-08-17" -> "Today" / "Tomorrow" / "7/10/26", relative to the given today string
+/* "2026-08-17" -> "Today" / "Tomorrow" / "7/10/26", relative to todayStr */
 export function formatRelativeLessonDate(date: string, todayStr: string): string {
     if (date === todayStr) return "Today";
 
@@ -44,19 +45,16 @@ export function formatRelativeLessonDate(date: string, todayStr: string): string
     return formatShortDateString(date);
 }
 
-// "2025-08-17" -> "2025-08" - zero-padded so plain string sort (used to order the
-// filter dropdown) matches chronological order. an unpadded "2025-8" would sort
-// after "2025-10"/"2025-11"/"2025-12" ("1" < "8" lexicographically), pushing autumn
-// months above summer ones in the list
+/* "2025-08-17" -> "2025-08" - zero-padded so a plain string sort (used for the
+   filter dropdown) matches chronological order */
 export function lessonMonthKey(date: string): string {
     const [year, month] = date.split("-");
     return `${year}-${month.padStart(2, "0")}`;
 }
 
-// a lesson can only be marked completed once it's actually started - matches the
-// backend check in LessonService.completeLesson. takes the date/time fields rather
-// than a whole Lesson so both the teacher's schedule modal and the lessons list
-// row can share it, despite holding differently-shaped lesson objects
+/* A lesson can only be marked completed once it's actually started - takes
+   date/time fields rather than a whole Lesson so it works for the differently-
+   shaped lesson objects used by the schedule modal and the lessons list */
 export function hasLessonStarted(lesson: { date: string; startTime: string }): boolean {
     const [year, month, day] = lesson.date.split("-").map(Number);
     const [hours, minutes] = lesson.startTime.slice(0, 5).split(":").map(Number);

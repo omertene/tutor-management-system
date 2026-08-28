@@ -14,15 +14,17 @@ import { studentLinks, teacherLinks } from "../constants/navLinks";
 
 const LESSONS_PER_PAGE = 10;
 
-// "2025-08" -> "Aug 2025"
+/* "2025-08" -> "Aug 2025" */
 function monthLabel(key: string): string {
     const [year, month] = key.split("-").map(Number);
     return `${monthNames[month - 1]} ${year}`;
 }
 
+/* Lessons page for both roles - the teacher books lessons and manages the full
+   list, a student sees their upcoming/completed/canceled lessons */
 function LessonsPage() {
-    // ProtectedRoute guarantees a token before this page renders; the ?? "" keeps
-    // decodeToken's signature honest and its try/catch handles a malformed value
+    /* ProtectedRoute guarantees a token before this page renders - the ?? ""
+       keeps decodeToken's signature honest, its try/catch handles a bad value */
     const token = localStorage.getItem("token") ?? "";
     const { role } = decodeToken(token);
     const isTeacher = role === "TEACHER";
@@ -34,19 +36,17 @@ function LessonsPage() {
         canCancelLesson, cancelLesson, completeLesson,
     } = useLessons(role);
 
-    // which lesson's "..." action menu is currently open (teacher, COMPLETED
-    // lessons only) - null means none open. used instead of a plain red Cancel
-    // button for completed lessons so voiding one takes a deliberate extra click
+    /* Which lesson's "..." action menu is open (teacher, COMPLETED lessons
+       only) - null means none open */
     const [openMenuLessonId, setOpenMenuLessonId] = useState<number | null>(null);
 
-    // filters for the teacher's lesson list
+    /* Filters for the teacher's lesson list */
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("ALL");
-    // "YYYY-MM" or "ALL" - lets the teacher narrow the list down to one specific
-    // month/year (any month, not just the current one), same idea as on Statistics
+    /* "YYYY-MM" or "ALL" - narrows the list to one specific month/year */
     const [monthFilter, setMonthFilter] = useState("ALL");
 
-    // close the open "..." action menu on any click outside it
+    /* Closes the open "..." action menu on any click outside it */
     useEffect(() => {
         if (openMenuLessonId === null) return;
         function handleClickAway() {
@@ -56,8 +56,7 @@ function LessonsPage() {
         return () => document.removeEventListener("click", handleClickAway);
     }, [openMenuLessonId]);
 
-    // every "YYYY-MM" that actually has a lesson on it, newest first - built from
-    // the teacher's own lessons rather than a fixed list, so only real months show up
+    /* Every "YYYY-MM" that actually has a lesson, newest first */
     const availableMonths = Array.from(new Set(lessons.map((lesson) => lessonMonthKey(lesson.date))))
         .sort()
         .reverse();
@@ -111,10 +110,8 @@ function LessonsPage() {
                     />
                 )}
 
-                {/* students book lessons interactively on the Schedule calendar (see
-                    StudentDashboard / StudentScheduleGrid) - this page focuses on
-                    showing their upcoming/completed/cancelled lessons instead of
-                    duplicating the booking form here */}
+                {/* students book on the Schedule calendar - this page just lists
+                    their lessons */}
 
                 {isTeacher && (
                     <div className="mt-8">

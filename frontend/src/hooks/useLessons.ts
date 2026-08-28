@@ -4,9 +4,9 @@ import type { Student, Subject } from "../types";
 import type { Lesson } from "../types/lesson";
 import { STUDENT_MIN_CANCEL_NOTICE_HOURS } from "../types/lesson";
 
-// lessons for whichever role is viewing, plus the reference data the teacher's
-// booking form needs. the teacher sees every lesson; a student sees only their
-// own, from a different endpoint.
+/* Lessons for whichever role is viewing, plus the reference data the teacher's
+   booking form needs. The teacher sees every lesson, a student sees only
+   their own, from a different endpoint. */
 export function useLessons(role: string) {
     const isTeacher = role === "TEACHER";
 
@@ -15,6 +15,7 @@ export function useLessons(role: string) {
     const [students, setStudents] = useState<Student[]>([]);
     const [errorMessage, setErrorMessage] = useState("");
 
+    /* Loads lessons, subjects, and (for a teacher) the student list */
     useEffect(() => {
         async function load() {
             const lessonsRes = await apiFetch(isTeacher ? `/teacher/lessons` : `/student/lessons`);
@@ -34,8 +35,8 @@ export function useLessons(role: string) {
         load();
     }, [isTeacher]);
 
-    // teacher books a lesson on behalf of a chosen student - POST /teacher/lessons.
-    // returns false so the caller can tell a rejected booking from a successful one
+    /* Teacher books a lesson on behalf of a chosen student. Returns false so the
+       caller can tell a rejected booking from a successful one */
     async function createLesson(body: {
         studentId: number;
         subjectId: number;
@@ -60,9 +61,8 @@ export function useLessons(role: string) {
         return true;
     }
 
-    // teacher types a brand new subject name straight from the booking dropdown -
-    // POST /subjects, then hands the created subject back so booking can continue
-    // without a page navigation
+    /* Creates a new subject straight from the booking dropdown and hands it back
+       so booking can continue without a page navigation */
     async function createSubject(name: string): Promise<Subject | null> {
         setErrorMessage("");
 
@@ -81,9 +81,8 @@ export function useLessons(role: string) {
         return created;
     }
 
-    // a lesson can only be cancelled while SCHEDULED or (teacher-only) COMPLETED -
-    // mirrors the backend rule in LessonService.cancelLesson, used to decide whether
-    // to show the Cancel button at all
+    /* A lesson can only be canceled while SCHEDULED, or COMPLETED for a teacher -
+       mirrors the backend rule, used to decide whether to show the Cancel button */
     function canCancelLesson(lesson: Lesson): boolean {
         if (lesson.status === "SCHEDULED") {
             if (!isTeacher) {
@@ -98,10 +97,11 @@ export function useLessons(role: string) {
         return false;
     }
 
+    /* Cancels a lesson - confirms first if it was COMPLETED, since that reverses
+       real revenue/debt */
     async function cancelLesson(lesson: Lesson) {
         setErrorMessage("");
 
-        // cancelling a COMPLETED lesson reverses real revenue/debt, so it confirms first
         if (lesson.status === "COMPLETED") {
             const confirmed = window.confirm(
                 "Cancel this completed lesson? This will reverse its effect on debt and revenue."
@@ -120,8 +120,7 @@ export function useLessons(role: string) {
         setLessons((current) => current.map((l) => (l.id === lesson.id ? cancelled : l)));
     }
 
-    // teacher marks a lesson as completed, so it counts toward the student's debt -
-    // PATCH /teacher/lessons/{id}/complete
+    /* Teacher marks a lesson as completed, so it counts toward the student's debt */
     async function completeLesson(lessonId: number) {
         setErrorMessage("");
 

@@ -3,6 +3,9 @@ import Modal from "../Modal";
 import type { TeacherLesson } from "../../types/schedule";
 import { hasLessonStarted } from "../../types/lesson";
 
+/* Popup showing details for one of the teacher's lessons, with notes and
+   the actions available for its current status. */
+
 type TeacherLessonModalProps = {
     lesson: TeacherLesson;
     onClose: () => void;
@@ -15,16 +18,16 @@ type TeacherLessonModalProps = {
 export default function TeacherLessonModal({
     lesson, onClose, onSaveNotes, onComplete, onEdit, onCancel,
 }: TeacherLessonModalProps) {
-    // the notes textarea's own draft value, kept separate from the lesson so typing
-    // doesn't need to round-trip through a lesson-list update on every keystroke -
-    // resynced whenever a different lesson (or a freshly saved one) is shown
+    /* own draft value so typing doesn't update the lesson list every keystroke */
     const [notesDraft, setNotesDraft] = useState(lesson.notes ?? "");
     const [savingNotes, setSavingNotes] = useState(false);
 
+    /* resync the draft whenever a different lesson (or a freshly saved one) shows */
     useEffect(() => {
         setNotesDraft(lesson.notes ?? "");
     }, [lesson.id, lesson.notes]);
 
+    /* Saves the notes draft for this lesson */
     async function handleSaveNotes() {
         setSavingNotes(true);
         await onSaveNotes(lesson.id, notesDraft);

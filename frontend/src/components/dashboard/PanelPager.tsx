@@ -1,11 +1,13 @@
+/* Small prev/next footer shared by the dashboard panels that page their
+   list (Outstanding debt, Needs completion) - pulled out so both don't
+   keep their own copy of the same markup. */
+
 type PanelPagerProps = {
     page: number;
     totalPages: number;
     onChange: (page: number) => void;
 };
 
-// the prev/next footer shared by the "Outstanding debt" and "Needs completion"
-// panels - both had their own byte-identical copy of this markup
 export default function PanelPager({ page, totalPages, onChange }: PanelPagerProps) {
     const linkClass = "text-sm text-indigo-600 hover:text-indigo-700 font-medium disabled:text-slate-300 disabled:cursor-default";
 

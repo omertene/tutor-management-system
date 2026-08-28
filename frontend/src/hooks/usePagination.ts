@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 
-// 1-based pagination over an already-filtered array.
-//
-// the page number is clamped rather than stored blindly, so removing the last item on
-// the final page can't strand the list on an empty page. resetKey resets to page 1
-// whenever the filters change - otherwise searching while on page 3 shows "no results"
-// for a query that does have matches.
+/* 1-based pagination over an already-filtered array. The page number is clamped
+   so removing the last item on the final page can't strand the list on an
+   empty page. resetKey resets back to page 1 whenever the filters change. */
 export function usePagination<T>(items: T[], perPage: number, resetKey?: unknown) {
     const [page, setPage] = useState(1);
 

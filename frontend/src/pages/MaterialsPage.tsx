@@ -12,9 +12,11 @@ import { studentLinks, teacherLinks } from "../constants/navLinks";
 
 const MATERIALS_PER_PAGE = 10;
 
+/* Materials list for both roles - the teacher can also add and delete, a
+   student can only view and download their own */
 function MaterialsPage() {
-    // ProtectedRoute guarantees a token before this page renders; the ?? "" keeps
-    // decodeToken's signature honest and its try/catch handles a malformed value
+    /* ProtectedRoute guarantees a token before this page renders - the ?? ""
+       keeps decodeToken's signature honest, its try/catch handles a bad value */
     const token = localStorage.getItem("token") ?? "";
     const { role } = decodeToken(token);
     const isTeacher = role === "TEACHER";
@@ -28,8 +30,8 @@ function MaterialsPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [typeFilter, setTypeFilter] = useState("ALL");
     const [subjectFilter, setSubjectFilter] = useState("ALL");
-    // lets you jump straight to "materials for this lesson" - matches against the
-    // lesson's date/subject text shown in each row (e.g. "7/10/26" or "Math")
+    /* Lets you jump to "materials for this lesson" - matches against the
+       lesson's date/subject text shown in each row */
     const [lessonFilterQuery, setLessonFilterQuery] = useState("");
 
     const filteredMaterials = materials
@@ -44,10 +46,9 @@ function MaterialsPage() {
         .filter((material) => {
             if (!lessonFilterQuery.trim()) return true;
             const query = lessonFilterQuery.trim().toLowerCase();
-            // lessonDate and lessonStartTime are always set together (both come from
-            // the same optional linked Lesson on the backend - see MaterialService),
-            // but TypeScript can't know that from two independently-nullable fields,
-            // so both are checked explicitly instead of asserting the second away
+            /* lessonDate and lessonStartTime are always set together, but TypeScript
+               can't know that from two independently-nullable fields, so both are
+               checked explicitly */
             if (!material.lessonDate || !material.lessonStartTime) return false;
             const lessonLabel = `${formatDateAndTime(material.lessonDate, material.lessonStartTime)} ${material.lessonSubject}`.toLowerCase();
             return lessonLabel.includes(query);

@@ -5,8 +5,11 @@ import { inputClassFull, labelClass } from "../../constants/formStyles";
 import { addOneHour } from "../../utils/time";
 import type { Subject, TeacherLesson, TeacherStudent } from "../../types/schedule";
 
-// what the modal opens with: a blank booking for a chosen range, or an existing
-// lesson being edited
+/* Modal for the teacher to book a new lesson, or edit an existing one when
+   draft.lessonId is set. */
+
+/* What the modal opens with: a blank booking for a chosen range, or an
+   existing lesson being edited */
 export type LessonDraft = {
     lessonId: number | null;
     date: string;
@@ -14,15 +17,17 @@ export type LessonDraft = {
     endTime: string;
     studentId: string;
     subjectId: string;
-    // routes to the endpoint that also creates an ADD override, so the teacher can
-    // book outside their own weekly availability without editing rules first
+    /* routes to the endpoint that also creates an ADD override, so this can
+       book outside the teacher's normal weekly availability */
     outsideHours: boolean;
 };
 
+/* Builds an empty draft for booking a brand new lesson */
 export function draftForNewLesson(date: string, startTime: string, endTime: string, outsideHours = false): LessonDraft {
     return { lessonId: null, date, startTime, endTime, studentId: "", subjectId: "", outsideHours };
 }
 
+/* Builds a draft pre-filled from an existing lesson, for editing */
 export function draftForExistingLesson(lesson: TeacherLesson): LessonDraft {
     return {
         lessonId: lesson.id,
@@ -47,7 +52,6 @@ type BookLessonModalProps = {
     ) => Promise<string | null>;
 };
 
-// books a new lesson, or edits an existing one when draft.lessonId is set
 export default function BookLessonModal({ draft, students, subjects, onClose, onSave }: BookLessonModalProps) {
     const [date, setDate] = useState(draft.date);
     const [startTime, setStartTime] = useState(draft.startTime);
@@ -58,11 +62,13 @@ export default function BookLessonModal({ draft, students, subjects, onClose, on
 
     const isEditing = draft.lessonId !== null;
 
+    /* Keeps the lesson an hour long by default when the start moves */
     function handleStartTimeChange(value: string) {
         setStartTime(value);
         if (value) setEndTime(addOneHour(value));
     }
 
+    /* Validates the form and saves the lesson (create or edit) */
     async function handleSave() {
         setError("");
 

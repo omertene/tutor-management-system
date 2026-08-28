@@ -1,6 +1,8 @@
 import { formatHours } from "../../utils/time";
 import type { SubjectPerformance, StudentPerformance } from "../../types/statistics";
 
+/* The two tables on the statistics page: subject summary and top students. */
+
 const sectionTitleClass = "text-lg font-semibold text-slate-900 mb-3";
 const tableWrapClass = "bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden";
 const headRowClass = "bg-slate-50 text-slate-500 text-left";
@@ -12,6 +14,7 @@ type StatisticsTablesProps = {
     topStudents: StudentPerformance[];
 };
 
+/* Two plain tables, no local state - just formats and lists the rows it's given */
 export default function StatisticsTables({ subjectBreakdown, topStudents }: StatisticsTablesProps) {
     return (
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">

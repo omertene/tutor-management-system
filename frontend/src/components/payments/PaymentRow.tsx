@@ -5,6 +5,10 @@ import { methodLabels } from "../../types/payment";
 import type { Payment, PaymentMethod } from "../../types/payment";
 import type { Student } from "../../types";
 
+/* One row in the payment history list, with an inline edit panel the
+   teacher can open. Draft values live here (not on the page) so editing
+   one row doesn't affect another. */
+
 type PaymentRowProps = {
     payment: Payment;
     isTeacher: boolean;
@@ -15,10 +19,6 @@ type PaymentRowProps = {
     onCancel: (payment: Payment) => void;
 };
 
-// one payment in the history list, which expands into its own inline edit panel.
-// the draft values live here rather than on the page so opening a second row can't
-// inherit the first one's half-typed values, and so the edit error shows next to the
-// row being edited instead of in the page-level banner far above it.
 export default function PaymentRow({ payment, isTeacher, students, onSave, onCancel }: PaymentRowProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [studentId, setStudentId] = useState(String(payment.studentId));
@@ -28,6 +28,7 @@ export default function PaymentRow({ payment, isTeacher, students, onSave, onCan
     const [paymentDate, setPaymentDate] = useState(payment.paymentDate ?? todayDateString());
     const [errorMessage, setErrorMessage] = useState("");
 
+    /* Resets the draft fields back to the payment's current values and opens the edit panel */
     function startEdit() {
         setStudentId(String(payment.studentId));
         setAmount(String(payment.amount));
@@ -38,6 +39,7 @@ export default function PaymentRow({ payment, isTeacher, students, onSave, onCan
         setIsEditing(true);
     }
 
+    /* Sends the edited fields and closes the panel if it worked */
     async function handleSave() {
         setErrorMessage("");
         const error = await onSave(payment.id, {
@@ -55,9 +57,7 @@ export default function PaymentRow({ payment, isTeacher, students, onSave, onCan
         setIsEditing(false);
     }
 
-    // the payment's own student may have been deactivated since it was recorded -
-    // "students" only lists active ones, so without this the dropdown would have no
-    // matching option and silently show whichever student happens to be first instead
+    /* True if the payment's student got deactivated since, so isn't in the list */
     const studentMissingFromList = Boolean(studentId) && !students.some((s) => String(s.id) === studentId);
 
     return (
@@ -83,8 +83,7 @@ export default function PaymentRow({ payment, isTeacher, students, onSave, onCan
                     <div className="flex flex-col gap-1">
                         <label className={labelClass}>Student</label>
                         <select value={studentId} onChange={(e) => setStudentId(e.target.value)} className={inputClass}>
-                            {/* shown disabled so it's clearly not a real choice, just a way
-                                to display who the payment actually belongs to */}
+                            {/* disabled - just shows who the payment belongs to */}
                             {studentMissingFromList && (
                                 <option value={studentId} disabled>
                                     {payment.studentFirstName} {payment.studentLastName} (inactive)

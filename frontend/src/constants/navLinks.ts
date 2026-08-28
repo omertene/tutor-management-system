@@ -1,7 +1,4 @@
-// the navbar entries for each role, in one place. these were previously redeclared
-// at the top of all eight page files, which is how the "Subjects" tab ended up
-// pointing at a route that had been deleted - seven copies said one thing and the
-// eighth said another, and nothing made them agree.
+/* The navbar entries for each role, in one place */
 export type NavLink = { label: string; to: string };
 
 export const teacherLinks: NavLink[] = [

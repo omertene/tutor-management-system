@@ -2,9 +2,8 @@ import NavBar from "../components/NavBar";
 import StudentScheduleGrid from "../components/StudentScheduleGrid";
 import { studentLinks } from "../constants/navLinks";
 
-// Lessons/Payments/Materials are already one click away in the navbar above, so
-// this page doesn't repeat them as buttons - it's just the welcome text and the
-// interactive booking calendar
+/* Student's home page: a welcome message and the interactive booking calendar.
+   Lessons/Payments/Materials are already one click away in the navbar. */
 function StudentDashboard() {
   return (
     <div className="min-h-screen bg-slate-50">

@@ -7,6 +7,8 @@ import { formatHours, monthNames } from "../utils/time";
 import { teacherLinks } from "../constants/navLinks";
 import type { RangeType } from "../types/statistics";
 
+/* The teacher's statistics dashboard: range/subject filters, KPI cards, charts,
+   and summary tables */
 function StatisticsPage() {
     const {
         statistics, subjects, years, errorMessage,
@@ -61,7 +63,7 @@ function StatisticsPage() {
 
                 {statistics && (
                     <>
-                        {/* KPI row */}
+                        {/* the four KPI cards */}
                         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className={cardClass}>
                                 <p className="text-sm text-slate-500">Total Revenue</p>

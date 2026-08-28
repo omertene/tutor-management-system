@@ -15,9 +15,9 @@ type StudentRowProps = {
     onToggleActive: (student: Student) => void;
 };
 
-// one row of the roster, which doubles as its own inline edit form. the draft field
-// values live here rather than on the page so only the row being edited re-renders,
-// and so opening a second row can't inherit the first one's half-typed values.
+/* One row of the roster that doubles as its own inline edit form. Draft
+   values live here (not on the page) so only this row re-renders while
+   editing, and opening a second row can't inherit half-typed values. */
 export default function StudentRow({
     student, debt, onSaved, onError, onOpenCredentials, onToggleActive,
 }: StudentRowProps) {
@@ -29,8 +29,7 @@ export default function StudentRow({
     const [educationLevel, setEducationLevel] = useState(student.educationLevel ?? "");
     const [notes, setNotes] = useState(student.notes ?? "");
 
-    // re-seeds the draft from the row's current values every time the form opens, so
-    // cancelling an edit and reopening doesn't show the abandoned changes
+    /* Resets the draft fields back to the student's current values and opens the edit form */
     function startEdit() {
         setFirstName(student.firstName);
         setLastName(student.lastName);
@@ -41,6 +40,7 @@ export default function StudentRow({
         setIsEditing(true);
     }
 
+    /* Validates the form and saves the student's updated info */
     async function handleSave() {
         onError("");
 

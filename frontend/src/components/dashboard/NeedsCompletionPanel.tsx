@@ -3,8 +3,12 @@ import PanelPager from "./PanelPager";
 import { formatTimeOfDay } from "../../utils/time";
 import type { DashboardLesson } from "../../types/dashboard";
 
+/* Dashboard panel listing past lessons that still need to be marked completed
+   or canceled, with paging when there are more than a few. */
+
 const NEEDS_COMPLETION_PAGE_SIZE = 3;
 
+/* "2026-11-24" -> "24/11" */
 function formatDayMonth(date: string): string {
     const [, month, day] = date.split("-");
     return `${day}/${month}`;

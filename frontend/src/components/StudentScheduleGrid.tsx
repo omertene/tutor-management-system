@@ -15,19 +15,17 @@ import {
 } from "../utils/availability";
 import type { StudentLesson } from "../types/schedule";
 
-// students shouldn't be able to tell a completed lesson apart from an upcoming
-// one at a glance - both statuses render identically here, unlike the teacher's
-// own schedule which does distinguish them
+/* Scheduled and completed lessons look identical to the student - no need to
+   tell them apart at a glance here like the teacher's schedule does */
 const lessonBlockStyles: Record<string, string> = {
     SCHEDULED: "bg-blue-100 hover:bg-blue-200",
     COMPLETED: "bg-blue-100 hover:bg-blue-200",
 };
 
-// the student-facing weekly schedule: shows the teacher's availability, other
-// students' booked slots (grayed out, no details), and this student's own lessons.
-// clicking an open slot books a lesson; clicking one of your own lessons lets you
-// view/cancel it. shared between the dedicated /student/schedule page and the
-// student dashboard, which embeds this same grid.
+/* Student-facing weekly schedule: shows the teacher's availability, other
+   students' booked slots (grayed out), and this student's own lessons.
+   Clicking an open slot books a lesson, clicking your own lesson lets you view
+   or cancel it. Shared by the /student/schedule page and the student dashboard. */
 function StudentScheduleGrid() {
     const {
         weekDates, hours,
@@ -39,7 +37,7 @@ function StudentScheduleGrid() {
         bookLesson, cancelLesson,
     } = useStudentSchedule();
 
-    // the cell the student clicked, which pre-fills the booking modal
+    /* The cell the student clicked, pre-fills the booking modal */
     const [bookingSlot, setBookingSlot] = useState<{ date: string; startTime: string; endTime: string } | null>(null);
     const [viewingLesson, setViewingLesson] = useState<StudentLesson | null>(null);
 
@@ -48,15 +46,15 @@ function StudentScheduleGrid() {
     const nowLineTop = ((nowMinutes - hourStart * 60) / 60) * ROW_HEIGHT;
     const showNowLine = todayDayIndex !== -1 && nowMinutes >= hourStart * 60 && nowMinutes <= hourEnd * 60;
 
+    /* Which quarter-hours of this cell are covered by a rule/override */
     function quartersForCell(dayIndex: number, hour: number): boolean[] {
         return getRuleCoverageQuarters(dayIndex, hour, dayDateString(weekDates, dayIndex), scheduleRules, scheduleOverrides);
     }
 
-    // whether the whole hour is off-limits for booking - a BLOCK override, an
-    // existing lesson, or a slot someone else already booked. an ADD override is
-    // deliberately NOT included here: it's meant to open the slot up for booking,
-    // so it's handled by quartersForCell instead (same path as a weekly rule),
-    // not treated as "covered"/unclickable
+    /* Whether the whole hour is off-limits for booking: a BLOCK override, an
+       existing lesson, or a slot someone else booked. An ADD override is NOT
+       included here on purpose - it opens the slot up, so it goes through
+       quartersForCell instead, same as a normal weekly rule */
     function isCellCoveredByOverrideOrLesson(dayIndex: number, hour: number): boolean {
         const dateStr = dayDateString(weekDates, dayIndex);
         const cellStart = hour * 60;
@@ -70,10 +68,9 @@ function StudentScheduleGrid() {
             (lesson) => lesson.date === dateStr && overlaps(lesson, cellStart, cellEnd)
         );
 
-        // busySlots already includes this student's own lessons too (they're
-        // SCHEDULED/COMPLETED lessons like anyone else's), so checking it alone
-        // would be enough, but the explicit lesson check above is kept since it's
-        // also used to decide whether *this* student's own lesson block renders
+        /* busySlots already includes this student's own lessons, so checking it
+           alone would be enough, but the lesson check above is kept since it's
+           also used to decide whether this student's own lesson block renders */
         const bookedByAnyone = busySlots.some(
             (slot) => slot.date === dateStr && overlaps(slot, cellStart, cellEnd)
         );
@@ -81,8 +78,8 @@ function StudentScheduleGrid() {
         return blocked || hasLesson || bookedByAnyone;
     }
 
-    // other students' busy slots for this day, excluding anything that overlaps one
-    // of this student's own lessons (which render separately, in full detail)
+    /* Other students' busy slots for this day, excluding anything that overlaps
+       one of this student's own lessons (those render separately, in full detail) */
     function getBusySlotsForDay(dayIndex: number) {
         const dateStr = dayDateString(weekDates, dayIndex);
 
@@ -98,6 +95,7 @@ function StudentScheduleGrid() {
             .filter((block) => block !== null);
     }
 
+    /* This student's own lessons for this day, positioned for the grid */
     function getLessonsForDay(dayIndex: number) {
         const dateStr = dayDateString(weekDates, dayIndex);
 
@@ -107,9 +105,9 @@ function StudentScheduleGrid() {
             .filter((block) => block !== null);
     }
 
-    // startTime (HH:MM) lets a partially-available cell be checked at its actual
-    // bookable start rather than the hour boundary - falls back to :00 when omitted,
-    // used for the cell's hover/cursor styling before a specific start is known
+    /* startTime lets a partially-available cell be checked at its real bookable
+       start instead of the hour boundary - falls back to :00 when omitted, which
+       is used for the cell's hover/cursor styling before a start time is known */
     function isCellTooSoonToBook(dayIndex: number, hour: number, startTime?: string): boolean {
         const [startHour, startMinute] = startTime ? startTime.split(":").map(Number) : [hour, 0];
         const cellStart = new Date(weekDates[dayIndex]);
@@ -119,11 +117,10 @@ function StudentScheduleGrid() {
         return cellStart < minBookingTime;
     }
 
-    // clicking a cell only opens the booking form when at least part of the hour is
-    // actually bookable - a student can't add availability or block time like a
-    // teacher can, so a fully unavailable cell (or one covered by a lesson/override)
-    // does nothing. a partially-available cell (e.g. rule starts at 08:15) still opens
-    // the form, pre-filled to the exact time that's actually available
+    /* Opens the booking form only when part of the hour is actually bookable - a
+       student can't add availability like a teacher can, so a fully unavailable
+       cell does nothing. A partially-available cell (rule starts at 08:15) still
+       opens the form, pre-filled to the exact time that's actually free */
     function handleCellClick(dayIndex: number, hour: number) {
         if (isCellCoveredByOverrideOrLesson(dayIndex, hour)) return;
 
@@ -140,6 +137,7 @@ function StudentScheduleGrid() {
         });
     }
 
+    /* Cancels a lesson and closes the view modal if it worked */
     async function handleCancelLesson(lessonId: number) {
         const cancelled = await cancelLesson(lessonId);
         if (cancelled) setViewingLesson(null);
@@ -203,10 +201,8 @@ function StudentScheduleGrid() {
                             );
                         })}
 
-                        {/* slots taken by another student - rendered as a plain gray block with no
-                            label or tooltip, identical to a cell that's simply outside the teacher's
-                            availability rules, so a student can't tell the two apart or infer that
-                            a lesson is booked there */}
+                        {/* another student's slot - a plain gray block, same as a cell outside the
+                            teacher's hours, so you can't tell a booked slot from an unavailable one */}
                         {getBusySlotsForDay(dayIndex).map(({ item: slot, top, height }, index) => (
                             <div
                                 key={`busy-${slot.date}-${slot.startTime}-${index}`}

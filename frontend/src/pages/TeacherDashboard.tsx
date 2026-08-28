@@ -8,13 +8,14 @@ import NeedsCompletionPanel from "../components/dashboard/NeedsCompletionPanel";
 import { useDashboard } from "../hooks/useDashboard";
 import { teacherLinks } from "../constants/navLinks";
 
-// minutes -> "1.5" / "2". distinct from utils/time's formatHours, which takes hours:
-// the "lessons this week" card sums lesson durations in minutes
+/* minutes -> "1.5" / "2". Separate from utils/time's formatHours, which takes
+   hours, since the "lessons this week" card sums durations in minutes */
 function formatHoursFromMinutes(totalMinutes: number): string {
     const hours = totalMinutes / 60;
     return hours % 1 === 0 ? String(hours) : hours.toFixed(1);
 }
 
+/* The teacher's home page: quick actions, stat cards, and the three dashboard panels */
 function TeacherDashboard() {
     const {
         students, errorMessage,

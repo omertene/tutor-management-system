@@ -1,7 +1,10 @@
 import Modal from "../Modal";
 import type { StudentLesson } from "../../types/schedule";
 
-// students can't cancel a lesson that starts within this many hours
+/* Popup showing details for one of the student's own lessons, opened by
+   clicking its block on the schedule. */
+
+/* students can't cancel a lesson that starts within this many hours */
 export const STUDENT_MIN_CANCEL_NOTICE_HOURS = 6;
 
 type StudentLessonModalProps = {
@@ -11,6 +14,7 @@ type StudentLessonModalProps = {
     onCancel: (lessonId: number) => void;
 };
 
+/* True if there's still enough notice left to cancel this lesson */
 export function canCancelLesson(lesson: StudentLesson, now: Date): boolean {
     const lessonStart = new Date(`${lesson.date}T${lesson.startTime}`);
     const minCancelTime = new Date(now);
@@ -18,7 +22,6 @@ export function canCancelLesson(lesson: StudentLesson, now: Date): boolean {
     return lessonStart >= minCancelTime;
 }
 
-// details for one of the student's own lessons, opened by clicking its block
 export default function StudentLessonModal({ lesson, now, onClose, onCancel }: StudentLessonModalProps) {
     const canCancel = canCancelLesson(lesson, now);
 

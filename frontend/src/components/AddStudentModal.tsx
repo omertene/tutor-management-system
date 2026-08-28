@@ -6,16 +6,13 @@ import { validateEmailField, validatePasswordField, validatePhoneField, validate
 
 type AddStudentModalProps = {
     onClose: () => void;
-    // called once the student is actually created, so the caller can refresh
-    // whatever list/summary it shows (RegisterPage's student list, the
-    // dashboard's counts) - the modal itself doesn't know what to refresh
+    /* Called once the student is created so the caller can refresh its own list -
+       the modal itself doesn't know what needs refreshing */
     onCreated: () => void;
 };
 
-// one shared "add student" form used by both RegisterPage and TeacherDashboard -
-// used to be two separate copies that quietly drifted apart (only one validated
-// the fields, only one closed itself on success), so the same action gave
-// different feedback depending on which page you started from
+/* Shared "add student" form used by both RegisterPage and TeacherDashboard, so
+   both pages validate and behave the same way instead of having their own copy */
 function AddStudentModal({ onClose, onCreated }: AddStudentModalProps) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -29,6 +26,7 @@ function AddStudentModal({ onClose, onCreated }: AddStudentModalProps) {
     const [errorMessage, setErrorMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
 
+    /* Validates the form and registers the new student */
     async function handleRegister() {
         setErrorMessage("");
         setSuccessMessage("");

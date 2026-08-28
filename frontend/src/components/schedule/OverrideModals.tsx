@@ -4,25 +4,29 @@ import TimeSelect from "../TimeSelect";
 import { inputClassFull, labelClass } from "../../constants/formStyles";
 import type { ScheduleOverride } from "../../types/schedule";
 
-// what the override form opens with: a new BLOCK/ADD for a chosen range, or an
-// existing override being edited
+/* Two modals for schedule overrides: a form to add/edit one, and a view
+   to see an existing one's details. */
+
+/* What the override form opens with: a new BLOCK/ADD for a chosen range,
+   or an existing override being edited */
 export type OverrideDraft = {
     overrideId: number | null;
     date: string;
     startTime: string;
     endTime: string;
     type: string;
-    // when the type was already decided by the action the teacher picked
-    // ("Block this time" / "Add availability"), the dropdown is replaced by a
-    // sentence - there's no reason to re-ask what they just chose
+    /* true when the action already picked the type (Block/Add) - then the
+       dropdown is replaced by a plain sentence instead of asking again */
     typeLocked: boolean;
     note: string;
 };
 
+/* Builds an empty draft for a new override, type already decided by the caller */
 export function draftForNewOverride(date: string, startTime: string, endTime: string, type: string): OverrideDraft {
     return { overrideId: null, date, startTime, endTime, type, typeLocked: true, note: "" };
 }
 
+/* Builds a draft pre-filled from an existing override, for editing */
 export function draftForExistingOverride(override: ScheduleOverride): OverrideDraft {
     return {
         overrideId: override.id,
@@ -52,12 +56,11 @@ export function OverrideFormModal({ draft, onClose, onSave }: OverrideFormModalP
     const [note, setNote] = useState(draft.note);
     const [error, setError] = useState("");
 
+    /* Validates the form and saves the override (create or edit) */
     async function handleSave() {
         setError("");
 
-        // an empty time posts "" where the backend expects a LocalTime, which fails
-        // to deserialize before any validation runs - the reply is then a generic
-        // "not valid JSON" rather than anything about the missing field
+        /* an empty time fails to deserialize on the backend with a confusing error */
         if (!date || !startTime || !endTime) {
             setError("Please fill in all fields");
             return;
@@ -132,6 +135,8 @@ type ViewOverrideModalProps = {
     onDelete: (overrideId: number) => void;
 };
 
+/* Shows an existing override's details - offers "book a lesson" only for
+   ADD overrides, since a BLOCK is unavailable time by definition */
 export function ViewOverrideModal({ override, onClose, onBookLesson, onEdit, onDelete }: ViewOverrideModalProps) {
     return (
         <Modal title={override.type === "BLOCK" ? "Blocked time" : "Added availability"} onClose={onClose}>

@@ -6,7 +6,8 @@ type ModalProps = {
     children: ReactNode;
 };
 
-
+/* Generic modal shell (dark overlay, centered card, close button) - the content
+   is whatever the caller passes as children */
 function Modal({ title, onClose, children }: ModalProps) {
     return (
         <div

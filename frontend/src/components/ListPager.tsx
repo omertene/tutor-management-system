@@ -1,16 +1,15 @@
 import { smallSecondaryButtonClass } from "../constants/formStyles";
 
 type ListPagerProps = {
-    page: number;          // 1-based
+    page: number; /* 1-based */
     totalPages: number;
     totalItems: number;
     perPage: number;
     onChange: (page: number) => void;
 };
 
-// the "Showing 1-10 of 34" footer with prev/next, used under every paginated list
-// (payments, debts, lessons, materials). each of those had its own copy of this
-// markup and its own copy of the slice arithmetic.
+/* The "Showing 1-10 of 34" footer with prev/next, shared by every paginated
+   list (payments, debts, lessons, materials) instead of each having its own copy */
 export default function ListPager({ page, totalPages, totalItems, perPage, onChange }: ListPagerProps) {
     const firstShown = (page - 1) * perPage + 1;
     const lastShown = Math.min(page * perPage, totalItems);

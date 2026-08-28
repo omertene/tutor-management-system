@@ -3,9 +3,9 @@ import { apiFetch, readErrorMessage } from "../utils/api";
 import type { Student, Subject } from "../types";
 import type { Material } from "../types/material";
 
-// materials for whichever role is viewing, plus the reference data the teacher's
-// "add material" form needs. the teacher sees every material; a student sees only
-// their own, from a different endpoint.
+/* Materials for whichever role is viewing, plus the reference data the
+   teacher's "add material" form needs. The teacher sees every material, a
+   student sees only their own, from a different endpoint. */
 export function useMaterials(role: string) {
     const isTeacher = role === "TEACHER";
 
@@ -14,6 +14,7 @@ export function useMaterials(role: string) {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [errorMessage, setErrorMessage] = useState("");
 
+    /* Loads subjects, and materials/students from the endpoint matching the role */
     useEffect(() => {
         async function load() {
             const subjectsRes = await apiFetch(`/subjects`);
@@ -39,11 +40,12 @@ export function useMaterials(role: string) {
         load();
     }, [isTeacher]);
 
+    /* Adds a newly created material to the list without refetching */
     function addMaterial(created: Material) {
         setMaterials((current) => [...current, created]);
     }
 
-    // downloads a FILE-type material
+    /* Downloads a FILE-type material */
     async function downloadMaterial(materialId: number, fileName: string) {
         setErrorMessage("");
 
@@ -60,11 +62,7 @@ export function useMaterials(role: string) {
         link.href = blobUrl;
         link.download = fileName;
 
-        // the link needs to actually be in the DOM for click() to reliably trigger a
-        // download in every browser (Chrome tolerates a detached element, Firefox/Safari
-        // don't always). revoking the blob URL on the same tick as the click is the same
-        // story - some browsers haven't finished reading it yet, so the download can come
-        // back empty/broken. deferring both to a follow-up tick avoids the race
+
         document.body.appendChild(link);
         link.click();
 
@@ -74,7 +72,7 @@ export function useMaterials(role: string) {
         }, 0);
     }
 
-    // hard delete (unlike lessons/payments, which soft-cancel), so it gets a confirm
+    /* Hard delete, unlike lessons/payments which soft-cancel - so it confirms first */
     async function deleteMaterial(material: Material) {
         setErrorMessage("");
 

@@ -3,6 +3,9 @@ import { formatShortDateString, formatTimeOfDay } from "../../utils/time";
 import { hasLessonStarted, statusStyles } from "../../types/lesson";
 import type { Lesson } from "../../types/lesson";
 
+/* One row in the teacher's lesson table - shows the lesson info plus the
+   actions available for its current status (complete/cancel/void). */
+
 type TeacherLessonRowProps = {
     lesson: Lesson;
     canCancel: boolean;
@@ -13,6 +16,8 @@ type TeacherLessonRowProps = {
     onCancel: (lesson: Lesson) => void;
 };
 
+/* Menu open state comes from the parent, not local state - so only one
+   row's menu can be open at once */
 export default function TeacherLessonRow({
     lesson, canCancel, isMenuOpen, onToggleMenu, onCloseMenu, onComplete, onCancel,
 }: TeacherLessonRowProps) {
@@ -37,18 +42,14 @@ export default function TeacherLessonRow({
             </div>
 
             <div className="flex gap-2 relative">
-                {/* only offered once the lesson has actually started - the backend
-                    refuses earlier, so showing it on a future lesson just produced a
-                    failed request. the schedule page's lesson modal gates the same way */}
+                {/* backend rejects completing a lesson before it starts */}
                 {lesson.status === "SCHEDULED" && hasLessonStarted(lesson) && (
                     <button onClick={() => onComplete(lesson.id)} className={smallSecondaryButtonClass}>
                         Mark completed
                     </button>
                 )}
-                {/* SCHEDULED lessons keep a plain Cancel button - cancelling before the
-                    lesson happened is routine. COMPLETED lessons already count toward
-                    revenue/debt, so voiding one lives behind a small "..." menu instead
-                    of a primary red button, to avoid accidental clicks on real income */}
+                {/* completed lessons count as real income, so cancelling one is
+                    tucked in the "..." menu instead of a plain button */}
                 {lesson.status === "SCHEDULED" && canCancel && (
                     <button
                         onClick={() => onCancel(lesson)}

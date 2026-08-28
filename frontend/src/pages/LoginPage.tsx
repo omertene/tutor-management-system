@@ -4,6 +4,8 @@ import { useState } from "react";
 import { API_BASE_URL, readErrorMessage } from "../utils/api";
 import type { LoginResponse } from "../types";
 
+/* The login screen - one form for both roles, redirects to the right
+   dashboard based on the role the backend returns */
 function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -11,6 +13,7 @@ function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  /* Logs in and stores the token, then redirects based on role */
   async function handleLogin() {
     setErrorMessage("");
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -35,7 +38,7 @@ function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex">
-      {/* branding panel - hidden on small screens, fills the emptiness on desktop */}
+      {/* branding panel, hidden on small screens */}
       <div className="hidden lg:flex lg:w-1/2 bg-indigo-600 text-white flex-col justify-between p-12">
         <div className="text-xl font-semibold tracking-tight">TutorHub</div>
 
@@ -54,7 +57,7 @@ function LoginPage() {
         </div>
       </div>
 
-      {/* login form */}
+      {/* the actual login form */}
       <div className="flex-1 flex items-center justify-center bg-slate-50 px-4 py-12">
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden text-center">

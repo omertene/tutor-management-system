@@ -6,6 +6,8 @@ interface ProtectedRouteProps {
   requiredRole: string;
 }
 
+/* Blocks access to a page unless the stored token is valid and matches the
+   required role - redirects to login otherwise */
 function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const token = localStorage.getItem("token");
 

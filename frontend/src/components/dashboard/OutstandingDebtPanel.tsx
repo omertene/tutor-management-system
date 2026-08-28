@@ -2,6 +2,9 @@ import { useState } from "react";
 import PanelPager from "./PanelPager";
 import type { Debt } from "../../types/dashboard";
 
+/* Dashboard panel listing students who still owe money, with paging when
+   there are more than a few. */
+
 const DEBT_PAGE_SIZE = 5;
 
 export default function OutstandingDebtPanel({ debts }: { debts: Debt[] }) {

@@ -17,7 +17,7 @@ export type Material = {
     uploadedAt: string;
 };
 
-// the subset of a lesson the "attach to lesson" dropdown needs
+/* The subset of a lesson the "attach to lesson" dropdown needs */
 export type MaterialLesson = {
     id: number;
     subjectName: string;

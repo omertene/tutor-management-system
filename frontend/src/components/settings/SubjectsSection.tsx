@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { apiFetch, readErrorMessage } from "../../utils/api";
 import type { Subject } from "../../types";
 
-// the subjects lessons can be booked under. owns its own list and errors - the page
-// around it holds no state of its own.
+/* Manages the subjects lessons can be booked under - owns its own list
+   and errors, the surrounding page holds no state of its own. */
 export default function SubjectsSection() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [newSubject, setNewSubject] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
 
+    /* Loads the subject list once on mount */
     useEffect(() => {
         async function loadSubjects() {
             const response = await apiFetch(`/subjects`);
@@ -21,6 +22,7 @@ export default function SubjectsSection() {
         loadSubjects();
     }, []);
 
+    /* Creates the subject and adds it to the list */
     async function handleAdd() {
         setErrorMessage("");
 
@@ -39,6 +41,7 @@ export default function SubjectsSection() {
         setNewSubject("");
     }
 
+    /* Confirms with the teacher, then deletes the subject */
     async function handleDelete(subject: Subject) {
         setErrorMessage("");
 

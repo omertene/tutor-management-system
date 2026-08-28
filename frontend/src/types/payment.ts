@@ -21,8 +21,8 @@ export type Debt = {
     debt: number;
 };
 
-// insertion order here drives the dropdown order - Paybox then Bit listed first
-// per how the teacher actually gets paid most often
+/* Insertion order drives the dropdown order - Paybox and Bit listed first,
+   matching how the teacher actually gets paid most often */
 export const methodLabels: Record<PaymentMethod, string> = {
     PAYBOX: "Paybox",
     BIT: "Bit",

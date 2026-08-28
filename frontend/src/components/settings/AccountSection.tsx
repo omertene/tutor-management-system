@@ -5,11 +5,8 @@ import { validateEmailField, validatePasswordField } from "../../utils/fieldVali
 const saveButtonClass = "px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors";
 const fieldLabelClass = "block text-sm font-medium text-slate-700 mb-1";
 
-// the teacher's own login email and password. changing these is a different concern
-// from configuring the app (subjects), so it keeps its own state and its own
-// success/error messages rather than sharing the page's.
-//
-// collapsed by default so the fields aren't sitting open the moment the page loads.
+/* Lets the teacher change their own login email/password. Collapsed by
+   default so the fields aren't sitting open the moment the page loads. */
 export default function AccountSection() {
     const [showForm, setShowForm] = useState(false);
     const [email, setEmail] = useState("");
@@ -18,6 +15,7 @@ export default function AccountSection() {
     const [errorMessage, setErrorMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
 
+    /* Validates and sends the new email */
     async function handleUpdateEmail() {
         setErrorMessage("");
         setSuccessMessage("");
@@ -46,6 +44,7 @@ export default function AccountSection() {
         }
     }
 
+    /* Validates and sends the new password */
     async function handleResetPassword() {
         setErrorMessage("");
         setSuccessMessage("");

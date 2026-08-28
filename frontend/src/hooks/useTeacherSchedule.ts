@@ -9,8 +9,8 @@ import {
     getStartOfWeek,
 } from "../utils/time";
 
-// everything the teacher's schedule page loads and mutates. the page itself is
-// left with the grid rendering, the drag interaction, and the modals.
+/* Everything the teacher's schedule page loads and mutates. The page itself is
+   left with the grid rendering, the drag interaction, and the modals. */
 export function useTeacherSchedule() {
     const [weekStart, setWeekStart] = useState(() => getStartOfWeek(new Date()));
     const [hourStart, setHourStart] = useState(DEFAULT_HOUR_START);
@@ -23,19 +23,21 @@ export function useTeacherSchedule() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [errorMessage, setErrorMessage] = useState("");
 
-    // drives the red "now" line; a minute's resolution is all the line needs
+    /* Drives the red "now" line - a minute's resolution is all it needs */
     const [now, setNow] = useState(() => new Date());
     useEffect(() => {
         const interval = setInterval(() => setNow(new Date()), 60000);
         return () => clearInterval(interval);
     }, []);
 
+    /* Reloads just the overrides list */
     async function loadOverrides() {
         const response = await apiFetch(`/teacher/schedule-overrides`);
         if (!response.ok) return;
         setScheduleOverrides((await response.json()) as ScheduleOverride[]);
     }
 
+    /* Loads rules, overrides, lessons, students, and subjects once on mount */
     useEffect(() => {
         async function load() {
             const [rulesRes, overridesRes, lessonsRes, studentsRes, subjectsRes] = await Promise.all([
@@ -58,6 +60,7 @@ export function useTeacherSchedule() {
         load();
     }, []);
 
+    /* The 7 dates of the currently visible week */
     const weekDates = useMemo(() => {
         return days.map((_, index) => {
             const date = new Date(weekStart);
@@ -66,12 +69,14 @@ export function useTeacherSchedule() {
         });
     }, [weekStart]);
 
+    /* The list of hour numbers currently shown on the grid */
     const hours = useMemo(() => {
         const result: number[] = [];
         for (let hour = hourStart; hour < hourEnd; hour++) result.push(hour);
         return result;
     }, [hourStart, hourEnd]);
 
+    /* Moves the visible week back by 7 days */
     function goToPreviousWeek() {
         setWeekStart((current) => {
             const previous = new Date(current);
@@ -80,6 +85,7 @@ export function useTeacherSchedule() {
         });
     }
 
+    /* Moves the visible week forward by 7 days */
     function goToNextWeek() {
         setWeekStart((current) => {
             const next = new Date(current);
@@ -88,9 +94,9 @@ export function useTeacherSchedule() {
         });
     }
 
-    // creates or updates a lesson. bookingOutsideHours routes to the endpoint that
-    // creates an ADD override alongside the lesson, so the override list is refetched
-    // afterwards. returns an error message for the modal, or null on success
+    /* Creates or updates a lesson. bookingOutsideHours routes to the endpoint
+       that also creates an ADD override, so overrides get refetched afterwards.
+       Returns an error message for the modal, or null on success. */
     async function saveLesson(
         body: { studentId: number; subjectId: number; date: string; startTime: string; endTime: string },
         editingLessonId: number | null,
@@ -121,6 +127,7 @@ export function useTeacherSchedule() {
         return null;
     }
 
+    /* Creates or updates a schedule override */
     async function saveOverride(
         body: { date: string; startTime: string; endTime: string; type: string; note: string },
         editingOverrideId: number | null,
@@ -146,6 +153,7 @@ export function useTeacherSchedule() {
         return null;
     }
 
+    /* Saves the teacher's private notes on a lesson */
     async function saveNotes(lessonId: number, notes: string): Promise<TeacherLesson | null> {
         setErrorMessage("");
 
@@ -164,6 +172,7 @@ export function useTeacherSchedule() {
         return updated;
     }
 
+    /* Marks a lesson as completed */
     async function completeLesson(lessonId: number): Promise<boolean> {
         setErrorMessage("");
 
@@ -179,9 +188,8 @@ export function useTeacherSchedule() {
         return true;
     }
 
-    // cancelling a lesson doesn't delete it - it's a soft cancel (status -> CANCELLED),
-    // same as everywhere else lessons are cancelled in the app. it just disappears
-    // from this screen since cancelled lessons no longer occupy any time
+    /* Cancels a lesson (soft cancel - status becomes CANCELLED) and removes it
+       from the grid, since it no longer occupies any time */
     async function cancelLesson(lessonId: number): Promise<boolean> {
         setErrorMessage("");
 
@@ -196,6 +204,7 @@ export function useTeacherSchedule() {
         return true;
     }
 
+    /* Deletes a schedule override */
     async function deleteOverride(overrideId: number): Promise<boolean> {
         setErrorMessage("");
 

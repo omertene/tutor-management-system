@@ -1,4 +1,4 @@
-// shapes the teacher dashboard works with
+/* Shapes the teacher dashboard works with */
 
 export type DashboardLesson = {
     id: number;

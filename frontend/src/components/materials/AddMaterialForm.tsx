@@ -5,7 +5,11 @@ import { formatDateAndTime } from "../../utils/time";
 import type { Material, MaterialLesson, MaterialType } from "../../types/material";
 import type { Student } from "../../types";
 
-// how many of the student's most recent lessons to offer in the "attach to lesson" dropdown
+/* Form for adding a material to a student - one form for all three kinds
+   (link/note/file), with a tab to pick the type and swap in just the field
+   that type needs. */
+
+/* max lessons shown in the "attach to lesson" dropdown */
 const LESSON_PICKER_LIMIT = 50;
 
 type AddMaterialFormProps = {
@@ -14,8 +18,6 @@ type AddMaterialFormProps = {
     onError: (message: string) => void;
 };
 
-// one form for all three material kinds: shared Student/Lesson/Title fields, plus a
-// type tab (Link / Note / File) that swaps in just the field that type needs.
 export default function AddMaterialForm({ students, onCreated, onError }: AddMaterialFormProps) {
     const [studentId, setStudentId] = useState("");
     const [lessons, setLessons] = useState<MaterialLesson[]>([]);
@@ -23,16 +25,13 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
     const [title, setTitle] = useState("");
     const [addType, setAddType] = useState<MaterialType>("LINK");
 
-    // description is shared by LINK/FILE (optional extra context); NOTE reuses the
-    // same field as its actual note text (the backend's AddNoteRequest.description
-    // *is* the note body - there's no separate field), but is labeled "Note text"
-    // in the UI below so it doesn't read as an optional description
+    /* For NOTE this field is the actual note text, not just extra info */
     const [description, setDescription] = useState("");
     const [url, setUrl] = useState("");
     const [file, setFile] = useState<File | null>(null);
 
-    // teacher picked a student - load that student's lessons so they can be picked
-    // from a dropdown too instead of typing a lesson id from memory
+    /* Teacher picked a student - load that student's lessons so one can be
+       picked from a dropdown instead of typing a lesson id */
     async function handleStudentChange(newStudentId: string) {
         onError("");
         setStudentId(newStudentId);
@@ -51,13 +50,12 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
         const sorted = data
             .filter((lesson) => lesson.status !== "CANCELLED")
             .sort((a, b) => (b.date + b.startTime).localeCompare(a.date + a.startTime));
-        // cap the dropdown to the most recent lessons so it stays scrollable for
-        // long-running students - older ones can still be found via the material search
+        /* Keep the dropdown short for students with a lot of lessons */
         setLessons(sorted.slice(0, LESSON_PICKER_LIMIT));
     }
 
-    // clears just the type-specific fields, so switching tabs after a successful add
-    // doesn't carry stale values over
+    /* Clears the type-specific fields so switching tabs after a successful
+       add doesn't carry stale values over */
     function resetForm() {
         setTitle("");
         setDescription("");
@@ -65,6 +63,7 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
         setFile(null);
     }
 
+    /* Sends the right request for the selected type (link/note/file) */
     async function handleSubmit() {
         onError("");
 
@@ -150,8 +149,7 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
                 </div>
             </div>
 
-            {/* type selector - picks which of the three material kinds this is;
-                only the one field that type actually needs is shown below */}
+            {/* type tab - shows only the field that type needs below */}
             <div className="mt-4 flex gap-2 border-b border-slate-200">
                 {(["LINK", "NOTE", "FILE"] as MaterialType[]).map((type) => (
                     <button

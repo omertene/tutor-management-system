@@ -13,18 +13,15 @@ type WeekGridProps = {
     showNowLine: boolean;
     nowLineTop: number;
     hours: number[];
-    // each grid's own cell/override/lesson/busy-slot rendering stays owned by the
-    // caller (teacher and student grids differ too much here to share safely -
-    // drag-select vs click, override blocks vs busy-slot blocks, different data
-    // entirely) - WeekGrid only owns the chrome that's genuinely identical: the
-    // week nav, hour-window controls, day header row, and hour gutter/now-line
+    /* Each grid's own cell/override/lesson rendering stays owned by the caller -
+       teacher and student grids differ too much to share safely (drag-select vs
+       click, different block types). WeekGrid only owns the shared chrome: week
+       nav, hour-window controls, day header row, and hour gutter/now-line. */
     renderDayColumn: (dayIndex: number) => ReactNode;
 };
 
-// shared shell for the two weekly calendar views (teacher's SchedulePage,
-// student's StudentScheduleGrid) - used to be copy-pasted verbatim in both,
-// down to the exact classNames, which meant any layout tweak had to be made
-// twice and could quietly drift apart
+/* Shared shell for the two weekly calendar views (teacher's SchedulePage,
+   student's StudentScheduleGrid) */
 function WeekGrid({
     weekDates,
     hourStart,

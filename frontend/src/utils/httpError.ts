@@ -1,8 +1,7 @@
-// safely reads a JSON error body from a failed fetch response. some server
-// errors (a non-JSON body, an empty body, a request that never reached the
-// backend at all) make response.json() reject - calling that directly and
-// reading .message off the result throws before any error state gets set,
-// so the UI just does nothing and the user sees no feedback at all.
+/* Safely reads a JSON error body from a failed fetch response. Some server
+   errors have a non-JSON or empty body, which makes response.json() reject -
+   calling that directly would throw before any error state gets set, leaving
+   the user with no feedback at all. */
 export async function readErrorMessage(response: Response, fallback: string): Promise<string> {
     try {
         const data: unknown = await response.json();

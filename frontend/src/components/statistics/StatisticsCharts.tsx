@@ -16,6 +16,9 @@ import { cardClass } from "../../constants/formStyles";
 import { monthNames } from "../../utils/time";
 import type { MonthlyTrend, SubjectPerformance } from "../../types/statistics";
 
+/* The two charts on the statistics page: a monthly trend chart and a
+   revenue-by-subject pie chart. */
+
 const COLORS = {
     indigo: "#4f46e5",
     sky: "#0ea5e9",
@@ -25,11 +28,12 @@ const PIE_COLORS = ["#4f46e5", "#0ea5e9", "#16a34a", "#d97706", "#dc2626", "#a85
 
 const sectionTitleClass = "text-lg font-semibold text-slate-900 mb-3";
 
+/* "2026, 8" -> "Aug '26" */
 function monthLabel(year: number, month: number): string {
     return `${monthNames[month - 1]} '${String(year).slice(2)}`;
 }
 
-// static tooltip box (no cursor-following label) shared by both charts
+/* Plain tooltip box shared by both charts (recharts default follows the cursor) */
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string; unit?: string }[]; label?: string }) {
     if (!active || !payload || payload.length === 0) return null;
     return (
@@ -47,8 +51,8 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 type StatisticsChartsProps = {
     monthlyTrend: MonthlyTrend[];
     subjectBreakdown: SubjectPerformance[];
-    // set when a single subject is selected - the trend chart needs it to warn that
-    // its revenue series is filtered while the income series isn't
+    /* true when one subject is selected, so the trend chart can warn that
+       its revenue series is filtered while income received isn't */
     subjectFilterActive: boolean;
 };
 

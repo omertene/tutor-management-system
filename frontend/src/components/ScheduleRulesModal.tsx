@@ -7,9 +7,7 @@ import { days } from "../utils/time";
 import { sortRules } from "../types/schedule";
 import type { ScheduleRule } from "../types/schedule";
 
-// the teacher's recurring weekly availability editor. lived at the bottom of
-// SchedulePage.tsx, which made that file 1275 lines and two components long - it
-// shares no state with the calendar around it, only the rules list it's handed.
+/* The teacher's recurring weekly availability editor. */
 
 type ScheduleRulesModalProps = {
     scheduleRules: ScheduleRule[];
@@ -17,17 +15,16 @@ type ScheduleRulesModalProps = {
     onClose: () => void;
 };
 
-
+/* "08:00:00" -> "08:00" */
 function formatTime(time: string): string {
     return time.slice(0, 5);
 }
 
-// the recurring weekly availability template - separate from the calendar since
-// rules are day-of-week based, not tied to a specific date
+/* One draft time range for the day being edited */
 type TimeRangeDraft = { startTime: string; endTime: string };
 
-// most teaching hours fall in this window, so a new/blank range starts here instead
-// of empty - saves a click in the common case, still fully editable
+/* Most teaching hours fall in this window, so a new range starts here instead
+   of blank - still fully editable */
 const DEFAULT_RULE_RANGE: TimeRangeDraft = { startTime: "08:00", endTime: "16:00" };
 
 export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onClose }: ScheduleRulesModalProps) {
@@ -36,12 +33,14 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
     const [errorMessage, setErrorMessage] = useState("");
     const [editingRuleId, setEditingRuleId] = useState<number | null>(null);
 
+    /* Clears the form back to a fresh "add rule" state */
     function resetForm() {
         setEditingRuleId(null);
         setDayOfWeek(days[0]);
         setRanges([{ ...DEFAULT_RULE_RANGE }]);
     }
 
+    /* Loads an existing rule into the form for editing */
     function startEditRule(rule: ScheduleRule) {
         setErrorMessage("");
         setEditingRuleId(rule.id);
@@ -49,18 +48,22 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
         setRanges([{ startTime: formatTime(rule.startTime), endTime: formatTime(rule.endTime) }]);
     }
 
+    /* Updates one field of one draft range */
     function updateRange(index: number, field: "startTime" | "endTime", value: string) {
         setRanges(ranges.map((range, i) => (i === index ? { ...range, [field]: value } : range)));
     }
 
+    /* Adds another blank range to the draft list */
     function addRange() {
         setRanges([...ranges, { ...DEFAULT_RULE_RANGE }]);
     }
 
+    /* Removes one draft range by index */
     function removeRange(index: number) {
         setRanges(ranges.filter((_, i) => i !== index));
     }
 
+    /* Saves the form - updates the rule being edited, or creates one rule per draft range */
     async function handleSaveRule() {
         setErrorMessage("");
         const isEditing = editingRuleId !== null;
@@ -102,8 +105,8 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
             return;
         }
 
-        // create mode - each range in the list is saved as its own rule, one request
-        // at a time, so a conflict on one range doesn't silently drop the others
+        /* Create mode - each range is saved as its own rule, one request at a time,
+           so a conflict on one range doesn't silently drop the rest */
         const createdRules: ScheduleRule[] = [];
         for (const range of ranges) {
             const response = await apiFetch(`/teacher/schedule-rules`, {
@@ -129,6 +132,7 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
         resetForm();
     }
 
+    /* Deletes a rule, warning first if lessons currently fall inside it */
     async function handleDeleteRule(ruleId: number) {
         setErrorMessage("");
 

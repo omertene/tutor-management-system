@@ -5,6 +5,8 @@ import { methodLabels } from "../../types/payment";
 import type { PaymentMethod } from "../../types/payment";
 import type { Student } from "../../types";
 
+/* Form the teacher uses to record a payment received from a student. */
+
 type RecordPaymentFormProps = {
     students: Student[];
     onSubmit: (body: {
@@ -20,11 +22,11 @@ export default function RecordPaymentForm({ students, onSubmit, onError }: Recor
     const [notes, setNotes] = useState("");
     const [paymentDate, setPaymentDate] = useState(todayDateString());
 
+    /* Validates the form and sends the payment */
     async function handleSubmit() {
         onError("");
 
-        // an unpicked student posts id 0 ("Student not found") and a cleared date
-        // posts "" (which fails to deserialize) - neither reads as a missing field
+        /* without this, an empty student/date fails on the backend with a confusing error */
         if (!studentId || !paymentDate) {
             onError("Please fill in all fields");
             return;

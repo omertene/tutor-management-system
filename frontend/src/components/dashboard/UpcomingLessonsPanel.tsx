@@ -1,8 +1,10 @@
 import { formatTimeOfDay } from "../../utils/time";
 import type { DashboardLesson } from "../../types/dashboard";
 
-// "2026-10-07" -> "7/10" - day/month only, since this panel only ever shows
-// today's and tomorrow's lessons
+/* Dashboard panel showing today's and tomorrow's lessons side by side, no
+   paging since it's only ever these two days. */
+
+/* "2026-11-24" -> "24/11" */
 function formatDayMonth(date: string): string {
     const [, month, day] = date.split("-");
     return `${day}/${month}`;

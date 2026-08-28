@@ -4,9 +4,9 @@ import { timeToMinutes, toDateString } from "../utils/time";
 import type { Student } from "../types";
 import type { DashboardLesson, Debt } from "../types/dashboard";
 
-// all four dashboard fetches plus the derived counts, kept out of the page.
-// every mutation (complete/cancel a lesson) re-runs refresh() so the panels and the
-// stat row can't drift out of sync with each other.
+/* All the dashboard's fetches plus the derived counts. Every mutation
+   (complete/cancel a lesson) re-runs refresh() so the panels and stat row
+   stay in sync with each other. */
 export function useDashboard() {
     const [students, setStudents] = useState<Student[]>([]);
     const [errorMessage, setErrorMessage] = useState("");
@@ -20,6 +20,7 @@ export function useDashboard() {
     const [minutesThisWeek, setMinutesThisWeek] = useState(0);
     const [revenueThisMonth, setRevenueThisMonth] = useState(0);
 
+    /* Reloads all four dashboard fetches and updates the derived counts */
     const refresh = useCallback(async () => {
         const [studentsData, lessonsData, debtsData, revenueData] = await Promise.all([
             loadStudentsList(),
@@ -44,6 +45,7 @@ export function useDashboard() {
         refresh();
     }, [refresh]);
 
+    /* Marks a lesson as completed, then refreshes the dashboard */
     async function completeLesson(lessonId: number) {
         setErrorMessage("");
         const response = await apiFetch(`/teacher/lessons/${lessonId}/complete`, { method: "PATCH" });
@@ -54,9 +56,8 @@ export function useDashboard() {
         refresh();
     }
 
-    // these are still-SCHEDULED lessons, so cancelling is a plain soft-cancel with no
-    // confirm needed (same as everywhere else a SCHEDULED lesson gets cancelled) -
-    // confirmation only matters when reversing an already-COMPLETED lesson's debt/revenue
+    /* Cancels a still-SCHEDULED lesson - no confirm needed since nothing has been
+       counted as revenue/debt yet */
     async function cancelLesson(lessonId: number) {
         setErrorMessage("");
         const response = await apiFetch(`/lessons/${lessonId}`, { method: "DELETE" });
@@ -86,6 +87,7 @@ export function useDashboard() {
     };
 }
 
+/* Loads the teacher's student list */
 async function loadStudentsList(): Promise<Student[] | null> {
     const response = await apiFetch(`/teacher/students`);
     if (!response.ok) return null;
@@ -100,6 +102,8 @@ type LessonsSummary = {
     studentsThisMonth: number;
 };
 
+/* Loads all lessons and derives the dashboard's upcoming/needs-completion lists
+   and weekly/monthly counts */
 async function loadLessonsData(): Promise<LessonsSummary | null> {
     const response = await apiFetch(`/teacher/lessons`);
     if (!response.ok) return null;
@@ -109,8 +113,7 @@ async function loadLessonsData(): Promise<LessonsSummary | null> {
     const tomorrowDate = toDateString(new Date(Date.now() + 24 * 60 * 60 * 1000));
     const scheduled = data.filter((lesson) => lesson.status === "SCHEDULED");
 
-    // "today" and "tomorrow" only - a full week list just duplicates the Schedule
-    // page, and at a normal booking pace it would rarely show past tomorrow anyway
+    /* Only shows today and tomorrow - a full week just duplicates the Schedule page */
     const upcoming = scheduled
         .filter((lesson) => lesson.date === todayDate || lesson.date === tomorrowDate)
         .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
@@ -135,10 +138,8 @@ async function loadLessonsData(): Promise<LessonsSummary | null> {
         0
     );
 
-    // distinct students with a lesson (past or upcoming) somewhere in the current
-    // calendar month - cancelled lessons don't count, since a cancelled lesson means
-    // that student wasn't actually taught. this is a better "who am I teaching right
-    // now" number than a manually-toggled active/inactive flag would give
+    /* Distinct students with a lesson (past or upcoming) in the current month -
+       canceled lessons don't count since that student wasn't actually taught */
     const monthStr = todayDate.slice(0, 7);
     const studentsThisMonth = new Set(
         data
@@ -149,6 +150,7 @@ async function loadLessonsData(): Promise<LessonsSummary | null> {
     return { upcoming, needsCompletion, thisWeekCount, thisWeekMinutes, studentsThisMonth };
 }
 
+/* Loads debts and keeps only students who actually owe something */
 async function loadDebtsList(): Promise<Debt[] | null> {
     const response = await apiFetch(`/teacher/debts`);
     if (!response.ok) return null;
@@ -156,6 +158,7 @@ async function loadDebtsList(): Promise<Debt[] | null> {
     return data.filter((debt) => debt.debt > 0);
 }
 
+/* Loads this month's revenue total */
 async function loadRevenueThisMonth(): Promise<number | null> {
     const response = await apiFetch(`/teacher/revenue/current-month`);
     if (!response.ok) return null;

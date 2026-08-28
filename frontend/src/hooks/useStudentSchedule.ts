@@ -7,8 +7,9 @@ import {
     getStartOfWeek, toDateString,
 } from "../utils/time";
 
-// everything the student grid needs from the server, plus the week/hour window it
-// is currently showing. the grid component itself is left with rendering only.
+/* Everything the student schedule grid needs from the server, plus the
+   week/hour window it is currently showing. The grid component is left with
+   rendering only. */
 export function useStudentSchedule() {
     const [weekStart, setWeekStart] = useState(() => getStartOfWeek(new Date()));
     const [hourStart, setHourStart] = useState(DEFAULT_HOUR_START);
@@ -21,16 +22,16 @@ export function useStudentSchedule() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [errorMessage, setErrorMessage] = useState("");
 
-    // drives the red "now" line; a minute's resolution is all the line needs
+    /* Drives the red "now" line - a minute's resolution is all it needs */
     const [now, setNow] = useState(() => new Date());
     useEffect(() => {
         const interval = setInterval(() => setNow(new Date()), 60000);
         return () => clearInterval(interval);
     }, []);
 
-    // the student-facing endpoints return date/time/type only - no id, no note
-    // (the teacher's private text), see StudentAvailabilityController. a student
-    // also only ever sees their own lessons; the backend scopes that by caller id.
+    /* Loads rules, overrides, lessons, and subjects once on mount. The
+       student-facing endpoints return date/time/type only - no id, no teacher
+       note - and lessons are already scoped to this student by the backend. */
     useEffect(() => {
         async function load() {
             const [rulesRes, overridesRes, lessonsRes, subjectsRes] = await Promise.all([
@@ -51,11 +52,8 @@ export function useStudentSchedule() {
         load();
     }, []);
 
-    // other students' booked slots, shown as blocked/gray so this student doesn't
-    // try to double-book a time that's actually already taken. scoped to the visible
-    // week only - this endpoint used to return every non-cancelled lesson ever
-    // booked, which meant it got slower every time any student booked a lesson,
-    // forever, even though the grid only ever shows one week at a time
+    /* Loads other students' booked slots for the visible week only, so this
+       student doesn't try to double-book an already-taken time */
     useEffect(() => {
         async function loadBusySlots() {
             const rangeStart = toDateString(weekStart);
@@ -70,6 +68,7 @@ export function useStudentSchedule() {
         loadBusySlots();
     }, [weekStart]);
 
+    /* The 7 dates of the currently visible week */
     const weekDates = useMemo(() => {
         return days.map((_, index) => {
             const date = new Date(weekStart);
@@ -78,12 +77,14 @@ export function useStudentSchedule() {
         });
     }, [weekStart]);
 
+    /* The list of hour numbers currently shown on the grid */
     const hours = useMemo(() => {
         const result: number[] = [];
         for (let hour = hourStart; hour < hourEnd; hour++) result.push(hour);
         return result;
     }, [hourStart, hourEnd]);
 
+    /* Moves the visible week back by 7 days */
     function goToPreviousWeek() {
         setWeekStart((current) => {
             const previous = new Date(current);
@@ -92,6 +93,7 @@ export function useStudentSchedule() {
         });
     }
 
+    /* Moves the visible week forward by 7 days */
     function goToNextWeek() {
         setWeekStart((current) => {
             const next = new Date(current);
@@ -100,9 +102,9 @@ export function useStudentSchedule() {
         });
     }
 
-    // books the lesson and optimistically adds it to both the student's own lessons
-    // and busySlots, so the cell greys out without waiting for a refetch. returns an
-    // error message for the modal to show, or null on success
+    /* Books the lesson and optimistically adds it to both lessons and busySlots,
+       so the cell greys out without waiting for a refetch. Returns an error
+       message for the modal to show, or null on success. */
     async function bookLesson(body: {
         subjectId: number;
         date: string;
@@ -127,9 +129,8 @@ export function useStudentSchedule() {
         return null;
     }
 
-    // cancelling doesn't delete the lesson - it's a soft cancel (status -> CANCELLED),
-    // same as everywhere else in the app. it just disappears from the grid since a
-    // cancelled lesson no longer occupies any time
+    /* Cancels a lesson (soft cancel - status becomes CANCELLED) and removes it
+       from the grid and busySlots, since it no longer occupies any time */
     async function cancelLesson(lessonId: number): Promise<boolean> {
         setErrorMessage("");
 

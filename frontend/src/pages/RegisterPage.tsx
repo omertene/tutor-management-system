@@ -8,6 +8,8 @@ import { useStudents } from "../hooks/useStudents";
 import { teacherLinks } from "../constants/navLinks";
 import type { Student } from "../types";
 
+/* The teacher's student roster page - search, filter active/inactive, add a
+   student, and open a row's edit or credentials */
 function RegisterPage() {
     const {
         students, errorMessage, setErrorMessage, showingInactive,
@@ -25,6 +27,7 @@ function RegisterPage() {
 
     const shownCount = showingInactive ? inactiveCount : activeCount;
 
+    /* Styles the active/inactive filter buttons based on which is selected */
     function filterButtonClass(selected: boolean) {
         return `px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
             selected ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-slate-300 text-slate-700 hover:bg-slate-50"

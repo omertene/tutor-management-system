@@ -1,5 +1,5 @@
-// the shapes GET /teacher/statistics/dashboard returns, mirroring
-// DashboardStatisticsResponse on the backend
+/* The shapes GET /teacher/statistics/dashboard returns, mirroring
+   DashboardStatisticsResponse on the backend */
 
 export type MonthlyTrend = {
     year: number;

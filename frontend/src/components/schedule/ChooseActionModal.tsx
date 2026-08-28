@@ -1,12 +1,14 @@
 import Modal from "../Modal";
 
+/* Shown after clicking or drag-selecting a range on the schedule, so the
+   teacher can pick between booking a lesson or changing availability. */
+
 type ChooseActionModalProps = {
     date: string;
     startTime: string;
     endTime: string;
-    // picks which pair of options is shown: book + block for available time,
-    // book + add for unavailable time. mirrors what the backend will accept for
-    // this range, so the popup never offers an action the server would reject
+    /* picks which pair of options shows: book+block for available time,
+       book+add for unavailable time - matches what the backend allows */
     isUnavailable: boolean;
     onClose: () => void;
     onBookLesson: () => void;
@@ -14,8 +16,6 @@ type ChooseActionModalProps = {
     onAddAvailability: () => void;
 };
 
-// shown after clicking or drag-selecting a range - lets the teacher choose to book
-// a lesson there, or change availability instead
 export default function ChooseActionModal({
     date, startTime, endTime, isUnavailable,
     onClose, onBookLesson, onBlockTime, onAddAvailability,

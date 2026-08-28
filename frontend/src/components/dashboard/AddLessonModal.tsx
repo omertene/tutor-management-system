@@ -6,14 +6,18 @@ import { addOneHour } from "../../utils/time";
 import { inputClassFull, labelClass } from "../../constants/formStyles";
 import type { Student, Subject } from "../../types";
 
+/* Modal for the dashboard's quick "+ Add lesson" button. Picks a student,
+   subject, date and time, then books the lesson through the teacher's
+   endpoint. */
+
 type AddLessonModalProps = {
     students: Student[];
     onClose: () => void;
     onCreated: () => void;
 };
 
-// the dashboard's quick "+ Add lesson" shortcut. loads its own subject list on open
-// rather than having the page hold subjects it otherwise never uses.
+/* Loads its own subject list on open rather than having the page hold
+   subjects it otherwise never uses */
 export default function AddLessonModal({ students, onClose, onCreated }: AddLessonModalProps) {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [studentId, setStudentId] = useState("");
@@ -25,6 +29,7 @@ export default function AddLessonModal({ students, onClose, onCreated }: AddLess
     const [endTime, setEndTime] = useState("09:00");
     const [errorMessage, setErrorMessage] = useState("");
 
+    /* Fetch the subject list once when the modal opens */
     useEffect(() => {
         async function loadSubjects() {
             const response = await apiFetch(`/subjects`);
@@ -34,11 +39,14 @@ export default function AddLessonModal({ students, onClose, onCreated }: AddLess
         loadSubjects();
     }, []);
 
+    /* Keep the end time one hour after the start time by default, so the
+       teacher doesn't have to set both every time */
     function handleStartTimeChange(value: string) {
         setStartTime(value);
         if (value) setEndTime(addOneHour(value));
     }
 
+    /* Validates the form and sends the create-lesson request */
     async function handleCreate() {
         setErrorMessage("");
 

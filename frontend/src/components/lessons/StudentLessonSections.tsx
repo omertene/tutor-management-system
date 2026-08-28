@@ -3,6 +3,10 @@ import { formatShortDateString, formatTimeOfDay } from "../../utils/time";
 import { formatRelativeLessonDate, statusStyles, studentStatusLabels, STUDENT_MIN_CANCEL_NOTICE_HOURS } from "../../types/lesson";
 import type { Lesson } from "../../types/lesson";
 
+/* What the student sees instead of the teacher's single filterable table:
+   their next lessons first, then history, with canceled ones tucked away
+   behind a toggle. */
+
 type StudentLessonSectionsProps = {
     upcoming: Lesson[];
     completed: Lesson[];
@@ -17,8 +21,6 @@ const listClass = "bg-white rounded-xl border border-slate-200 shadow-sm divide-
 const emptyClass = "px-4 py-6 text-sm text-slate-500 text-center";
 const badgeClass = "text-xs font-medium px-2 py-0.5 rounded-full";
 
-// what the student sees instead of the teacher's single filterable table: their
-// next lessons first, then history, with cancelled ones tucked away behind a toggle
 export default function StudentLessonSections({
     upcoming, completed, cancelled, today, canCancel, onCancel,
 }: StudentLessonSectionsProps) {

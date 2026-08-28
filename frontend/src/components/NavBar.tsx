@@ -6,9 +6,8 @@ type NavBarProps = {
     links: { label: string; to: string }[];
 };
 
-// shared top nav used on every dashboard/page after login. `homePath` and `links`
-// are passed in per-role (teacher vs student), since the two roles see different
-// pages - see StudentDashboard/TeacherDashboard for how this is used
+/* Shared top nav for every page after login. homePath/links are passed in per
+   role (teacher vs student) since each role sees different pages */
 function NavBar({ homePath, links }: NavBarProps) {
     return (
         <header className="bg-white border-b border-slate-200">

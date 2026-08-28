@@ -12,9 +12,11 @@ import { studentLinks, teacherLinks } from "../constants/navLinks";
 
 const PAYMENTS_PER_PAGE = 10;
 
+/* Payments page for both roles - the teacher sees payment history and every
+   student's debt, a student sees their own payments and balance */
 function PaymentsPage() {
-    // ProtectedRoute guarantees a token before this page renders; the ?? "" keeps
-    // decodeToken's signature honest and its try/catch handles a malformed value
+    /* ProtectedRoute guarantees a token before this page renders - the ?? ""
+       keeps decodeToken's signature honest, its try/catch handles a bad value */
     const token = localStorage.getItem("token") ?? "";
     const { role } = decodeToken(token);
     const isTeacher = role === "TEACHER";
@@ -25,8 +27,7 @@ function PaymentsPage() {
         createPayment, updatePayment, cancelPayment,
     } = usePayments(role);
 
-    // one search box filters both the payment history and the debt list, since
-    // they're both "everything about this student's money"
+    /* One search box filters both the payment history and the debt list */
     const [searchQuery, setSearchQuery] = useState("");
 
     const filteredPayments = payments

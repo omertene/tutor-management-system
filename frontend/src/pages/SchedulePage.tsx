@@ -29,17 +29,15 @@ const overrideBlockStyles: Record<string, string> = {
 };
 
 const lessonBlockStyles: Record<string, string> = {
-    // indigo matches the app's primary action color elsewhere, so an upcoming
-    // lesson reads as "the active thing to look at"
+    /* Indigo matches the app's primary action color, so an upcoming lesson
+       reads as "the active thing to look at" */
     SCHEDULED: "bg-indigo-100 hover:bg-indigo-200",
-    // was the same slate as an unavailable cell, so a completed lesson was
-    // visually indistinguishable from empty/unbookable time on the grid - teal
-    // is a distinct hue from every other color already on the grid (red/green/
-    // indigo/gray) and reads calmly as "done, nothing to act on"
+    /* Teal is distinct from every other color on the grid (red/green/indigo/
+       gray) and reads as "done, nothing to act on" */
     COMPLETED: "bg-teal-100 hover:bg-teal-200",
 };
 
-// the range a click or drag resolved to, which the choose-action popup acts on
+/* The range a click or drag resolved to, which the choose-action popup acts on */
 type SelectedRange = {
     date: string;
     startTime: string;
@@ -47,6 +45,9 @@ type SelectedRange = {
     isUnavailable: boolean;
 };
 
+/* The teacher's weekly schedule: availability rules as the grid background,
+   overrides and lessons as blocks on top, click or drag a cell to add a lesson
+   or override */
 function SchedulePage() {
     const {
         weekDates, hours,
@@ -71,8 +72,8 @@ function SchedulePage() {
     const nowLineTop = ((nowMinutes - hourStart * 60) / 60) * ROW_HEIGHT;
     const showNowLine = todayDayIndex !== -1 && nowMinutes >= hourStart * 60 && nowMinutes <= hourEnd * 60;
 
-    // is any part of this hour cell covered by an override or a lesson - used so
-    // the plain background cell isn't clickable-to-add underneath an existing block
+    /* Whether any part of this hour cell is covered by an override or a lesson -
+       so the plain background cell isn't clickable underneath an existing block */
     function isCellCoveredByOverride(dayIndex: number, hour: number): boolean {
         const dateStr = dayDateString(weekDates, dayIndex);
         const cellStart = hour * 60;
@@ -89,11 +90,9 @@ function SchedulePage() {
         return overridden || hasLesson;
     }
 
-    // extends [startHour, hour] to the widest contiguous run of cells that share the
-    // same availability as the starting cell, so a drag across mixed cells doesn't
-    // silently include time the teacher didn't intend to select. "availability" here
-    // uses isRangeCoveredByRule (any overlap), matching what the popup will actually
-    // offer/the backend will actually accept for the resulting range
+    /* Extends [startHour, hour] to the widest contiguous run of cells sharing the
+       same availability as the starting cell, so a drag across mixed cells
+       doesn't include time the teacher didn't intend to select */
     function clampRangeToUniformAvailability(dayIndex: number, startHour: number, hour: number): [number, number] {
         const startAvailable = isRangeCoveredByRule(dayIndex, startHour, startHour + 1, scheduleRules);
         const lo = Math.min(startHour, hour);
@@ -112,10 +111,9 @@ function SchedulePage() {
         return [rangeStart, rangeEnd + 1];
     }
 
-    // opens the right popup for a resolved [startHour, endHour) range on a given day,
-    // offering "Add availability" only when the backend would actually accept it
-    // (no rule overlaps at all) and "Block this time" only when the backend would
-    // accept that (some rule does overlap) - see isRangeCoveredByRule
+    /* Opens the choose-action popup for a resolved range - offers "Add
+       availability" only where the backend would accept it (no rule overlaps),
+       "Block this time" only where some rule does overlap */
     function openPopupForRange(dayIndex: number, startHour: number, endHour: number) {
         setSelectedRange({
             date: dayDateString(weekDates, dayIndex),
@@ -131,6 +129,7 @@ function SchedulePage() {
         onRangeSelected: openPopupForRange,
     });
 
+    /* Opens the booking modal pre-filled from the selected range */
     function handleChooseBookLesson() {
         if (!selectedRange) return;
         setLessonDraft(draftForNewLesson(
@@ -139,6 +138,7 @@ function SchedulePage() {
         setSelectedRange(null);
     }
 
+    /* Opens the override modal pre-filled from the selected range */
     function handleChooseOverride(type: string) {
         if (!selectedRange) return;
         setOverrideDraft(draftForNewOverride(
@@ -147,20 +147,23 @@ function SchedulePage() {
         setSelectedRange(null);
     }
 
+    /* Completes a lesson and closes its view modal if it worked */
     async function handleCompleteLesson(lessonId: number) {
         if (await completeLesson(lessonId)) setViewingLesson(null);
     }
 
+    /* Cancels a lesson and closes its view modal if it worked */
     async function handleCancelLesson(lessonId: number) {
         if (await cancelLesson(lessonId)) setViewingLesson(null);
     }
 
+    /* Deletes an override and closes its view modal if it worked */
     async function handleDeleteOverride(overrideId: number) {
         if (await deleteOverride(overrideId)) setViewingOverride(null);
     }
 
-    // keeps the open modal showing the saved notes, so its "Save notes" button
-    // disables again once the draft matches what was stored
+    /* Saves notes and keeps the open modal showing the saved value, so its
+       "Save notes" button disables again once the draft matches */
     async function handleSaveNotes(lessonId: number, notes: string) {
         const updated = await saveNotes(lessonId, notes);
         if (updated) setViewingLesson(updated);

@@ -1,28 +1,26 @@
 import { useEffect, useState } from "react";
 
 type DragSelectOptions = {
-    // true when this cell already has an override or lesson on it - dragging can
-    // neither start on nor extend through one
+    /* True when this cell already has an override or lesson on it - dragging can
+       neither start on nor extend through one */
     isCellBlocked: (dayIndex: number, hour: number) => boolean;
-    // narrows the raw [start, current] drag to the widest run that's uniformly
-    // available, so a drag across mixed cells doesn't select time the teacher
-    // didn't intend
+    /* Narrows the raw [start, current] drag to the widest run that's uniformly
+       available, so a drag across mixed cells doesn't select unintended time */
     clampRange: (dayIndex: number, startHour: number, hour: number) => [number, number];
-    // called once on mouse-up with the resolved half-open range
+    /* Called once on mouse-up with the resolved half-open range */
     onRangeSelected: (dayIndex: number, startHour: number, endHour: number) => void;
 };
 
-// drag-to-select a multi-hour range across cells in the same day column.
-//
-// the mouseup listener lives on window rather than the cells, so releasing the
-// button outside the grid still completes (or abandons) the drag instead of
-// leaving the page stuck in a dragging state.
+/* Drag-to-select a multi-hour range across cells in the same day column. The
+   mouseup listener lives on window rather than the cells, so releasing the
+   button outside the grid still completes or abandons the drag. */
 export function useDragSelect({ isCellBlocked, clampRange, onRangeSelected }: DragSelectOptions) {
     const [dragDayIndex, setDragDayIndex] = useState<number | null>(null);
     const [dragStartHour, setDragStartHour] = useState<number | null>(null);
     const [dragCurrentHour, setDragCurrentHour] = useState<number | null>(null);
     const [isDragging, setIsDragging] = useState(false);
 
+    /* Listens for mouse-up anywhere on the page to finish the drag */
     useEffect(() => {
         function handleMouseUp() {
             if (!isDragging || dragDayIndex === null || dragStartHour === null || dragCurrentHour === null) {
@@ -43,6 +41,7 @@ export function useDragSelect({ isCellBlocked, clampRange, onRangeSelected }: Dr
         return () => window.removeEventListener("mouseup", handleMouseUp);
     }, [isDragging, dragDayIndex, dragStartHour, dragCurrentHour, clampRange, onRangeSelected]);
 
+    /* Starts a drag on this cell, unless it's blocked */
     function handleCellMouseDown(dayIndex: number, hour: number) {
         if (isCellBlocked(dayIndex, hour)) return;
         setDragDayIndex(dayIndex);
@@ -51,11 +50,13 @@ export function useDragSelect({ isCellBlocked, clampRange, onRangeSelected }: Dr
         setIsDragging(true);
     }
 
+    /* Extends the drag as the mouse moves over cells in the same day column */
     function handleCellMouseEnter(dayIndex: number, hour: number) {
         if (!isDragging || dragDayIndex !== dayIndex || dragStartHour === null) return;
         setDragCurrentHour(hour);
     }
 
+    /* Whether this cell falls inside the range currently being dragged */
     function isCellInDragSelection(dayIndex: number, hour: number): boolean {
         if (!isDragging || dragDayIndex !== dayIndex || dragStartHour === null || dragCurrentHour === null) return false;
         const lo = Math.min(dragStartHour, dragCurrentHour);

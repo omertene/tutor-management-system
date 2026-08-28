@@ -1,10 +1,7 @@
 import { days } from "../utils/time";
 
-// the shapes both calendar views work with. SchedulePage (teacher) and
-// StudentScheduleGrid (student) each declared their own copies of these, which is how
-// they drifted apart on what "available" meant - the student grid required all four
-// quarter-hours of a cell to be rule-covered while the teacher page used any overlap.
-// one definition each now, so a change lands in both views at once.
+/* The shapes both calendar views (teacher's SchedulePage, student's
+   StudentScheduleGrid) work with, defined once so both stay in sync */
 
 export type ScheduleRule = {
     id: number;
@@ -13,14 +10,11 @@ export type ScheduleRule = {
     endTime: string;
 };
 
-// the two override shapes are deliberately separate types rather than one type with
-// optional fields. GET /teacher/schedule-overrides returns the full row; the student
-// endpoint strips the id and the teacher's private note (see
-// StudentAvailabilityController). modelling that as `id?: number` would push a null
-// check onto the teacher page, which always has an id, and would let a student-shaped
-// value flow into code that needs one.
+/* The two override shapes are separate types rather than one type with optional
+   fields, since the student endpoint strips the id and the teacher's note - a
+   student-shaped value should never flow into code that needs a real id. */
 
-// what the student grid receives: enough to shade the calendar, nothing more
+/* What the student grid receives: enough to shade the calendar, nothing more */
 export type AvailabilityWindow = {
     date: string;
     startTime: string;
@@ -28,21 +22,21 @@ export type AvailabilityWindow = {
     type: string;
 };
 
-// what the teacher page receives: the editable row
+/* What the teacher page receives: the editable row */
 export type ScheduleOverride = AvailabilityWindow & {
     id: number;
     note: string;
 };
 
-// a booked slot belonging to another student - no name or subject, used only to grey
-// out the grid so a student can't try to book a time that's already taken
+/* A booked slot belonging to another student - no name or subject, used only to
+   grey out the grid so a student can't try to book an already-taken time */
 export type BusySlot = {
     date: string;
     startTime: string;
     endTime: string;
 };
 
-// rules sorted the way the weekly editor lists them: by day of week, then start time
+/* Sorts rules the way the weekly editor lists them: by day of week, then start time */
 export function sortRules(rules: ScheduleRule[]): ScheduleRule[] {
     return [...rules].sort((a, b) => {
         const dayDiff = days.indexOf(a.dayOfWeek) - days.indexOf(b.dayOfWeek);
@@ -51,8 +45,8 @@ export function sortRules(rules: ScheduleRule[]): ScheduleRule[] {
     });
 }
 
-// one of the student's own lessons as the student grid receives it - no student
-// name (they're the only student it can be) and no price
+/* One of the student's own lessons, as the student grid receives it - no
+   student name (they're the only student it can be) and no price */
 export type StudentLesson = {
     id: number;
     subjectName: string;
@@ -68,8 +62,8 @@ export type Subject = {
     name: string;
 };
 
-// a lesson as the TEACHER's schedule receives it - includes the student's name and
-// id (the teacher has many students) and the private per-lesson notes
+/* A lesson as the TEACHER's schedule receives it - includes the student's name/id
+   (the teacher has many students) and the private per-lesson notes */
 export type TeacherLesson = {
     id: number;
     studentId: number;

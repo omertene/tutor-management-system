@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
 
+/* Clears the stored token and sends the user back to login */
 function LogoutButton() {
   const navigate = useNavigate();
 
+  /* Removes the token so ProtectedRoute treats the user as logged out */
   function handleLogout() {
     localStorage.removeItem("token");
     navigate("/login");

@@ -2,6 +2,9 @@ import ListPager from "../ListPager";
 import { usePagination } from "../../hooks/usePagination";
 import type { Debt } from "../../types/payment";
 
+/* Teacher's per-student balance list, filtered by search and sorted with
+   the biggest debt first. */
+
 const DEBTS_PER_PAGE = 10;
 
 type DebtListProps = {
@@ -9,7 +12,6 @@ type DebtListProps = {
     searchQuery: string;
 };
 
-// the teacher's per-student balance list, sorted with the largest debt first
 export default function DebtList({ debts, searchQuery }: DebtListProps) {
     const filtered = debts
         .filter((debt) => {

@@ -3,11 +3,9 @@ import { apiFetch, readErrorMessage } from "../utils/api";
 import type { Student } from "../types";
 import type { Debt, Payment } from "../types/payment";
 
-// payments and balances for whichever role is viewing.
-//
-// the two roles hit completely different endpoints - the teacher gets every payment
-// and every student's balance, a student gets only their own - so this branches once
-// on role at load time rather than the page doing it at every call site.
+/* Payments and balances for whichever role is viewing. The two roles hit
+   completely different endpoints - the teacher gets every payment and every
+   student's balance, a student gets only their own. */
 export function usePayments(role: string) {
     const isTeacher = role === "TEACHER";
 
@@ -17,6 +15,7 @@ export function usePayments(role: string) {
     const [ownDebt, setOwnDebt] = useState<Debt | null>(null);
     const [errorMessage, setErrorMessage] = useState("");
 
+    /* Loads every student's outstanding debt (teacher only) */
     const loadAllDebts = useCallback(async () => {
         const response = await apiFetch(`/teacher/debts`);
         if (!response.ok) {
@@ -26,6 +25,7 @@ export function usePayments(role: string) {
         setAllDebts((await response.json()) as Debt[]);
     }, []);
 
+    /* Loads the view matching the current role */
     useEffect(() => {
         async function loadTeacherView() {
             const [studentsRes, paymentsRes] = await Promise.all([
@@ -59,9 +59,8 @@ export function usePayments(role: string) {
         else loadStudentView();
     }, [isTeacher, loadAllDebts]);
 
-    // teacher records a new payment - POST /teacher/payments.
-    // returns an error message, or null on success, so the caller can decide where to
-    // show it (this form and the inline edit panel show errors in different places)
+    /* Teacher records a new payment. Returns an error message, or null on
+       success, so the caller decides where to show it */
     async function createPayment(body: {
         studentId: number; amount: number; method: string; notes: string; paymentDate: string;
     }): Promise<string | null> {
@@ -76,15 +75,15 @@ export function usePayments(role: string) {
 
         const created = (await response.json()) as Payment;
         setPayments((current) => [...current, created]);
-        // a new payment changes that student's balance, so the debt snapshot
-        // needs refreshing too
+        /* A new payment changes that student's balance, so the debt snapshot
+           needs refreshing too */
         loadAllDebts();
         return null;
     }
 
-    // student is editable here, so a payment logged against the wrong student can be
-    // reassigned; debt is derived per-student on read, so refreshing the debt list
-    // after this picks up the corrected balance for both the old and new student
+    /* Updates a payment, including moving it to a different student if it was
+       logged against the wrong one - refreshing debts after picks up the
+       corrected balance for both students */
     async function updatePayment(paymentId: number, body: {
         studentId: number; amount: number; method: string; notes: string; paymentDate: string;
     }): Promise<string | null> {
@@ -103,6 +102,7 @@ export function usePayments(role: string) {
         return null;
     }
 
+    /* Confirms with the teacher, then cancels a payment and refreshes debts */
     async function cancelPayment(payment: Payment) {
         setErrorMessage("");
 

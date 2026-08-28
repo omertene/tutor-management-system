@@ -13,15 +13,16 @@ type CredentialsModalProps = {
     onEmailChanged: (updated: Student) => void;
 };
 
-// the teacher changing a student's login email or resetting their password. these are
-// two independent actions on one dialog, each with its own Save button - deliberately
-// not one form, so resetting a password doesn't also resubmit the email field.
+/* Lets the teacher change a student's login email or reset their password -
+   two independent actions, each with its own Save button, so resetting one
+   doesn't resubmit the other. */
 export default function CredentialsModal({ student, onClose, onEmailChanged }: CredentialsModalProps) {
     const [email, setEmail] = useState(student.email);
     const [newPassword, setNewPassword] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
 
+    /* Validates and saves the new email */
     async function handleSaveEmail() {
         setErrorMessage("");
         setSuccessMessage("");
@@ -45,8 +46,7 @@ export default function CredentialsModal({ student, onClose, onEmailChanged }: C
 
             const updated = (await response.json()) as Student;
             onEmailChanged(updated);
-            // the backend lowercases the address on save, so show what was actually
-            // stored rather than what was typed
+            /* show what the backend actually stored (it lowercases it), not what was typed */
             setEmail(updated.email);
             setSuccessMessage("Email updated");
         } catch {
@@ -54,6 +54,7 @@ export default function CredentialsModal({ student, onClose, onEmailChanged }: C
         }
     }
 
+    /* Validates and sends the new password */
     async function handleResetPassword() {
         setErrorMessage("");
         setSuccessMessage("");

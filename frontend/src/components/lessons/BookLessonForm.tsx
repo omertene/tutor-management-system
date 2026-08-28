@@ -4,6 +4,9 @@ import type { Student, Subject } from "../../types";
 import { inputClass, labelClass, primaryButtonClass, smallSecondaryButtonClass } from "../../constants/formStyles";
 import { addOneHour, todayDateString } from "../../utils/time";
 
+/* Form the teacher uses to book a lesson for a student, with inline
+   "+ New subject..." creation right from the subject dropdown. */
+
 type BookLessonFormProps = {
     students: Student[];
     subjects: Subject[];
@@ -18,8 +21,7 @@ type BookLessonFormProps = {
     onValidationError: (message: string) => void;
 };
 
-// the teacher's booking form. date/time default to today 08:00-09:00 instead of
-// blank, since most bookings only need the student/subject changed
+/* Date/time default to today 08:00-09:00 instead of blank */
 export default function BookLessonForm({ students, subjects, onBook, onCreateSubject, onValidationError }: BookLessonFormProps) {
     const [selectedStudentId, setSelectedStudentId] = useState("");
     const [selectedSubjectId, setSelectedSubjectId] = useState("");
@@ -27,18 +29,18 @@ export default function BookLessonForm({ students, subjects, onBook, onCreateSub
     const [startTime, setStartTime] = useState("08:00");
     const [endTime, setEndTime] = useState("09:00");
 
-    // inline "+ New subject..." creation from the dropdown, so adding a subject on
-    // the fly doesn't require leaving this page
+    /* Inline "+ New subject..." creation from the dropdown, so adding a subject  doesn't require leaving this page */
     const [isAddingSubject, setIsAddingSubject] = useState(false);
     const [newSubjectName, setNewSubjectName] = useState("");
 
-    // keeps the lesson an hour long by default when the start moves
+    /* Keeps the lesson an hour long by default when the start moves */
     function handleStartTimeChange(value: string) {
         setStartTime(value);
         if (!value) return;
         setEndTime(addOneHour(value));
     }
 
+    /* Creates the subject inline and selects it, without leaving this page */
     async function handleCreateSubjectInline() {
         const name = newSubjectName.trim();
         if (!name) return;
@@ -51,10 +53,10 @@ export default function BookLessonForm({ students, subjects, onBook, onCreateSub
         setIsAddingSubject(false);
     }
 
+    /* Validates the form and sends the booking, without it an empty dropdown posts studentId 0
+       and the backend answers "Student not found", which reads like a data
+       problem rather than an unfilled field */
     function handleBook() {
-        // same guard as the schedule page's booking modal - without it an empty
-        // dropdown posts studentId 0 and the backend answers "Student not found",
-        // which reads like a data problem rather than an unfilled field
         if (!selectedStudentId || !selectedSubjectId || !date || !startTime || !endTime) {
             onValidationError("Please fill in all fields");
             return;

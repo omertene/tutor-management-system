@@ -1,14 +1,11 @@
-// client-side field checks, mirroring AccountValidation on the backend. these are a
-// convenience so the user gets an error without a round trip - the server validates
-// the same rules again and is the one that actually enforces them.
-//
-// AddStudentModal, RegisterPage and SettingsPage each carried their own byte-identical
-// copies of all four before this.
+/* Client-side field checks, mirroring AccountValidation on the backend - a
+   convenience so the user gets an error without a round trip. The server
+   validates the same rules again and is what actually enforces them. */
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^\d+$/;
 
-// each returns an error message, or null when the value is fine
+/* Each returns an error message, or null when the value is fine */
 export function validateEmailField(email: string): string | null {
     if (!EMAIL_PATTERN.test(email)) return "Please enter a valid email address";
     return null;
