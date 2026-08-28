@@ -1,3 +1,5 @@
+/* Shared shapes used across multiple pages/components */
+
 export type Subject = {
     id: number;
     name: string;

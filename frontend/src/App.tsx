@@ -11,6 +11,7 @@ import PaymentsPage from "./pages/PaymentsPage"
 import MaterialsPage from "./pages/MaterialsPage"
 import StatisticsPage from "./pages/StatisticsPage"
 
+/* All the app's routes, each page wrapped in ProtectedRoute with the role it needs */
 function App() {
   return (
     <BrowserRouter>
@@ -125,6 +126,7 @@ function App() {
           }
         />
 
+        {/* any unknown path just sends the user back to login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
