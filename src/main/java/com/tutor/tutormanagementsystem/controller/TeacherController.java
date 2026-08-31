@@ -52,7 +52,7 @@ public class TeacherController {
     }
 
     /* includes deactivated students too - used by the student management screen,
-       where the teacher needs to see  everyone */
+       where the teacher needs to see everyone */
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/students/all")
     public ResponseEntity<List<StudentResponse>> getAllStudentsIncludingInactive() {
@@ -78,7 +78,7 @@ public class TeacherController {
         return ResponseEntity.ok(studentService.updateStudentEmail(studentId, request.email()));
     }
 
-    /* teacher sets/resets a student's password directly  */
+    /* teacher sets/resets a student's password directly */
     @PreAuthorize("hasRole('TEACHER')")
     @PatchMapping("/students/{id}/password")
     public ResponseEntity<StudentResponse> resetStudentPassword(
@@ -107,7 +107,7 @@ public class TeacherController {
         return ResponseEntity.ok(userService.updateOwnEmail(caller.id(), request.email()));
     }
 
-    /* teacher changes their own password (e.g. from a settings screen) */
+    /* teacher changes their own password */
     @PreAuthorize("hasRole('TEACHER')")
     @PatchMapping("/me/password")
     public ResponseEntity<UserResponse> resetOwnPassword(

@@ -45,7 +45,6 @@ export default function MaterialRow({ material, isTeacher, onDownload, onDelete 
                 )}
 
                 {material.type === "FILE" && material.fileName && (() => {
-                    /* TS needs this in a local var to know it's not null here */
                     const fileName = material.fileName;
                     return (
                         <button onClick={() => onDownload(material.id, fileName)} className={smallSecondaryButtonClass}>

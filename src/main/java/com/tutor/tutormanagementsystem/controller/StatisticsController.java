@@ -15,7 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /* teacher-only reporting endpoints that back the statistics dashboard - revenue,
-   lesson counts, etc. all the actual number-crunching happens in
+   lesson counts, etc. all the actual number-calculating happens in
    StatisticsService, this just validates/shapes the incoming date range. */
 @RestController
 @RequiredArgsConstructor
@@ -24,8 +24,7 @@ public class StatisticsController {
     private final StatisticsService statisticsService;
 
     /* unified statistics dashboard - startDate/endDate define the KPI/table
-       timeframe (the frontend resolves "this month", "this year", or "all time"
-       into concrete dates before calling this), subjectId is optional */
+       timeframe, subjectId is optional */
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/teacher/statistics/dashboard")
     public ResponseEntity<DashboardStatisticsResponse> getDashboardStatistics(

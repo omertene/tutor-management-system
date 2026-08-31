@@ -25,7 +25,7 @@ public class TeacherSeeder implements CommandLineRunner {
     @Value("${teacher.seed.password}")
     private String teacherPassword;
 
-    /* CommandLineRunner hook - Spring Boot calls this once on startup */
+    /* Spring Boot calls this once on startup */
     @Override
     public void run(String... args) {
         if (userRepository.existsByRole(Role.TEACHER)) {
@@ -33,8 +33,7 @@ public class TeacherSeeder implements CommandLineRunner {
         }
 
         User teacher = User.builder()
-                /* normalised the same way StudentService/UserService store emails, so
-                   the seeded teacher can log in regardless of how the property is cased */
+                /* normalized, so the seeded teacher can log in regardless of how the property is cased */
                 .email(teacherEmail.trim().toLowerCase())
                 .password(passwordEncoder.encode(teacherPassword)) /* never store the raw password */
                 .role(Role.TEACHER)

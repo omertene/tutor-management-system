@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/* teacher-only CRUD for the recurring weekly availability rules (e.g. "available
-   Mondays 4-8pm"), the base schedule that overrides and bookings check against */
+/* teacher-only - for the recurring weekly availability rules,
+    the base schedule that overrides and bookings check against */
 @RestController
 @RequestMapping("/teacher/schedule-rules")
 @RequiredArgsConstructor

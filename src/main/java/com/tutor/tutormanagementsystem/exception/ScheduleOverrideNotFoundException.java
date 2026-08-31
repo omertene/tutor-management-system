@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 /* no schedule override with this id */
 public class ScheduleOverrideNotFoundException extends ApiException {
 
-    /* just forwards the message and status - nothing else to look up here */
+    /* just forwards the message and status */
     public ScheduleOverrideNotFoundException(String message) {
         super(message, HttpStatus.NOT_FOUND);
     }

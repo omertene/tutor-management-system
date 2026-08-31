@@ -27,8 +27,7 @@ public class SecurityConfig {
         this.jwtAuthFilter = jwtAuthFilter;
     }
 
-    /* BCrypt is the standard choice for password hashing - it's salted and slow
-       on purpose, which makes brute-forcing stolen hashes much harder */
+    /* BCrypt for password hashing */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

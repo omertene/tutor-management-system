@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-/* A study material item as returned to the client - file/link/note details plus the lesson it's linked to, if any */
+/* A study material item as returned to the client - file/link/note details plus the lesson it's linked to, if there is */
 public record MaterialResponse(
         Long id,
         Long studentId,

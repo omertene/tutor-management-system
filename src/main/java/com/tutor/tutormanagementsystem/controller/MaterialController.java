@@ -25,7 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 /* study materials attached to a student (links, notes, or uploaded files).
-   adding/deleting is teacher-only; a student can read/download only their own */
+   adding/deleting is teacher-only, a student can read/download only their own */
 @RestController
 @RequiredArgsConstructor
 public class MaterialController {
@@ -106,9 +106,9 @@ public class MaterialController {
                 .filename(material.getFileName(), java.nio.charset.StandardCharsets.UTF_8)
                 .build();
 
-        /* the client's browser/HTTP client isn't guaranteed to send a content type on
-           upload - MediaType.parseMediaType(null) throws, so fall back to a generic
-           binary type rather than 500ing on an otherwise perfectly valid download */
+        /*  browser might not send a content type on upload, and passing null to
+            MediaType.parseMediaType() throws - so just default to generic binary
+            instead of crashing on a valid download */
         String contentType = material.getContentType() != null
                 ? material.getContentType()
                 : MediaType.APPLICATION_OCTET_STREAM_VALUE;

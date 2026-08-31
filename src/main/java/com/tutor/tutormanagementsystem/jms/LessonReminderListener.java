@@ -38,7 +38,7 @@ public class LessonReminderListener {
             Lesson lesson = lessonService.getLessonEntity(lessonId);
 
             if (lesson.isReminderSent() || lesson.getStatus() != LessonStatus.SCHEDULED) {
-                return; /* already reminded, or cancelled since this was queued */
+                return; /* already reminded, or canceled since this was queued */
             }
 
             String to = lesson.getStudent().getUser().getEmail();

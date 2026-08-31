@@ -57,7 +57,7 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.updatePayment(paymentId, request));
     }
 
-    /* teacher voids a payment (e.g. it was entered by mistake) */
+    /* teacher voids a payment */
     @PreAuthorize("hasRole('TEACHER')")
     @DeleteMapping("/teacher/payments/{id}")
     public ResponseEntity<Void> cancelPayment(@PathVariable("id") Long paymentId) {

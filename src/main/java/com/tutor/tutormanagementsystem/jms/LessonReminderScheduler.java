@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /* producer side of the reminder flow - finds lessons due for a reminder and
-   queues their IDs, doesn't send email itself (see LessonReminderListener) */
+   queues their IDs, doesn't send email itself */
 @Component
 @RequiredArgsConstructor
 public class LessonReminderScheduler {

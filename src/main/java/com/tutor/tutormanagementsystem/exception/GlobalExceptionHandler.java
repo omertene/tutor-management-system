@@ -23,15 +23,13 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    /* every expected domain failure: the exception knows its own status
-       (see ApiException and its subclasses) */
+    /* every expected domain failure: the exception knows its own status */
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ErrorResponse> handleApiException(ApiException ex) {
         return ResponseEntity.status(ex.getStatus()).body(new ErrorResponse(ex.getMessage()));
     }
 
-    /* malformed JSON body, or a value that doesn't match the target type
-       (e.g. an empty string where a LocalDate/LocalTime/number was expected) */
+    /* malformed JSON body, or a value that doesn't match the target type */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMalformedRequestBody(HttpMessageNotReadableException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

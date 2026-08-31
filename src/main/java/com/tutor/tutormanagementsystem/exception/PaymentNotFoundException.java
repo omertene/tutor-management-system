@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 /* no payment with this id */
 public class PaymentNotFoundException extends ApiException {
 
-    /* just forwards the message and status - nothing else to look up here */
+    /* just forwards the message and status */
     public PaymentNotFoundException(String message) {
         super(message, HttpStatus.NOT_FOUND);
     }

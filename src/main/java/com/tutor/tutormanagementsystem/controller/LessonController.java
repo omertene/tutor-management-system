@@ -114,8 +114,7 @@ public class LessonController {
         return ResponseEntity.ok(lessonService.completeLesson(lessonId));
     }
 
-    /* teacher-only notes about a lesson - never exposed to the student (see
-       LessonService.toResponse's includeNotes flag) */
+    /* teacher-only notes about a lesson - never exposed to the student */
     @PreAuthorize("hasRole('TEACHER')")
     @PatchMapping("/teacher/lessons/{id}/notes")
     public ResponseEntity<LessonResponse> updateLessonNotes(

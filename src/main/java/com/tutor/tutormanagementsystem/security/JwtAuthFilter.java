@@ -16,8 +16,7 @@ import java.io.IOException;
 import java.util.List;
 
 /* runs once per request, checks the Authorization header and logs the user
-   in (via the SecurityContext) if the token is valid. registered before
-   Spring's own auth filter in SecurityConfig. */
+   in if the token is valid. registered before Spring's own auth filter in SecurityConfig. */
 @RequiredArgsConstructor
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {

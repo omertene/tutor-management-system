@@ -57,7 +57,7 @@ public class JwtService {
     }
 
     /* true if the token parses and verifies - false for any bad signature,
-       malformed token or expired one (parseClaims throws for all of those) */
+       malformed token or expired one */
     public boolean isTokenValid(String token) {
         try {
             parseClaims(token);

@@ -26,7 +26,7 @@ public class LoginRateLimiter {
     private record AttemptRecord(int failedAttempts, Instant lockedUntil, Instant lastAttempt) {
     }
 
-    /* ConcurrentHashMap + compute() (below) so two failed logins for the same
+    /* ConcurrentHashMap + compute() so two failed logins for the same
        email at the same time can't both read the same count and lose an increment */
     private final ConcurrentHashMap<String, AttemptRecord> attemptsByEmail = new ConcurrentHashMap<>();
 

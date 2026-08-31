@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/* teacher-only CRUD for one-off exceptions to the weekly schedule (e.g. "closed on
-   the 5th"). students see a read-only version via StudentAvailabilityController */
+/* teacher-only - for one-off exceptions to the weekly schedule. students see
+    a read-only version via StudentAvailabilityController */
 @RestController
 @RequestMapping("/teacher/schedule-overrides")
 @RequiredArgsConstructor
