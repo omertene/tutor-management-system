@@ -62,7 +62,7 @@ export default function StatisticsTables({ subjectBreakdown, topStudents }: Stat
                             {topStudents.length === 0 && (
                                 <tr><td colSpan={3} className="px-4 py-6 text-center text-slate-500">No completed lessons in this range.</td></tr>
                             )}
-                            {topStudents.map((row) => (
+                            {topStudents.slice(0, 5).map((row) => (
                                 <tr key={row.studentId}>
                                     <td className="px-4 py-3 font-medium text-slate-900">{row.firstName} {row.lastName}</td>
                                     <td className="px-4 py-3 text-right text-slate-700">{row.lessonCount}</td>
