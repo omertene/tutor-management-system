@@ -145,9 +145,7 @@ function StudentScheduleGrid() {
 
     return (
         <>
-            <div>
-                <p className="text-slate-500 text-sm">White = available, gray = unavailable, split = partly available within the hour, blue = your lesson. Click an open slot to book.</p>
-            </div>
+
 
             {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 

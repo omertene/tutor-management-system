@@ -27,6 +27,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/* teacher-only account management: registering/editing/deactivating students,
+   resetting passwords, and the teacher's own login email/password */
 @RestController
 @RequestMapping("/teacher")
 @RequiredArgsConstructor
@@ -35,26 +37,29 @@ public class TeacherController {
     private final StudentService studentService;
     private final UserService userService;
 
+    /* creates a new student account under this teacher */
     @PreAuthorize("hasRole('TEACHER')")
     @PostMapping("/register")
     public ResponseEntity<StudentResponse> register(@RequestBody CreateStudentRequest request) {
         return ResponseEntity.ok(studentService.createStudent(request));
     }
 
-    // active students only - feeds booking/payment/material dropdowns
+    /* active students only - feeds booking/payment/material dropdowns */
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/students")
     public ResponseEntity<List<StudentResponse>> getAllStudents() {
         return ResponseEntity.ok(studentService.getAllStudents());
     }
 
-
+    /* includes deactivated students too - used by the student management screen,
+       where the teacher needs to see  everyone */
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/students/all")
     public ResponseEntity<List<StudentResponse>> getAllStudentsIncludingInactive() {
         return ResponseEntity.ok(studentService.getAllStudentsIncludingInactive());
     }
 
+    /* updates a student's profile fields (name, rate, etc - whatever UpdateStudentRequest carries) */
     @PreAuthorize("hasRole('TEACHER')")
     @PutMapping("/students/{id}")
     public ResponseEntity<StudentResponse> updateStudent(
@@ -63,6 +68,8 @@ public class TeacherController {
         return ResponseEntity.ok(studentService.updateStudent(studentId, request));
     }
 
+    /* changes a student's login email - separate endpoint from the general update
+       above since it's a more sensitive field (affects login, not just profile data) */
     @PreAuthorize("hasRole('TEACHER')")
     @PatchMapping("/students/{id}/email")
     public ResponseEntity<StudentResponse> updateStudentEmail(
@@ -71,6 +78,7 @@ public class TeacherController {
         return ResponseEntity.ok(studentService.updateStudentEmail(studentId, request.email()));
     }
 
+    /* teacher sets/resets a student's password directly  */
     @PreAuthorize("hasRole('TEACHER')")
     @PatchMapping("/students/{id}/password")
     public ResponseEntity<StudentResponse> resetStudentPassword(
@@ -79,6 +87,8 @@ public class TeacherController {
         return ResponseEntity.ok(studentService.resetStudentPassword(studentId, request.newPassword()));
     }
 
+    /* activates/deactivates a student account, e.g. when a student stops taking lessons
+       but the teacher wants to keep their history instead of deleting them */
     @PreAuthorize("hasRole('TEACHER')")
     @PatchMapping("/students/{id}/active")
     public ResponseEntity<StudentResponse> setStudentActive(
@@ -87,8 +97,8 @@ public class TeacherController {
         return ResponseEntity.ok(studentService.setStudentActive(studentId, request.active()));
     }
 
-    // the teacher's own login email/password - identified from the JWT (caller.id()),
-    // never a path variable, so this can only ever change the caller's own account
+    /* the teacher's own login email/password - identified from the JWT (caller.id()),
+       never a path variable, so this can only ever change the caller's own account */
     @PreAuthorize("hasRole('TEACHER')")
     @PatchMapping("/me/email")
     public ResponseEntity<UserResponse> updateOwnEmail(
@@ -97,6 +107,7 @@ public class TeacherController {
         return ResponseEntity.ok(userService.updateOwnEmail(caller.id(), request.email()));
     }
 
+    /* teacher changes their own password (e.g. from a settings screen) */
     @PreAuthorize("hasRole('TEACHER')")
     @PatchMapping("/me/password")
     public ResponseEntity<UserResponse> resetOwnPassword(

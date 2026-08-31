@@ -9,12 +9,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-// creates the one teacher account on startup, but only if no teacher account
-// exists yet at all. deliberately checks by role rather than by the fixed seed
-// email - if the teacher later changes their own login email (see /teacher/me
-// endpoints in TeacherController), findByEmail(teacherEmail) would no longer
-// match their renamed row, and the old email-based check would have silently
-// recreated a second teacher account with the default password on next restart
+/* single-teacher app: creates the one teacher account on first boot if none
+   exists yet (checked by role, not by the seed email, so a later email change
+   by the teacher doesn't cause a second account to get created) */
 @Component
 @RequiredArgsConstructor
 public class TeacherSeeder implements CommandLineRunner {
@@ -28,17 +25,18 @@ public class TeacherSeeder implements CommandLineRunner {
     @Value("${teacher.seed.password}")
     private String teacherPassword;
 
+    /* CommandLineRunner hook - Spring Boot calls this once on startup */
     @Override
     public void run(String... args) {
         if (userRepository.existsByRole(Role.TEACHER)) {
-            return; // a teacher account already exists, nothing to do
+            return; /* a teacher account already exists, nothing to do */
         }
 
         User teacher = User.builder()
-                // normalised the same way StudentService/UserService store emails, so
-                // the seeded teacher can log in regardless of how the property is cased
+                /* normalised the same way StudentService/UserService store emails, so
+                   the seeded teacher can log in regardless of how the property is cased */
                 .email(teacherEmail.trim().toLowerCase())
-                .password(passwordEncoder.encode(teacherPassword))
+                .password(passwordEncoder.encode(teacherPassword)) /* never store the raw password */
                 .role(Role.TEACHER)
                 .firstName("Teacher")
                 .lastName("Account")

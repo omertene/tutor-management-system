@@ -13,7 +13,8 @@ import org.springframework.stereotype.Component;
 
 import java.time.format.DateTimeFormatter;
 
-
+/* consumer side of the reminder flow - picks lesson IDs off the queue
+   (LessonReminderScheduler is the producer) and sends the actual email */
 @Component
 @RequiredArgsConstructor
 public class LessonReminderListener {
@@ -27,27 +28,17 @@ public class LessonReminderListener {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
 
-    // reminderSent is only set here, after a successful send - not by the scheduler at
-    // queue time (see LessonReminderScheduler). that means the same lesson could in
-    // principle be queued twice if a listener run is still in flight when the next
-    // scheduler tick fires, so this re-checks reminderSent/status itself before sending
-    // rather than trusting that queuing it implies it's safe to send.
-    //
-    // this whole method is wrapped in a try/catch on purpose: a JMS listener that lets
-    // an exception escape gets the message redelivered by the broker and throws again,
-    // forever, on every lesson this fails for (a "poison message"). since there's no
-    // redelivery-limit configured on the embedded broker, catching everything here and
-    // logging instead is what actually stops that loop - a lesson whose reminder failed
-    // to send just stays reminderSent=false and gets picked up again on the next
-    // scheduler run (30 min later), which is the right outcome for a transient failure
-    // like SMTP being down.
+    /* sends the reminder email for one lesson. wrapped in try/catch so a failure
+       doesn't get redelivered forever - it's just logged, and the lesson stays
+       reminderSent=false to get picked up on the next scheduler run */
     @JmsListener(destination = JmsQueues.LESSON_REMINDER_QUEUE)
     public void onLessonReminder(Long lessonId) {
         try {
+            /* re-fetch fresh, could be stale since it was queued */
             Lesson lesson = lessonService.getLessonEntity(lessonId);
 
             if (lesson.isReminderSent() || lesson.getStatus() != LessonStatus.SCHEDULED) {
-                return; // already reminded, or cancelled since this was queued - nothing to do
+                return; /* already reminded, or cancelled since this was queued */
             }
 
             String to = lesson.getStudent().getUser().getEmail();
@@ -64,6 +55,7 @@ public class LessonReminderListener {
 
             emailService.sendEmail(to, subject, body);
 
+            /* only mark sent after the send succeeds, so a failure is retried later */
             lessonReminderService.markReminderSent(lesson);
         } catch (Exception e) {
             log.error("Failed to send lesson reminder for lesson {}", lessonId, e);

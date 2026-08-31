@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+/* booking, viewing, editing, canceling and completing lessons. */
 @RestController
 @RequiredArgsConstructor
 public class LessonController {
@@ -33,20 +34,22 @@ public class LessonController {
     private final LessonService lessonService;
     private final LessonBookingService lessonBookingService;
 
-    // teacher books a lesson on behalf of a given student
+    /* teacher books a lesson on behalf of a given student */
     @PreAuthorize("hasRole('TEACHER')")
     @PostMapping("/teacher/lessons")
     public ResponseEntity<LessonResponse> createLessonForStudent(@RequestBody LessonRequest request) {
         return ResponseEntity.ok(lessonService.createLessonForStudent(request));
     }
 
+    /* same as above but outside the teacher's normal hours - routed to LessonBookingService
+       since it skips the regular schedule-rule availability check */
     @PreAuthorize("hasRole('TEACHER')")
     @PostMapping("/teacher/lessons/book-outside-hours")
     public ResponseEntity<LessonResponse> createLessonOutsideHours(@RequestBody LessonRequest request) {
         return ResponseEntity.ok(lessonBookingService.createLessonOutsideHours(request));
     }
 
-    // student books a lesson for themselves
+    /* student books a lesson for themselves */
     @PreAuthorize("hasRole('STUDENT')")
     @PostMapping("/student/lessons")
     public ResponseEntity<LessonResponse> createLessonAsStudent(
@@ -55,23 +58,22 @@ public class LessonController {
         return ResponseEntity.ok(lessonService.createLessonAsStudent(caller.id(), request));
     }
 
+    /* teacher views every lesson across every student */
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/teacher/lessons")
     public ResponseEntity<List<LessonResponse>> getAllLessonsForTeacher() {
         return ResponseEntity.ok(lessonService.getAllLessonsForTeacher());
     }
 
-    // a student only ever sees their own lessons, so no id is taken from the URL/body
+    /* a student only ever sees their own lessons, so no id is taken from the URL/body */
     @PreAuthorize("hasRole('STUDENT')")
     @GetMapping("/student/lessons")
     public ResponseEntity<List<LessonResponse>> getLessonsForStudent(@AuthenticationPrincipal AuthenticatedUser caller) {
         return ResponseEntity.ok(lessonService.getLessonsForStudent(caller.id()));
     }
 
-    // every booked slot across all students within the given date range, with no
-    // student-identifying info - lets a student's schedule view gray out times
-    // already taken by someone else. scoped to the week the caller is viewing rather
-    // than every lesson ever booked
+    /* every booked slot in the date range, with no student-identifying info - lets
+       a student's schedule view gray out times already taken by someone else */
     @PreAuthorize("hasRole('STUDENT')")
     @GetMapping("/student/busy-slots")
     public ResponseEntity<List<BusySlotResponse>> getBusySlots(
@@ -80,14 +82,14 @@ public class LessonController {
         return ResponseEntity.ok(lessonService.getBusySlots(startDate, endDate));
     }
 
-    // teacher views a given student's lessons
+    /* teacher views a given student's lessons */
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/teacher/students/{studentId}/lessons")
     public ResponseEntity<List<LessonResponse>> getLessonsForStudentAsTeacher(@PathVariable Long studentId) {
         return ResponseEntity.ok(lessonService.getLessonsForStudent(studentId));
     }
 
-    // teacher edits an existing scheduled lesson's student/subject/date/time
+    /* teacher edits an existing scheduled lesson's student/subject/date/time */
     @PreAuthorize("hasRole('TEACHER')")
     @PutMapping("/teacher/lessons/{id}")
     public ResponseEntity<LessonResponse> updateLesson(
@@ -96,7 +98,7 @@ public class LessonController {
         return ResponseEntity.ok(lessonService.updateLesson(lessonId, request));
     }
 
-    // both roles can cancel: LessonService enforces that a student may only cancel their own lesson
+    /* both roles can cancel: LessonService enforces that a student may only cancel their own lesson */
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     @DeleteMapping("/lessons/{id}")
     public ResponseEntity<LessonResponse> cancelLesson(
@@ -105,15 +107,15 @@ public class LessonController {
         return ResponseEntity.ok(lessonService.cancelLesson(lessonId, caller.id(), caller.role()));
     }
 
-    // teacher marks a lesson as completed, so it counts toward the student's debt
+    /* teacher marks a lesson as completed, so it counts toward the student's debt */
     @PreAuthorize("hasRole('TEACHER')")
     @PatchMapping("/teacher/lessons/{id}/complete")
     public ResponseEntity<LessonResponse> completeLesson(@PathVariable("id") Long lessonId) {
         return ResponseEntity.ok(lessonService.completeLesson(lessonId));
     }
 
-    // teacher-only notes about a lesson - never exposed to the student (see
-    // LessonService.toResponse's includeNotes flag)
+    /* teacher-only notes about a lesson - never exposed to the student (see
+       LessonService.toResponse's includeNotes flag) */
     @PreAuthorize("hasRole('TEACHER')")
     @PatchMapping("/teacher/lessons/{id}/notes")
     public ResponseEntity<LessonResponse> updateLessonNotes(
@@ -122,8 +124,8 @@ public class LessonController {
         return ResponseEntity.ok(lessonService.updateLessonNotes(lessonId, request.notes()));
     }
 
-    // total price of lessons completed so far this calendar month - "revenue this month"
-    // means work actually done this month, not payments received this month
+    /* total price of lessons completed so far this calendar month - "revenue this month"
+       means work actually done this month, not payments received this month */
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/teacher/revenue/current-month")
     public ResponseEntity<BigDecimal> getCurrentMonthRevenue() {

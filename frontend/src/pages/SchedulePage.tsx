@@ -178,7 +178,6 @@ function SchedulePage() {
                 <div className="flex items-center justify-between flex-wrap gap-3">
                     <div>
                         <h1 className="text-2xl font-semibold text-slate-900">Schedule</h1>
-                        <p className="text-slate-500 mt-1">White = available, gray = unavailable, split = partly available within the hour, red = blocked, green = added, indigo = upcoming lesson, teal = completed lesson.</p>
                     </div>
                     <button
                         onClick={() => setShowRulesModal(true)}

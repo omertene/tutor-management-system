@@ -24,27 +24,29 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+/* study materials attached to a student (links, notes, or uploaded files).
+   adding/deleting is teacher-only; a student can read/download only their own */
 @RestController
 @RequiredArgsConstructor
 public class MaterialController {
 
     private final MaterialService materialService;
 
-    // teacher adds a link
+    /* teacher adds a link */
     @PreAuthorize("hasRole('TEACHER')")
     @PostMapping("/teacher/materials/link")
     public ResponseEntity<MaterialResponse> addLink(@RequestBody AddLinkRequest request) {
         return ResponseEntity.ok(materialService.addLink(request));
     }
 
-    // teacher adds a plain text note
+    /* teacher adds a plain text note */
     @PreAuthorize("hasRole('TEACHER')")
     @PostMapping("/teacher/materials/note")
     public ResponseEntity<MaterialResponse> addNote(@RequestBody AddNoteRequest request) {
         return ResponseEntity.ok(materialService.addNote(request));
     }
 
-    // teacher uploads a file.
+    /* teacher uploads a file. */
     @PreAuthorize("hasRole('TEACHER')")
     @PostMapping(value = "/teacher/materials/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MaterialResponse> uploadFile(
@@ -56,29 +58,29 @@ public class MaterialController {
         return ResponseEntity.ok(materialService.uploadFile(studentId, lessonId, title, description, file));
     }
 
-    // student views their own materials
+    /* student views their own materials */
     @PreAuthorize("hasRole('STUDENT')")
     @GetMapping("/student/materials")
     public ResponseEntity<List<MaterialResponse>> getOwnMaterials(@AuthenticationPrincipal AuthenticatedUser caller) {
         return ResponseEntity.ok(materialService.getMaterialsForStudent(caller.id()));
     }
 
-    // teacher views a given student's materials
+    /* teacher views a given student's materials */
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/teacher/students/{studentId}/materials")
     public ResponseEntity<List<MaterialResponse>> getMaterialsForStudent(@PathVariable Long studentId) {
         return ResponseEntity.ok(materialService.getMaterialsForStudent(studentId));
     }
 
-    // teacher views every material across every student - the default materials view
+    /* teacher views every material across every student - the default materials view */
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/teacher/materials")
     public ResponseEntity<List<MaterialResponse>> getAllMaterials() {
         return ResponseEntity.ok(materialService.getAllMaterials());
     }
 
-    // materials attached to a specific lesson - available to both roles, but a student
-    // may only view materials for their own lesson (enforced in MaterialService)
+    /* materials attached to a specific lesson - available to both roles, but a student
+       may only view materials for their own lesson */
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     @GetMapping("/lessons/{lessonId}/materials")
     public ResponseEntity<List<MaterialResponse>> getMaterialsForLesson(
@@ -87,22 +89,26 @@ public class MaterialController {
         return ResponseEntity.ok(materialService.getMaterialsForLesson(lessonId, caller.id(), caller.role()));
     }
 
-    // downloads a FILE-type material's actual bytes - a student may only download
-    // their own material (enforced in MaterialService)
+    /* downloads a FILE-type material's actual bytes - a student may only download
+       their own material */
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     @GetMapping("/materials/{id}/download")
     public ResponseEntity<byte[]> downloadFile(
             @PathVariable("id") Long materialId,
             @AuthenticationPrincipal AuthenticatedUser caller) {
+        /* fetches the raw entity (not just a response DTO) since we need the file
+           bytes, filename and content type, none of which belong on MaterialResponse */
         Material material = materialService.getMaterialEntity(materialId, caller.id(), caller.role());
 
+        /* tells the browser to save the file with its original name instead of
+           trying to render it inline (e.g. a PDF opening in-tab) */
         ContentDisposition contentDisposition = ContentDisposition.attachment()
                 .filename(material.getFileName(), java.nio.charset.StandardCharsets.UTF_8)
                 .build();
 
-        // the client's browser/HTTP client isn't guaranteed to send a content type on
-        // upload - MediaType.parseMediaType(null) throws, so fall back to a generic
-        // binary type rather than 500ing on an otherwise perfectly valid download
+        /* the client's browser/HTTP client isn't guaranteed to send a content type on
+           upload - MediaType.parseMediaType(null) throws, so fall back to a generic
+           binary type rather than 500ing on an otherwise perfectly valid download */
         String contentType = material.getContentType() != null
                 ? material.getContentType()
                 : MediaType.APPLICATION_OCTET_STREAM_VALUE;
@@ -113,6 +119,7 @@ public class MaterialController {
                 .body(material.getData());
     }
 
+    /* teacher deletes a material (link, note, or file) */
     @PreAuthorize("hasRole('TEACHER')")
     @DeleteMapping("/teacher/materials/{id}")
     public ResponseEntity<Void> deleteMaterial(@PathVariable("id") Long materialId) {

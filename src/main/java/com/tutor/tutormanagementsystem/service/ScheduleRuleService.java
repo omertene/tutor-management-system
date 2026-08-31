@@ -63,7 +63,6 @@ public class ScheduleRuleService {
                 .toList();
     }
 
-
     /* Counts how many future scheduled lessons will lose their recurring time slot if this rule is deleted */
     public long countUpcomingLessonsAffectedByDeletion(Long ruleId) {
         ScheduleRule rule = scheduleRuleRepository.findById(ruleId)

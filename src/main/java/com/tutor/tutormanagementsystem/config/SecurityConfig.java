@@ -16,8 +16,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+/* security setup: password hashing, CORS, and the JWT-based (stateless) filter chain */
 @Configuration
-@EnableMethodSecurity // turns on @PreAuthorize checks on controller methods
+@EnableMethodSecurity /* turns on @PreAuthorize checks on controller methods */
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
@@ -26,12 +27,14 @@ public class SecurityConfig {
         this.jwtAuthFilter = jwtAuthFilter;
     }
 
+    /* BCrypt is the standard choice for password hashing - it's salted and slow
+       on purpose, which makes brute-forcing stolen hashes much harder */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // allows the React dev server (a different origin/port) to call this API
+    /* allows the React dev server (a different origin/port) to call this API */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
@@ -44,18 +47,20 @@ public class SecurityConfig {
         return source;
     }
 
+    /* the actual security rules: stateless sessions, open /auth/**, JWT filter runs before Spring's default one */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> {}) // tells Spring Security to use the corsConfigurationSource bean above
-                // no sessions, so no csrf needed
-                .csrf(csrf -> csrf.disable())
+                .cors(cors -> {}) /* use the corsConfigurationSource bean above */
+                .csrf(csrf -> csrf.disable()) /* no sessions, so no csrf needed */
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll() // login and register don't need a token
+                        .requestMatchers("/auth/**").permitAll() /* login and register don't need a token */
                         .anyRequest().authenticated()
                 )
+                /* run our JWT check before Spring's default auth filter, so by the
+                   time that filter runs, the user is already authenticated (or not) */
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -15,14 +15,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
-// checks the Authorization header on every request and logs the user in
-// for that request if the token is valid
+/* runs once per request, checks the Authorization header and logs the user
+   in (via the SecurityContext) if the token is valid. registered before
+   Spring's own auth filter in SecurityConfig. */
 @RequiredArgsConstructor
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
 
+    /* if the token is missing/invalid we just continue unauthenticated -
+       SecurityConfig's authorization rules are what actually reject with a 401 */
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
@@ -32,13 +35,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // no token or wrong format - let it pass through as unauthenticated
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authHeader.substring(7); // remove "Bearer "
+        String token = authHeader.substring(7); /* remove "Bearer " */
 
         if (jwtService.isTokenValid(token)) {
             Long userId = jwtService.extractUserId(token);
@@ -47,7 +49,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             AuthenticatedUser principal = new AuthenticatedUser(userId, email, role);
 
-            // "ROLE_" prefix needed for hasRole()/@PreAuthorize
+            /* "ROLE_" prefix is needed for hasRole()/@PreAuthorize */
             List<SimpleGrantedAuthority> authorities =
                     List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
 

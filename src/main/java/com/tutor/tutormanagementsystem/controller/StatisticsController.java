@@ -14,15 +14,18 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.List;
 
+/* teacher-only reporting endpoints that back the statistics dashboard - revenue,
+   lesson counts, etc. all the actual number-crunching happens in
+   StatisticsService, this just validates/shapes the incoming date range. */
 @RestController
 @RequiredArgsConstructor
 public class StatisticsController {
 
     private final StatisticsService statisticsService;
 
-    // unified statistics dashboard - startDate/endDate define the KPI/table
-    // timeframe (the frontend resolves "this month", "this year", or "all time"
-    // into concrete dates before calling this), subjectId is optional
+    /* unified statistics dashboard - startDate/endDate define the KPI/table
+       timeframe (the frontend resolves "this month", "this year", or "all time"
+       into concrete dates before calling this), subjectId is optional */
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/teacher/statistics/dashboard")
     public ResponseEntity<DashboardStatisticsResponse> getDashboardStatistics(
@@ -33,8 +36,8 @@ public class StatisticsController {
                 new DashboardStatisticsRequest(startDate, endDate, subjectId)));
     }
 
-    // every year that has at least one completed lesson - populates the dashboard's
-    // year picker so an empty year is never offered
+    /* every year that has at least one completed lesson - populates the dashboard's
+       year picker so an empty year is never offered */
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/teacher/statistics/years")
     public ResponseEntity<List<Integer>> getYearsWithData() {
