@@ -22,6 +22,10 @@ const lessonBlockStyles: Record<string, string> = {
     COMPLETED: "bg-blue-100 hover:bg-blue-200",
 };
 
+/* Shown for a slot that's otherwise open but falls inside the minimum booking
+   notice - kept in one place so the tooltip and the click message always match */
+const tooSoonMessage = `Lessons must be booked at least ${STUDENT_MIN_BOOKING_NOTICE_HOURS} hours in advance. Please contact your teacher directly for anything sooner.`;
+
 /* Student-facing weekly schedule: shows the teacher's availability, other
    students' booked slots (grayed out), and this student's own lessons.
    Clicking an open slot books a lesson, clicking your own lesson lets you view
@@ -117,6 +121,15 @@ function StudentScheduleGrid() {
         return cellStart < minBookingTime;
     }
 
+    /* A slot that has already started/passed is just unavailable, not "too soon" -
+       the too-soon tooltip/message is only for the future side of the notice window */
+    function isCellInThePast(dayIndex: number, hour: number, startTime?: string): boolean {
+        const [startHour, startMinute] = startTime ? startTime.split(":").map(Number) : [hour, 0];
+        const cellStart = new Date(weekDates[dayIndex]);
+        cellStart.setHours(startHour, startMinute, 0, 0);
+        return cellStart < now;
+    }
+
     /* Opens the booking form only when part of the hour is actually bookable - a
        student can't add availability like a teacher can, so a fully unavailable
        cell does nothing. A partially-available cell (rule starts at 08:15) still
@@ -128,7 +141,11 @@ function StudentScheduleGrid() {
         if (!availableRun) return;
 
         const startTime = quarterRunStartTime(hour, availableRun.startQuarter);
-        if (isCellTooSoonToBook(dayIndex, hour, startTime)) return;
+        if (isCellInThePast(dayIndex, hour, startTime)) return;
+        if (isCellTooSoonToBook(dayIndex, hour, startTime)) {
+            alert(tooSoonMessage);
+            return;
+        }
 
         setBookingSlot({
             date: dayDateString(weekDates, dayIndex),
@@ -174,13 +191,15 @@ function StudentScheduleGrid() {
                             const runStartTime = availableRun
                                 ? quarterRunStartTime(hour, availableRun.startQuarter)
                                 : undefined;
-                            const isTooSoon = availableRun !== null && isCellTooSoonToBook(dayIndex, hour, runStartTime);
+                            const isPast = availableRun !== null && isCellInThePast(dayIndex, hour, runStartTime);
+                            const isTooSoon = !isCovered && !isPast && availableRun !== null && isCellTooSoonToBook(dayIndex, hour, runStartTime);
                             const isClickable = !isCovered && availableRun !== null && !isTooSoon;
 
                             return (
                                 <button
                                     key={hour}
                                     onClick={() => handleCellClick(dayIndex, hour)}
+                                    title={isTooSoon ? tooSoonMessage : undefined}
                                     style={{
                                         height: `${ROW_HEIGHT}px`,
                                         boxSizing: "border-box",
@@ -188,12 +207,14 @@ function StudentScheduleGrid() {
                                     }}
                                     className={`block w-full border-b border-slate-300 transition-colors select-none ${
                                         allCovered
-                                            ? `bg-white ${isClickable ? "hover:bg-slate-50 cursor-pointer" : "cursor-default"}`
+                                            ? `bg-white ${isClickable ? "hover:bg-slate-50 cursor-pointer" : isTooSoon ? "cursor-help" : "cursor-default"}`
                                             : noneCovered
                                                 ? "bg-slate-200 cursor-default"
                                                 : isClickable
                                                     ? "hover:brightness-95 cursor-pointer"
-                                                    : "cursor-default"
+                                                    : isTooSoon
+                                                        ? "cursor-help"
+                                                        : "cursor-default"
                                     }`}
                                 />
                             );

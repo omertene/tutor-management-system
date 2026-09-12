@@ -69,7 +69,14 @@ public class LessonService {
                     "Lessons must be booked at least " + STUDENT_MIN_BOOKING_NOTICE_HOURS + " hours in advance");
         }
 
-        LessonResponse response = createLesson(student, request.subjectId(), request.date(), request.startTime(), request.endTime());
+        LessonResponse response;
+        try {
+            response = createLesson(student, request.subjectId(), request.date(), request.startTime(), request.endTime());
+        } catch (SlotNotAvailableException e) {
+            /* Don't let a student learn that another student has a lesson booked here -
+               "already booked" and "outside working hours" must look identical to them */
+            throw new SlotNotAvailableException("This time is not available");
+        }
 
         /* Send email notification to teacher only when student books by themselves */
         notifyTeacherOfNewBooking(response);
