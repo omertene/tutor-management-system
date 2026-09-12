@@ -1,7 +1,11 @@
 import { useState } from "react";
+import ListPager from "../ListPager";
+import { usePagination } from "../../hooks/usePagination";
 import { formatShortDateString, formatTimeOfDay } from "../../utils/time";
 import { formatRelativeLessonDate, statusStyles, studentStatusLabels, STUDENT_MIN_CANCEL_NOTICE_HOURS } from "../../types/lesson";
 import type { Lesson } from "../../types/lesson";
+
+const LESSONS_PER_PAGE = 10;
 
 /* What the student sees instead of the teacher's single filterable table:
    their next lessons first, then history, with canceled ones tucked away
@@ -26,6 +30,16 @@ export default function StudentLessonSections({
 }: StudentLessonSectionsProps) {
     const [showCancelledLessons, setShowCancelledLessons] = useState(false);
 
+    const {
+        page: upcomingPage, totalPages: upcomingTotalPages,
+        visibleItems: visibleUpcoming, setPage: setUpcomingPage,
+    } = usePagination(upcoming, LESSONS_PER_PAGE);
+
+    const {
+        page: completedPage, totalPages: completedTotalPages,
+        visibleItems: visibleCompleted, setPage: setCompletedPage,
+    } = usePagination(completed, LESSONS_PER_PAGE);
+
     return (
         <div className="mt-8 flex flex-col gap-8">
             <div>
@@ -34,7 +48,7 @@ export default function StudentLessonSections({
                     {upcoming.length === 0 && (
                         <p className={emptyClass}>No upcoming lessons. Book one from the Schedule tab!</p>
                     )}
-                    {upcoming.map((lesson) => (
+                    {visibleUpcoming.map((lesson) => (
                         <div key={lesson.id} className={rowClass}>
                             <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-medium text-slate-900">
@@ -58,6 +72,15 @@ export default function StudentLessonSections({
                         </div>
                     ))}
                 </div>
+                {upcoming.length > 0 && (
+                    <ListPager
+                        page={upcomingPage}
+                        totalPages={upcomingTotalPages}
+                        totalItems={upcoming.length}
+                        perPage={LESSONS_PER_PAGE}
+                        onChange={setUpcomingPage}
+                    />
+                )}
             </div>
 
             <div>
@@ -66,7 +89,7 @@ export default function StudentLessonSections({
                     {completed.length === 0 && (
                         <p className={emptyClass}>No completed lessons yet.</p>
                     )}
-                    {completed.map((lesson) => (
+                    {visibleCompleted.map((lesson) => (
                         <div key={lesson.id} className={rowClass}>
                             <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-medium text-slate-900">
@@ -81,6 +104,15 @@ export default function StudentLessonSections({
                         </div>
                     ))}
                 </div>
+                {completed.length > 0 && (
+                    <ListPager
+                        page={completedPage}
+                        totalPages={completedTotalPages}
+                        totalItems={completed.length}
+                        perPage={LESSONS_PER_PAGE}
+                        onChange={setCompletedPage}
+                    />
+                )}
             </div>
 
             {cancelled.length > 0 && (
