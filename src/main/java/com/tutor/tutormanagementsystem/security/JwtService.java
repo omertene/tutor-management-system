@@ -11,7 +11,7 @@ import javax.crypto.SecretKey;
 import java.util.Base64;
 import java.util.Date;
 
-/* creates and validates the JWTs - the only place that knows about jjwt itself */
+/* creates and validates the JWTs - the only place that knows about jwt itself */
 @Service
 public class JwtService {
 
