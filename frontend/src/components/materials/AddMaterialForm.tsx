@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { apiFetch, readErrorMessage } from "../../utils/api";
+import { apiFetch, readErrorMessage, SessionExpiredError } from "../../utils/api";
 import { inputClass, labelClass, primaryButtonClass } from "../../constants/formStyles";
 import { formatDateAndTime } from "../../utils/time";
 import type { Material, MaterialLesson, MaterialType } from "../../types/material";
@@ -10,7 +10,7 @@ import type { Student } from "../../types";
    that type needs. */
 
 /* max lessons shown in the "attach to lesson" dropdown */
-const LESSON_PICKER_LIMIT = 50;
+const LESSON_PICKER_LIMIT = 15;
 
 type AddMaterialFormProps = {
     students: Student[];
@@ -69,30 +69,41 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
 
         let response: Response;
 
-        if (addType === "FILE") {
-            if (!file) {
-                onError("Choose a file first");
-                return;
+        try {
+            if (addType === "FILE") {
+                if (!file) {
+                    onError("Choose a file first");
+                    return;
+                }
+                const formData = new FormData();
+                formData.append("studentId", studentId);
+                if (lessonId) formData.append("lessonId", lessonId);
+                formData.append("title", title);
+                formData.append("description", description);
+                formData.append("file", file);
+
+                response = await apiFetch(`/teacher/materials/file`, { method: "POST", body: formData });
+            } else {
+                const path = addType === "LINK" ? "/teacher/materials/link" : "/teacher/materials/note";
+                const body: Record<string, unknown> = {
+                    studentId: Number(studentId),
+                    lessonId: lessonId ? Number(lessonId) : null,
+                    title,
+                    description,
+                };
+                if (addType === "LINK") body.url = url;
+
+                response = await apiFetch(path, { method: "POST", body: JSON.stringify(body) });
             }
-            const formData = new FormData();
-            formData.append("studentId", studentId);
-            if (lessonId) formData.append("lessonId", lessonId);
-            formData.append("title", title);
-            formData.append("description", description);
-            formData.append("file", file);
-
-            response = await apiFetch(`/teacher/materials/file`, { method: "POST", body: formData });
-        } else {
-            const path = addType === "LINK" ? "/teacher/materials/link" : "/teacher/materials/note";
-            const body: Record<string, unknown> = {
-                studentId: Number(studentId),
-                lessonId: lessonId ? Number(lessonId) : null,
-                title,
-                description,
-            };
-            if (addType === "LINK") body.url = url;
-
-            response = await apiFetch(path, { method: "POST", body: JSON.stringify(body) });
+        } catch (e) {
+            /* apiFetch throws SessionExpiredError on its way to redirecting to
+               /login - let that pass through instead of showing a pointless
+               error banner right before the page navigates away. Anything else
+               here is the request itself failing (e.g. connection reset by a
+               file too large for the server to even respond with a clean 413) */
+            if (e instanceof SessionExpiredError) throw e;
+            onError("Upload failed - the file may be too large, or the connection was interrupted");
+            return;
         }
 
         if (!response.ok) {
