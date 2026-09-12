@@ -43,6 +43,10 @@ public class PaymentService {
             throw new InvalidRequestDataException("Payment method is required");
         }
 
+        /* A payment can't be dated after today - it records money already received */
+        if (request.paymentDate() != null && request.paymentDate().isAfter(LocalDate.now())) {
+            throw new InvalidRequestDataException("Payment date can't be in the future");
+        }
 
         Student student = studentService.getStudentEntity(request.studentId());
 
@@ -70,6 +74,11 @@ public class PaymentService {
 
         if (request.method() == null) {
             throw new InvalidRequestDataException("Payment method is required");
+        }
+
+        /* A payment can't be dated after today - it records money already received */
+        if (request.paymentDate() != null && request.paymentDate().isAfter(LocalDate.now())) {
+            throw new InvalidRequestDataException("Payment date can't be in the future");
         }
 
         /* Locate target payment */
