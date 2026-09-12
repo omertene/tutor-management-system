@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import AddStudentModal from "../components/AddStudentModal";
 import StudentRow from "../components/students/StudentRow";
@@ -39,11 +38,7 @@ function RegisterPage() {
             <NavBar homePath="/teacher" links={teacherLinks} />
 
             <main className="max-w-4xl mx-auto px-4 py-8">
-                <Link to="/teacher" className="text-sm text-indigo-600 hover:text-indigo-700">
-                    &larr; Back
-                </Link>
-
-                <h1 className="text-2xl font-semibold text-slate-900 mt-2">Students</h1>
+                <h1 className="text-2xl font-semibold text-slate-900">Students</h1>
 
                 <div className="mt-6">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
