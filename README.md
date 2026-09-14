@@ -1,75 +1,67 @@
-# Tutor Management System
+# TutorHub
 
-A full-stack app for a private tutor to manage students, lesson scheduling, payments, and
-study materials. 
+A full-stack web app for a private tutor to manage students, lesson scheduling, payments, and study materials — built end-to-end as a portfolio project: REST API, relational schema, JWT auth, async messaging, and a React frontend.
 
-Stack: Spring Boot (Java 17) + PostgreSQL on the backend, React + TypeScript (Vite) on the
-frontend.
+**Stack:** Spring Boot 4 (Java 17) · PostgreSQL · Spring Security (JWT) · JMS (embedded ActiveMQ Artemis) · React 19 + TypeScript · Tailwind CSS · Vite
 
-## Running it
+![Login screen](docs/screenshots/login.png)
+
+## Features
+
+- **Auth** — JWT-based login with two roles (teacher / student). No public sign-up; only the teacher can create student accounts. Login attempts are rate-limited per email to block brute-force attempts.
+- **Scheduling** — a weekly grid combining recurring availability rules with one-off overrides (block or open a specific slot). Either the teacher or the student can book a lesson; bookings are protected against double-booking with a database-level lock, not just an application-level check.
+- **Lessons** — booking, editing, cancellation (with a minimum-notice window for students), and completion — the trigger that turns a lesson into billable debt. Each lesson snapshots its price at booking time, so a later rate change never rewrites history.
+- **Payments** — the teacher records payments per student; outstanding debt is computed from completed lessons minus payments, viewable per-student or as a full list.
+- **Study materials** — the teacher shares files, links, or notes with a student, optionally tied to a specific lesson. File uploads are stored as binary data in Postgres.
+- **Statistics** — revenue, lesson volume, and debt overview for the teacher, with charts.
+- **Email reminders** — an async job scans for upcoming lessons and emails students ahead of time, respecting quiet hours.
+
+![Weekly schedule grid — recurring availability, overrides, and booked lessons in one view](docs/screenshots/schedule.png)
+
+![Statistics dashboard — revenue, hours, and per-subject breakdown](docs/screenshots/statistics.png)
+
+## Architecture
+
+**Backend** follows a strict layered structure — `Controller → Service → Repository` — with one hard rule: a service never reaches into another domain's repository directly, it goes through that domain's service. A few packages break the "one folder per layer" pattern on purpose, because they're cross-cutting infrastructure rather than another feature slice:
+
+- `security/` — JWT creation and validation, the request filter that populates the security context on every call, and a per-email login rate limiter.
+- `jms/` — the async reminder pipeline: a scheduled producer that queues lesson IDs needing a reminder, and a listener that sends the email and marks it sent (only after a successful send, so a transient failure retries on the next scan instead of silently dropping).
+- `exception/` — every domain error carries its own HTTP status, so a single `@RestControllerAdvice` handler maps all of them without a switch statement; framework-level exceptions (bad JSON, oversized uploads, auth failures, optimistic-lock conflicts) each get one explicit handler.
+- `config/` — Spring wiring (security filter chain, CORS, initial teacher account seeding).
+
+DTOs (Java records) are strictly separate from JPA entities — nothing entity-shaped crosses the controller boundary, and a couple of DTOs conditionally omit fields depending on who's asking (a student never sees a teacher's private lesson notes, for instance).
+
+**Frontend** mirrors the same layering: pages are thin (layout only), hooks own state and talk to the API (the "service layer"), and components are pure presentation driven by props. A component lives in a feature subfolder only if it's used by exactly one page; anything reused across pages, or generic UI (modal shell, pager, nav), stays at the top level.
+
+**Concurrency & data integrity**
+
+- Two people booking the same slot at once is resolved with a Postgres advisory lock scoped to the transaction and keyed by date — not just an in-memory or optimistic check — so the database itself serializes the conflicting writes.
+- `@Version` optimistic locking on lessons and payments returns a clean 409 instead of silently overwriting a concurrent edit.
+- Lessons and payments are soft-deleted (status flag) to preserve history for statistics; materials are hard-deleted since there's nothing to retain.
+
+## Known trade-offs
+
+A few read paths (weekly-slot lesson counts, per-student debt totals) load full tables and filter in Java rather than pushing the filtering into the query, and `@ManyToOne`/`@OneToOne` associations default to eager fetching. At the data volume a single tutor's practice generates, this stays simple and readable without a measurable cost; the one genuinely hot path — fetching busy slots on every schedule page load — is scoped to the visible date range rather than the full lesson history. Documented as a deliberate choice, not an oversight, with the fix already scoped if the data volume ever changes.
+
+## Running it locally
 
 **Backend**
 
-1. Create a Postgres database matching `spring.datasource.url` in
-   `src/main/resources/application.properties` (defaults to `tutor_db2` on `localhost:5432`).
-2. Copy `.env.example` to `.env` (or otherwise set the environment variables it lists) with
-   real values for your database credentials and JWT secret.
-3. Run `./mvnw spring-boot:run` (or run `TutorManagementSystemApplication` from your IDE).
-4. On first startup, a teacher account is auto-created using the `teacher.seed.email` /
-   `teacher.seed.password` values.
+```bash
+# 1. Create a Postgres database matching spring.datasource.url in
+#    src/main/resources/application.properties
+# 2. Copy .env.example to .env and fill in real values (DB credentials, JWT secret, mail credentials)
+./mvnw spring-boot:run
+```
 
-Tables are created/updated automatically (`spring.jpa.hibernate.ddl-auto=update`) — no manual
-migration step needed for a fresh database.
+Tables are created/updated automatically on startup (`ddl-auto=update`); a teacher account is seeded from the `.env` values on first run.
 
 **Frontend**
 
-```
+```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Runs on `http://localhost:5173`, calling the backend at `http://localhost:8080`.
-
-## Features
-
-- **Auth** — JWT-based login, two roles (TEACHER / STUDENT). Only the teacher can register
-  new student accounts; there's no public sign-up.
-- **Subjects** — the teacher defines subjects (e.g. "Math") that lessons are booked under.
-- **Availability** — recurring weekly schedule rules (e.g. "available Mondays 9–17") combined
-  with one-off overrides (block or add availability on a specific date) to determine what's
-  bookable.
-- **Lessons** — either party can book (teacher for a student, or a student for themselves),
-  protected against double-booking. Lessons can be cancelled by either party, or marked
-  completed by the teacher, which is what feeds debt tracking.
-- **Payments** — the teacher records payments against a student; outstanding debt is
-  calculated automatically and viewable per-student or as a full list.
-- **Materials** — the teacher shares files, links, or plain-text notes with a student,
-  optionally tied to a specific lesson.
-- **Student roster** — the teacher can edit a student's profile and deactivate/reactivate a
-  student without losing their history.
-- **Statistics** — revenue, lesson counts, and a debt overview for the teacher.
-- **Email reminders** — students are notified ahead of upcoming lessons.
-
-## Architecture
-
-- **Controller → Service → Repository** layering throughout, with a consistent rule that a
-  service never reaches into another domain's repository directly — it goes through that
-  domain's service instead.
-- **DTOs (Java records)** separate the API surface from JPA entities; entities never cross the
-  controller boundary.
-- **A single global exception handler** maps every domain-specific error to a proper HTTP
-  status code.
-- **Secrets** (DB credentials, JWT signing key) are read from environment variables rather
-  than committed to source.
-
-## Known trade-offs
-
-A few read paths in `LessonService`/`PaymentService` (e.g. counting lessons in a weekly slot,
-computing every student's debt) load full tables via `findAll()`/`Student` lists and filter or
-aggregate in Java rather than pushing the filtering into the query, and `@ManyToOne`/`@OneToOne`
-associations default to eager fetching, so listing lessons can trigger extra per-row queries.
-At one tutor's data volume this doesn't matter and the derived-query style stays readable;
-`getBusySlots` — the one hot path a student hits on every schedule page load — has been scoped
-to a date range instead of loading every lesson ever booked, but the rest are left as-is
-pending real scale.
+Runs at `http://localhost:5173`, calling the backend at `http://localhost:8080`.
