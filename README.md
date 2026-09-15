@@ -39,9 +39,6 @@ DTOs (Java records) are strictly separate from JPA entities — nothing entity-s
 - `@Version` optimistic locking on lessons and payments returns a clean 409 instead of silently overwriting a concurrent edit.
 - Lessons and payments are soft-deleted (status flag) to preserve history for statistics; materials are hard-deleted since there's nothing to retain.
 
-## Known trade-offs
-
-A few read paths (weekly-slot lesson counts, per-student debt totals) load full tables and filter in Java rather than pushing the filtering into the query, and `@ManyToOne`/`@OneToOne` associations default to eager fetching. At the data volume a single tutor's practice generates, this stays simple and readable without a measurable cost; the one genuinely hot path — fetching busy slots on every schedule page load — is scoped to the visible date range rather than the full lesson history. Documented as a deliberate choice, not an oversight, with the fix already scoped if the data volume ever changes.
 
 ## Running it locally
 

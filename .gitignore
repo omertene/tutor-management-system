@@ -10,7 +10,7 @@ src/main/resources/application.properties
 
 
 # local draft docs / screenshots - not meant to be shared/committed
-docs/
+
 pictures/
 !**/src/main/**/target/
 !**/src/test/**/target/
