@@ -6,7 +6,6 @@ target/
 .env
 
 # real secrets (DB password, JWT key, seed teacher password) -
-src/main/resources/application.properties
 
 
 # local draft docs / screenshots - not meant to be shared/committed

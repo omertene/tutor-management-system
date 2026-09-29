@@ -35,9 +35,9 @@ public class SecurityConfig {
 
     /* allows the React dev server (a different origin/port) to call this API */
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(@org.springframework.beans.factory.annotation.Value("${cors.allowed-origins}") String allowedOrigins) {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedOrigins(List.of(allowedOrigins.split(",")));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
         config.setAllowedHeaders(List.of("*"));
 
