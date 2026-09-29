@@ -92,7 +92,13 @@ public class LessonService {
                 + " at " + lesson.startTime().format(NOTIFICATION_TIME_FORMAT) + "-"
                 + lesson.endTime().format(NOTIFICATION_TIME_FORMAT) + ".";
 
-        emailService.sendEmail(teacherNotificationEmail, subject, body);
+        /* a failed notification must never break the booking itself */
+        try {
+            emailService.sendEmail(teacherNotificationEmail, subject, body);
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(LessonService.class)
+                    .error("Failed to send booking notification email", e);
+        }
     }
 
 
