@@ -1,5 +1,6 @@
 package com.tutor.tutormanagementsystem.service;
 
+import com.tutor.tutormanagementsystem.config.DemoMode;
 import com.tutor.tutormanagementsystem.dto.AddLinkRequest;
 import com.tutor.tutormanagementsystem.dto.AddNoteRequest;
 import com.tutor.tutormanagementsystem.dto.MaterialResponse;
@@ -32,6 +33,7 @@ public class MaterialService {
     private final MaterialRepository materialRepository;
     private final StudentService studentService;
     private final LessonService lessonService;
+    private final DemoMode demoMode;
 
 
     /* Returns all learning materials belonging to a specific student using DB projection */
@@ -112,6 +114,8 @@ public class MaterialService {
     /* Teacher uploads a binary file for a student, optionally tied to a lesson */
     @Transactional
     public MaterialResponse uploadFile(Long studentId, Long lessonId, String title, String description, MultipartFile file) {
+        /* files are stored inside the database, so in demo mode they are refused to protect its free storage limit */
+        demoMode.blockInDemo("Uploading files");
 
         if (title == null || title.isBlank()) {
             throw new InvalidMaterialException("Title is required");
