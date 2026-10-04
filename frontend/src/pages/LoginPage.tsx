@@ -4,6 +4,17 @@ import { useEffect, useState } from "react";
 import { API_BASE_URL, readErrorMessage } from "../utils/api";
 import type { LoginResponse } from "../types";
 
+/* Optional contact line under the form. Set VITE_CONTACT_PHONE (e.g. in the Vercel
+   dashboard) to show it; when it is not set the line is hidden, so no phone number
+   has to live in the code or in git. */
+const CONTACT_PHONE: string | undefined = import.meta.env.VITE_CONTACT_PHONE || undefined;
+
+/* wa.me links want international digits only: an Israeli 05X number becomes 9725X... */
+function whatsappDigits(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  return digits.startsWith("0") ? "972" + digits.slice(1) : digits;
+}
+
 /* The login screen - one form for both roles, redirects to the right
    dashboard based on the role the backend returns */
 function LoginPage() {
@@ -170,19 +181,21 @@ function LoginPage() {
             )}
           </div>
 
-          <p className="text-sm text-slate-500 text-center mt-4">
-            Need help? Contact me: 050-000-0000{" "}
-            (
-            <a
-              href="https://wa.me/972500000000"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-indigo-600 hover:text-indigo-700 font-medium"
-            >
-              WhatsApp
-            </a>
-            )
-          </p>
+          {CONTACT_PHONE && (
+            <p className="text-sm text-slate-500 text-center mt-4">
+              Need help? Contact me: {CONTACT_PHONE}{" "}
+              (
+              <a
+                href={`https://wa.me/${whatsappDigits(CONTACT_PHONE)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-600 hover:text-indigo-700 font-medium"
+              >
+                WhatsApp
+              </a>
+              )
+            </p>
+          )}
         </div>
       </div>
     </div>
