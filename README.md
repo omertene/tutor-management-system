@@ -6,6 +6,13 @@ A full-stack web app for a private tutor to manage students, lesson scheduling, 
 
 ![Login screen](docs/screenshots/login.png)
 
+## Live demo
+
+**https://tutor-management-system-pied.vercel.app** - click **Try demo** on the login screen to explore the teacher dashboard with sample data. No account needed.
+
+- It runs on free hosting (Vercel, Render, Neon), so the first request after a quiet period can take up to a minute while the backend wakes up.
+- It is a shared sandbox: anyone can edit the data. In demo mode, file uploads and changing the account email or password are disabled.
+
 ## Features
 
 - **Auth** — JWT-based login with two roles (teacher / student). No public sign-up; only the teacher can create student accounts. Login attempts are rate-limited per email to block brute-force attempts.
@@ -62,3 +69,20 @@ npm run dev
 ```
 
 Runs at `http://localhost:5173`, calling the backend at `http://localhost:8080`.
+
+## Deployment
+
+The live demo runs entirely on free tiers: the frontend on Vercel (root directory `frontend`), the backend on Render (Docker, see `Dockerfile`) and PostgreSQL on Neon. A push to `main` redeploys both.
+
+Configuration comes only from environment variables (see `.env.example`):
+
+| Where | Variable | Purpose |
+| --- | --- | --- |
+| Backend | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | Postgres connection |
+| Backend | `JWT_SECRET` | signs login tokens |
+| Backend | `TEACHER_SEED_EMAIL`, `TEACHER_SEED_PASSWORD` | the teacher account created on first start |
+| Backend | `CORS_ALLOWED_ORIGINS` | the frontend's address |
+| Backend | `DEMO_ENABLED` | `true` turns on the "Try demo" button (passwordless teacher sign-in). Leave it off for any site that holds real data |
+| Backend | `BREVO_API_KEY`, `BREVO_SENDER_EMAIL` | optional: send email over HTTPS where SMTP is blocked (otherwise Gmail SMTP is used) |
+| Frontend | `VITE_API_URL` | the backend's address |
+| Frontend | `VITE_CONTACT_PHONE` | optional contact line on the login screen; hidden when unset |
