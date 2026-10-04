@@ -25,4 +25,10 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+
+    /* "Try demo" button: signs in as the teacher without a password. 404 unless DEMO_ENABLED=true. */
+    @PostMapping("/demo/teacher")
+    public ResponseEntity<LoginResponse> demoTeacherLogin() {
+        return ResponseEntity.ok(authService.demoTeacherLogin());
+    }
 }

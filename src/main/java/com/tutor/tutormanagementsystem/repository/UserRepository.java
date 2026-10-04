@@ -17,4 +17,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     /* Checks if an account with a specific role exists.
        Used by seeders to prevent duplicate admin/teacher creation */
     boolean existsByRole(Role role);
+
+    /* the first account with a given role - used by demo login to find the single teacher */
+    Optional<User> findFirstByRole(Role role);
 }
