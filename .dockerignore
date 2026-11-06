@@ -1,5 +1,19 @@
-target
-frontend
+# version control and IDE
 .git
 .idea
+
+# build output (we build fresh inside the container)
+target
+
+# the frontend is not part of the backend image
+frontend
+
+# secrets must never be baked into an image
+.env
+
+# docs and leftovers
 docs
+*.md
+Claude outputs
+Dockerfile.old
+.dockerignore.old
