@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16
+    restart: unless-stopped
     environment:
       POSTGRES_DB: tutor_db
       POSTGRES_USER: ${DB_USERNAME}
@@ -10,6 +11,7 @@ services:
 
   backend:
     build: .
+    restart: unless-stopped
     depends_on:
       - postgres
     environment:
@@ -28,10 +30,9 @@ services:
       context: ./frontend
       args:
         VITE_API_URL: /api
+    restart: unless-stopped
     depends_on:
       - backend
-    ports:
-      - "${WEB_PORT:-80}:80"
 
 volumes:
   postgres_data:
