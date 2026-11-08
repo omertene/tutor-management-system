@@ -1,6 +1,6 @@
 
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { API_BASE_URL, readErrorMessage } from "../utils/api";
 import type { LoginResponse } from "../types";
 
@@ -24,18 +24,7 @@ function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  /* true only when the backend has demo mode switched on - decides if the "Try demo" button shows */
-  const [demoEnabled, setDemoEnabled] = useState(false);
-
-  /* asks the backend once on load; any failure just means no demo button */
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/auth/demo/status`)
-      .then((response) => (response.ok ? response.json() : { enabled: false }))
-      .then((data) => setDemoEnabled(data.enabled === true))
-      .catch(() => setDemoEnabled(false));
-  }, []);
-
-  /* Stores the token and redirects based on role - shared by the normal login and the demo button */
+  /* Stores the token and redirects based on role - used after a successful login */
   function finishLogin(data: LoginResponse) {
     localStorage.setItem("token", data.token);
     if (data.role === "TEACHER") {
@@ -60,21 +49,6 @@ function LoginPage() {
     }
 
     finishLogin(await response.json());
-  }
-
-  /* "Try demo": signs in as the teacher with no password (only works while demo mode is on) */
-  async function handleDemoLogin() {
-    setErrorMessage("");
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/demo/teacher`, { method: "POST" });
-      if (!response.ok) {
-        setErrorMessage(await readErrorMessage(response, "The demo is not available right now"));
-        return;
-      }
-      finishLogin(await response.json());
-    } catch {
-      setErrorMessage("Could not reach the server. It may be waking up - try again in a minute.");
-    }
   }
 
   return (
@@ -164,21 +138,6 @@ function LoginPage() {
                 Log in
               </button>
             </form>
-
-            {demoEnabled && (
-              <div className="mt-4 pt-4 border-t border-slate-200">
-                <button
-                  type="button"
-                  onClick={handleDemoLogin}
-                  className="w-full rounded-lg border border-indigo-600 text-indigo-600 text-sm font-medium py-2.5 hover:bg-indigo-50 transition-colors"
-                >
-                  Try demo
-                </button>
-                <p className="text-xs text-slate-500 text-center mt-2">
-                  Explore the teacher dashboard with sample data - no account needed.
-                </p>
-              </div>
-            )}
           </div>
 
           {CONTACT_PHONE && (
