@@ -4,14 +4,13 @@ A full-stack web app for a private tutor to manage students, lesson scheduling, 
 
 **Stack:** Spring Boot 4 (Java 17) · PostgreSQL · Spring Security (JWT) · JMS (embedded ActiveMQ Artemis) · React 19 + TypeScript · Tailwind CSS · Vite
 
+**Infrastructure:** Docker (multi-stage builds) · Docker Compose · nginx · Caddy (automatic HTTPS) · AWS EC2 + S3 · Cloudflare DNS
+
 ![Login screen](docs/screenshots/login.png)
 
-## Live demo
+## Live
 
-**https://tutor-management-system-pied.vercel.app** - click **Try demo** on the login screen to explore the teacher dashboard with sample data. No account needed.
-
-- It runs on free hosting (Vercel, Render, Neon), so the first request after a quiet period can take up to a minute while the backend wakes up.
-- It is a shared sandbox: anyone can edit the data. In demo mode, file uploads and changing the account email or password are disabled.
+**https://omerlessons.com** - the production deployment, used with real students. It holds real student data, so there is no public demo login: you need an account, and only the teacher can create accounts. The screenshots below show the main screens.
 
 ## Features
 
@@ -49,40 +48,69 @@ DTOs (Java records) are strictly separate from JPA entities — nothing entity-s
 
 ## Running it locally
 
-**Backend**
+**With Docker (recommended)** - starts PostgreSQL, the backend and the frontend with one command:
 
 ```bash
-# 1. Create a Postgres database matching spring.datasource.url in
-#    src/main/resources/application.properties
-# 2. Copy .env.example to .env and fill in real values (DB credentials, JWT secret, mail credentials)
+cp .env.example .env      # fill in the values marked "required"
+docker compose up --build
+```
+
+Then open `http://localhost:8400` (change the port with `WEB_PORT` in `.env`). The database lives in a Docker volume, so data survives restarts; `docker compose down -v` deletes it.
+
+**Without Docker**
+
+```bash
+# backend: needs a PostgreSQL database matching spring.datasource.url
+# in src/main/resources/application.properties, plus the values from .env
 ./mvnw spring-boot:run
+
+# frontend
+cd frontend
+npm install
+npm run dev               # http://localhost:5173, calling the backend at http://localhost:8080
 ```
 
 Tables are created/updated automatically on startup (`ddl-auto=update`); a teacher account is seeded from the `.env` values on first run.
 
-**Frontend**
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Runs at `http://localhost:5173`, calling the backend at `http://localhost:8080`.
-
 ## Deployment
 
-The live demo runs entirely on free tiers: the frontend on Vercel (root directory `frontend`), the backend on Render (Docker, see `Dockerfile`) and PostgreSQL on Neon. A push to `main` redeploys both.
+The production site runs on a single AWS EC2 instance (Ubuntu, `t3.small`) with Docker Compose:
+
+```
+browser --HTTPS--> Caddy (80/443, automatic Let's Encrypt certificates)
+                     |
+                     v
+                   nginx (frontend container: serves the React build, forwards /api/ to the backend)
+                     |
+                     v
+                   Spring Boot backend  -->  PostgreSQL (data volume)
+```
+
+- **Only ports 80 and 443 are open to the internet.** The backend and the database are reachable only inside the Docker network; SSH is restricted to a single IP and uses a key pair.
+- **One entry point.** nginx forwards `/api/` to the backend, so the browser talks to one origin: no CORS setup and no backend port exposed.
+- **Multi-stage Docker builds** keep the images small: the build stage has the JDK / Node toolchain, and the final image has only the JRE + the jar (backend) or nginx + static files (frontend).
+- **Compose files:** `docker-compose.yml` is the base, `docker-compose.override.yml` is loaded automatically for local development (exposes the site on `WEB_PORT`), and `docker-compose.prod.yml` adds Caddy on the server (selected with `COMPOSE_FILE`).
+- **Secrets** (`.env`) live only on the machine, outside git and outside the images, and are passed to the containers as environment variables at runtime. On the server they are generated there with `openssl` and the file is `chmod 600`.
+- **Resilience:** containers use `restart: unless-stopped`, and the full stack was verified to come back on its own after a server reboot.
+- **Backups:** a nightly cron job runs `pg_dump`, keeps 14 days locally and copies each dump to a private, encrypted S3 bucket. The server writes to S3 through an IAM role limited to that bucket (no access keys on the machine). A restore was tested into a scratch database.
+- **Cost alerts:** AWS Budgets send an email when real spend appears or when usage jumps.
+
+To deploy an update: `git pull` and `docker compose up -d --build` on the server.
+
+### Configuration
 
 Configuration comes only from environment variables (see `.env.example`):
 
 | Where | Variable | Purpose |
 | --- | --- | --- |
-| Backend | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | Postgres connection |
+| Backend | `DB_USERNAME`, `DB_PASSWORD` | Postgres credentials (Compose also uses them to create the database) |
+| Backend | `DB_URL` | JDBC url; Compose sets it to the `postgres` service |
 | Backend | `JWT_SECRET` | signs login tokens |
 | Backend | `TEACHER_SEED_EMAIL`, `TEACHER_SEED_PASSWORD` | the teacher account created on first start |
 | Backend | `CORS_ALLOWED_ORIGINS` | the frontend's address |
-| Backend | `DEMO_ENABLED` | `true` turns on the "Try demo" button (passwordless teacher sign-in). Leave it off for any site that holds real data |
-| Backend | `BREVO_API_KEY`, `BREVO_SENDER_EMAIL` | optional: send email over HTTPS where SMTP is blocked (otherwise Gmail SMTP is used) |
-| Frontend | `VITE_API_URL` | the backend's address |
+| Backend | `MAIL_USERNAME`, `MAIL_PASSWORD` | Gmail SMTP for lesson reminders |
+| Backend | `BREVO_API_KEY`, `BREVO_SENDER_EMAIL` | optional: send email over HTTPS where SMTP is blocked |
+| Compose | `WEB_PORT` | local port for the site (default 8400) |
+| Server only | `DOMAIN`, `COMPOSE_FILE` | domain Caddy serves, and which Compose files to load |
+| Frontend | `VITE_API_URL` | the backend's address at build time (`/api` with the proxy) |
 | Frontend | `VITE_CONTACT_PHONE` | optional contact line on the login screen; hidden when unset |
