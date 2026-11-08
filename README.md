@@ -1,5 +1,7 @@
 # TutorHub
 
+[![CI](https://github.com/omertene/tutor-management-system/actions/workflows/ci.yml/badge.svg)](https://github.com/omertene/tutor-management-system/actions/workflows/ci.yml)
+
 A full-stack web app for a private tutor to manage students, lesson scheduling, payments, and study materials — built end-to-end as a portfolio project: REST API, relational schema, JWT auth, async messaging, and a React frontend.
 
 **Stack:** Spring Boot 4 (Java 17) · PostgreSQL · Spring Security (JWT) · JMS (embedded ActiveMQ Artemis) · React 19 + TypeScript · Tailwind CSS · Vite
