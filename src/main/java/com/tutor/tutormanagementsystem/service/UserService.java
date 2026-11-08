@@ -1,6 +1,5 @@
 package com.tutor.tutormanagementsystem.service;
 
-import com.tutor.tutormanagementsystem.config.DemoMode;
 import com.tutor.tutormanagementsystem.dto.UserResponse;
 import com.tutor.tutormanagementsystem.exception.DuplicateEmailException;
 import com.tutor.tutormanagementsystem.exception.UserNotFoundException;
@@ -20,13 +19,10 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final DemoMode demoMode;
 
     /* Updates the email address of the authenticated user after checking format and system uniqueness */
     @Transactional
     public UserResponse updateOwnEmail(Long userId, String newEmail) {
-        demoMode.blockInDemo("Changing the email");
-
         String email = AccountValidation.normalizeEmail(newEmail);
         AccountValidation.requireValidEmail(email);
 
@@ -47,7 +43,6 @@ public class UserService {
     /* Hashes and updates the authenticated user's account password */
     @Transactional
     public UserResponse resetOwnPassword(Long userId, String newPassword) {
-        demoMode.blockInDemo("Changing the password");
         AccountValidation.requireValidPassword(newPassword);
 
         User user = getUserEntity(userId);
