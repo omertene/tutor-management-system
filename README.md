@@ -10,7 +10,7 @@ A full-stack web app for a private tutor to manage students, lesson scheduling, 
 
 ## Live
 
-**https://omerlessons.com** - the production deployment, used with real students. It holds real student data, so there is no public demo login: you need an account, and only the teacher can create accounts. The screenshots below show the main screens.
+**https://omerlessons.com** - the production deployment, used with real students. The screenshots below show the main screens.
 
 ## Features
 
