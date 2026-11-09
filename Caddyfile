@@ -1,3 +1,8 @@
 {$DOMAIN} {
     reverse_proxy frontend:80
 }
+
+# www redirects to the main domain (Caddy issues the certificate automatically)
+www.{$DOMAIN} {
+    redir https://{$DOMAIN}{uri} permanent
+}
