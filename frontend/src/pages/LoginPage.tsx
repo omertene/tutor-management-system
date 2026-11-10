@@ -52,103 +52,134 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full flex">
-      {/* branding panel, hidden on small screens */}
-      <div className="hidden lg:flex lg:w-1/2 bg-indigo-600 text-white flex-col justify-between p-12">
-        <div className="text-xl font-semibold tracking-tight">TutorHub</div>
-
-        <div>
-          <h2 className="text-3xl font-semibold leading-snug mb-3">
-            Your lessons, materials, and payments — all in one place.
-          </h2>
-          <p className="text-indigo-100 text-sm max-w-md">
-            Log in to see your upcoming lessons, download materials your tutor shared,
-            and keep track of your balance.
-          </p>
+    <div className="font-login min-h-screen w-full flex bg-[#F5F6FA]">
+      {/* branding panel with a decorative weekly timetable, hidden on small screens */}
+      <div className="hidden lg:flex lg:w-[48%] bg-[#1B2A5C] text-[#F5F6FA] flex-col justify-between p-12 xl:p-16">
+        <div className="font-display flex items-center gap-2.5 text-xl font-bold tracking-tight">
+          <span className="inline-block h-5 w-5 rounded-[5px] bg-[#FFD84D]" aria-hidden="true" />
+          TutorHub
         </div>
 
-        <div className="text-indigo-200 text-xs">
+        <div>
+          <h2 className="font-display text-4xl xl:text-5xl font-bold leading-[1.08] tracking-tight max-w-md">
+            Your lessons, materials, and payments in one place.
+          </h2>
+          <p className="mt-4 text-[#C5CBE6] text-base max-w-sm leading-relaxed">
+            See what is coming up this week, open the materials your tutor shared,
+            and check your balance.
+          </p>
+
+          {/* decorative week: Sun-Thu, four evening slots */}
+          <div className="mt-10 max-w-md" aria-hidden="true">
+            <div className="grid grid-cols-5 gap-2 text-xs text-[#9AA5D1] mb-2">
+              {["Sun", "Mon", "Tue", "Wed", "Thu"].map((d) => (
+                <div key={d}>{d}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-5 grid-rows-4 gap-2 h-44">
+              <div style={{ "--i": 0, gridColumn: 1, gridRow: "1 / span 2" } as React.CSSProperties}
+                   className="login-block rounded-md bg-[#FFD84D]" />
+              <div style={{ "--i": 1, gridColumn: 2, gridRow: "3 / span 2" } as React.CSSProperties}
+                   className="login-block rounded-md bg-[#8FE0C5]" />
+              <div style={{ "--i": 2, gridColumn: 3, gridRow: "2 / span 1" } as React.CSSProperties}
+                   className="login-block rounded-md bg-[#B9B4F5]" />
+              <div style={{ "--i": 3, gridColumn: 4, gridRow: "1 / span 2" } as React.CSSProperties}
+                   className="login-block rounded-md bg-[#FFD84D]" />
+              <div style={{ "--i": 4, gridColumn: 4, gridRow: "4 / span 1" } as React.CSSProperties}
+                   className="login-block rounded-md bg-[#8FE0C5]" />
+              <div style={{ "--i": 5, gridColumn: 5, gridRow: "3 / span 2" } as React.CSSProperties}
+                   className="login-block rounded-md bg-[#B9B4F5]" />
+              <div className="col-span-5 row-span-4 col-start-1 row-start-1 -z-0 pointer-events-none rounded-md border border-white/10" />
+            </div>
+          </div>
+        </div>
+
+        <div className="text-[#9AA5D1] text-xs">
           &copy; {new Date().getFullYear()} TutorHub
         </div>
       </div>
 
       {/* the actual login form */}
-      <div className="flex-1 flex items-center justify-center bg-slate-50 px-4 py-12">
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
-          <div className="mb-8 lg:hidden text-center">
-            <h1 className="text-2xl font-semibold text-slate-900">TutorHub</h1>
+          <div className="font-display lg:hidden mb-10 flex items-center gap-2.5 text-xl font-bold tracking-tight text-[#1B2A5C]">
+            <span className="inline-block h-5 w-5 rounded-[5px] bg-[#FFD84D]" aria-hidden="true" />
+            TutorHub
           </div>
 
-          <div className="mb-8">
-            <h1 className="text-2xl font-semibold text-slate-900">Welcome back</h1>
-            <p className="text-sm text-slate-500 mt-1">Sign in to your account</p>
-          </div>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-[#1B2A5C]">Welcome back</h1>
+          <p className="text-base text-[#5B6384] mt-2">Log in with the email and password you were given.</p>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <form
-              className="flex flex-col gap-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleLogin();
-              }}
-            >
-              <div className="flex flex-col gap-1">
-                <label htmlFor="email" className="text-sm font-medium text-slate-700">
-                  Email
-                </label>
+          <form
+            className="mt-8 flex flex-col gap-5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleLogin();
+            }}
+          >
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="email" className="text-sm font-semibold text-[#1B2A5C]">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="username"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-[#C3C9E0] bg-white px-3.5 py-3 text-base text-[#1B2A5C] focus:outline-none focus:border-[#1B2A5C] focus:ring-4 focus:ring-[#FFD84D]/60"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="password" className="text-sm font-semibold text-[#1B2A5C]">
+                Password
+              </label>
+              <div className="relative">
                 <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border border-[#C3C9E0] bg-white px-3.5 py-3 pr-16 text-base text-[#1B2A5C] focus:outline-none focus:border-[#1B2A5C] focus:ring-4 focus:ring-[#FFD84D]/60"
                 />
+                <button
+                  type="button"
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 px-3.5 text-sm font-semibold text-[#3B4A8C] hover:text-[#1B2A5C] rounded-r-lg focus-visible:outline-2 focus-visible:outline-[#1B2A5C]"
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
               </div>
+            </div>
 
-              <div className="flex flex-col gap-1">
-                <label htmlFor="password" className="text-sm font-medium text-slate-700">
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 pr-16 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 px-3 text-xs font-medium text-slate-500 hover:text-slate-700"
-                  >
-                    {showPassword ? "Hide" : "Show"}
-                  </button>
-                </div>
-              </div>
+            {errorMessage && (
+              <p role="alert" className="rounded-lg bg-[#FDECE8] border border-[#F2B8AB] px-3.5 py-2.5 text-sm text-[#9C2B16]">
+                {errorMessage}
+              </p>
+            )}
 
-              {errorMessage && (
-                <p className="text-sm text-red-600">{errorMessage}</p>
-              )}
-
-              <button
-                type="submit"
-                className="w-full rounded-lg bg-indigo-600 text-white text-sm font-medium py-2.5 hover:bg-indigo-700 transition-colors"
-              >
-                Log in
-              </button>
-            </form>
-          </div>
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-[#1B2A5C] text-white text-base font-semibold py-3 hover:bg-[#13204A] transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#FFD84D]/70"
+            >
+              Log in
+            </button>
+          </form>
 
           {CONTACT_PHONE && (
-            <p className="text-sm text-slate-500 text-center mt-4">
-              Need help? Contact me: {CONTACT_PHONE}{" "}
+            <p className="text-sm text-[#5B6384] mt-8">
+              Can't log in? Message me: {CONTACT_PHONE}{" "}
               (
               <a
                 href={`https://wa.me/${whatsappDigits(CONTACT_PHONE)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-indigo-600 hover:text-indigo-700 font-medium"
+                className="text-[#1B2A5C] underline underline-offset-2 font-semibold"
               >
                 WhatsApp
               </a>
