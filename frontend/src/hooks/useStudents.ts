@@ -22,7 +22,7 @@ export function useStudents() {
 
         const response = await apiFetch(inactiveOnly ? `/teacher/students/all` : `/teacher/students`);
         if (!response.ok) {
-            setErrorMessage("Failed to load students");
+            setErrorMessage("טעינת התלמידים נכשלה");
             return;
         }
 
@@ -75,13 +75,13 @@ export function useStudents() {
             });
 
             if (!response.ok) {
-                setErrorMessage(await readErrorMessage(response, "Failed to update student status"));
+                setErrorMessage(await readErrorMessage(response, "עדכון סטטוס התלמיד נכשל"));
                 return;
             }
 
             refresh();
         } catch {
-            setErrorMessage("Could not reach the server. Please try again.");
+            setErrorMessage("אין חיבור לשרת. נסו שוב.");
         }
     }
 

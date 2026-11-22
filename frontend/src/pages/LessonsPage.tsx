@@ -96,7 +96,7 @@ function LessonsPage() {
             <NavBar homePath={isTeacher ? "/teacher" : "/student"} links={isTeacher ? teacherLinks : studentLinks} />
 
             <main className="max-w-6xl mx-auto px-4 py-8">
-                <h1 className="text-2xl font-semibold text-slate-900">Lessons</h1>
+                <h1 className="text-2xl font-semibold text-slate-900">שיעורים</h1>
 
                 {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
@@ -116,23 +116,23 @@ function LessonsPage() {
                 {isTeacher && (
                     <div className="mt-8">
                         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                            <h2 className="text-lg font-semibold text-slate-900">Your lessons</h2>
+                            <h2 className="text-lg font-semibold text-slate-900">השיעורים שלך</h2>
                             <div className="flex flex-wrap gap-2">
                                 <input
                                     type="text"
-                                    placeholder="Search by student or subject..."
+                                    placeholder="חיפוש לפי תלמיד או מקצוע..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className={inputClass}
                                 />
                                 <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={inputClass}>
-                                    <option value="ALL">All statuses</option>
-                                    <option value="SCHEDULED">Scheduled</option>
-                                    <option value="COMPLETED">Completed</option>
-                                    <option value="CANCELLED">Cancelled</option>
+                                    <option value="ALL">כל הסטטוסים</option>
+                                    <option value="SCHEDULED">מתוכנן</option>
+                                    <option value="COMPLETED">הושלם</option>
+                                    <option value="CANCELLED">בוטל</option>
                                 </select>
                                 <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} className={inputClass}>
-                                    <option value="ALL">All months</option>
+                                    <option value="ALL">כל החודשים</option>
                                     {availableMonths.map((key) => (
                                         <option key={key} value={key}>{monthLabel(key)}</option>
                                     ))}
@@ -143,7 +143,7 @@ function LessonsPage() {
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
                             {visibleItems.length === 0 && (
                                 <p className="px-4 py-6 text-sm text-slate-500 text-center">
-                                    {lessons.length === 0 ? "No lessons yet." : "No lessons match your search."}
+                                    {lessons.length === 0 ? "אין שיעורים עדיין." : "לא נמצאו שיעורים התואמים לחיפוש."}
                                 </p>
                             )}
 

@@ -46,7 +46,7 @@ export default function StudentBookLessonModal({
         setError("");
 
         if (!subjectId || !date || !startTime || !endTime) {
-            setError("Please fill in all fields");
+            setError("יש למלא את כל השדות");
             return;
         }
 
@@ -57,7 +57,7 @@ export default function StudentBookLessonModal({
         const minBookingTime = new Date();
         minBookingTime.setHours(minBookingTime.getHours() + STUDENT_MIN_BOOKING_NOTICE_HOURS);
         if (requestedStart < minBookingTime) {
-            setError(`Lessons must be booked at least ${STUDENT_MIN_BOOKING_NOTICE_HOURS} hours in advance`);
+            setError(`יש לקבוע שיעור לפחות ${STUDENT_MIN_BOOKING_NOTICE_HOURS} שעות מראש`);
             return;
         }
 
@@ -77,12 +77,12 @@ export default function StudentBookLessonModal({
     }
 
     return (
-        <Modal title="Book a lesson" onClose={onClose}>
+        <Modal title="קביעת שיעור" onClose={onClose}>
             <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Subject</label>
+                    <label className={labelClass}>מקצוע</label>
                     <select value={subjectId} onChange={(e) => setSubjectId(e.target.value)} className={inputClassFull}>
-                        <option value="">Select subject</option>
+                        <option value="">בחירת מקצוע</option>
                         {subjects.map((subject) => (
                             <option key={subject.id} value={subject.id}>
                                 {subject.name}
@@ -92,17 +92,17 @@ export default function StudentBookLessonModal({
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Date</label>
+                    <label className={labelClass}>תאריך</label>
                     <input type="date" value={date} min={toDateString(new Date())} onChange={(e) => setDate(e.target.value)} className={inputClassFull} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Start time</label>
+                        <label className={labelClass}>שעת התחלה</label>
                         <TimeSelect value={startTime} onChange={handleStartTimeChange} className={inputClassFull} />
                     </div>
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>End time</label>
+                        <label className={labelClass}>שעת סיום</label>
                         <TimeSelect value={endTime} onChange={setEndTime} className={inputClassFull} />
                     </div>
                 </div>
@@ -113,7 +113,7 @@ export default function StudentBookLessonModal({
                     onClick={handleBook}
                     className="w-full mt-2 rounded-lg bg-indigo-600 text-white text-sm font-medium py-2.5 hover:bg-indigo-700 transition-colors"
                 >
-                    Book lesson
+                    קביעת שיעור
                 </button>
             </div>
         </Modal>

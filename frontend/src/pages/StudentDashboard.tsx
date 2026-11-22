@@ -11,8 +11,8 @@ function StudentDashboard() {
 
       <main className="max-w-6xl mx-auto px-4 py-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Welcome back</h1>
-          <p className="text-slate-500 mt-1">Here's your schedule.</p>
+          <h1 className="text-2xl font-semibold text-slate-900">ברוכים השבים</h1>
+          <p className="text-slate-500 mt-1">הנה לוח הזמנים שלך.</p>
         </div>
 
         <div className="mt-6">

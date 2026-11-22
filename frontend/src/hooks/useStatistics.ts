@@ -93,14 +93,14 @@ export function useStatistics() {
                 const response = await apiFetch(`/teacher/statistics/dashboard?${params.toString()}`);
 
                 if (!response.ok) {
-                    setErrorMessage("Failed to load statistics");
+                    setErrorMessage("טעינת הסטטיסטיקה נכשלה");
                     return;
                 }
 
                 const data: DashboardStatistics = await response.json();
                 setStatistics(data);
             } catch {
-                setErrorMessage("Could not reach the server. Please try again.");
+                setErrorMessage("אין חיבור לשרת. נסו שוב.");
             }
         }
 

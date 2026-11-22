@@ -1,3 +1,4 @@
+import { formatMoney } from "../utils/money";
 import { useState } from "react";
 import NavBar from "../components/NavBar";
 import ListPager from "../components/ListPager";
@@ -47,7 +48,7 @@ function PaymentsPage() {
             <NavBar homePath={isTeacher ? "/teacher" : "/student"} links={isTeacher ? teacherLinks : studentLinks} />
 
             <main className="max-w-6xl mx-auto px-4 py-8">
-                <h1 className="text-2xl font-semibold text-slate-900">Payments</h1>
+                <h1 className="text-2xl font-semibold text-slate-900">תשלומים</h1>
 
                 {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
@@ -58,7 +59,7 @@ function PaymentsPage() {
                         <div className="mt-8">
                             <input
                                 type="text"
-                                placeholder="Search by student name..."
+                                placeholder="חיפוש לפי שם תלמיד..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className={`${inputClass} w-full max-w-sm`}
@@ -68,12 +69,12 @@ function PaymentsPage() {
                 )}
 
                 <div className="mt-4">
-                    <h2 className="text-lg font-semibold text-slate-900 mb-3">Payment history</h2>
+                    <h2 className="text-lg font-semibold text-slate-900 mb-3">היסטוריית תשלומים</h2>
 
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
                         {visibleItems.length === 0 && (
                             <p className="px-4 py-6 text-sm text-slate-500 text-center">
-                                {payments.length === 0 ? "No payments yet." : "No payments match your search."}
+                                {payments.length === 0 ? "אין תשלומים עדיין." : "לא נמצאו תשלומים התואמים לחיפוש."}
                             </p>
                         )}
 
@@ -101,17 +102,17 @@ function PaymentsPage() {
                 </div>
 
                 <div className="mt-8">
-                    <h2 className="text-lg font-semibold text-slate-900 mb-3">Debt</h2>
+                    <h2 className="text-lg font-semibold text-slate-900 mb-3">חוב</h2>
 
                     {!isTeacher && ownDebt && (
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-sm">
-                            <p className="text-sm text-slate-500">Current balance</p>
+                            <p className="text-sm text-slate-500">יתרה נוכחית</p>
                             <p className={`text-3xl font-semibold mt-1 ${ownDebt.debt > 0 ? "text-red-600" : "text-green-600"}`}>
-                                ₪{ownDebt.debt}
+                                {formatMoney(ownDebt.debt)}
                             </p>
                             <div className="mt-4 flex gap-6 text-sm text-slate-500">
-                                <span>Owed: ₪{ownDebt.totalOwed}</span>
-                                <span>Paid: ₪{ownDebt.totalPaid}</span>
+                                <span>חויב: {formatMoney(ownDebt.totalOwed)}</span>
+                                <span>שולם: {formatMoney(ownDebt.totalPaid)}</span>
                             </div>
                         </div>
                     )}

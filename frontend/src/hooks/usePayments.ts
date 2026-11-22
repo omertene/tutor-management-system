@@ -19,7 +19,7 @@ export function usePayments(role: string) {
     const loadAllDebts = useCallback(async () => {
         const response = await apiFetch(`/teacher/debts`);
         if (!response.ok) {
-            setErrorMessage("Failed to load debts");
+            setErrorMessage("טעינת החובות נכשלה");
             return;
         }
         setAllDebts((await response.json()) as Debt[]);
@@ -34,10 +34,10 @@ export function usePayments(role: string) {
             ]);
 
             if (studentsRes.ok) setStudents((await studentsRes.json()) as Student[]);
-            else setErrorMessage("Failed to load students");
+            else setErrorMessage("טעינת התלמידים נכשלה");
 
             if (paymentsRes.ok) setPayments((await paymentsRes.json()) as Payment[]);
-            else setErrorMessage("Failed to load payments");
+            else setErrorMessage("טעינת התשלומים נכשלה");
 
             loadAllDebts();
         }
@@ -49,10 +49,10 @@ export function usePayments(role: string) {
             ]);
 
             if (paymentsRes.ok) setPayments((await paymentsRes.json()) as Payment[]);
-            else setErrorMessage("Failed to load payments");
+            else setErrorMessage("טעינת התשלומים נכשלה");
 
             if (debtRes.ok) setOwnDebt((await debtRes.json()) as Debt);
-            else setErrorMessage("Failed to load debt");
+            else setErrorMessage("טעינת החוב נכשלה");
         }
 
         if (isTeacher) loadTeacherView();
@@ -70,7 +70,7 @@ export function usePayments(role: string) {
         });
 
         if (!response.ok) {
-            return await readErrorMessage(response, "Failed to record payment");
+            return await readErrorMessage(response, "רישום התשלום נכשל");
         }
 
         const created = (await response.json()) as Payment;
@@ -93,7 +93,7 @@ export function usePayments(role: string) {
         });
 
         if (!response.ok) {
-            return await readErrorMessage(response, "Failed to save payment");
+            return await readErrorMessage(response, "שמירת התשלום נכשלה");
         }
 
         const saved = (await response.json()) as Payment;
@@ -107,14 +107,14 @@ export function usePayments(role: string) {
         setErrorMessage("");
 
         const confirmed = window.confirm(
-            `Cancel this ₪${payment.amount} payment from ${payment.studentFirstName} ${payment.studentLastName}? This will increase their outstanding debt.`
+            `לבטל תשלום של ₪${payment.amount} מאת ${payment.studentFirstName} ${payment.studentLastName}? הביטול יגדיל את החוב שלו.`
         );
         if (!confirmed) return;
 
         const response = await apiFetch(`/teacher/payments/${payment.id}`, { method: "DELETE" });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to cancel payment"));
+            setErrorMessage(await readErrorMessage(response, "ביטול התשלום נכשל"));
             return;
         }
 

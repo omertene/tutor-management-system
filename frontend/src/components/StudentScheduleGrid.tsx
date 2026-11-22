@@ -24,7 +24,7 @@ const lessonBlockStyles: Record<string, string> = {
 
 /* Shown for a slot that's otherwise open but falls inside the minimum booking
    notice - kept in one place so the tooltip and the click message always match */
-const tooSoonMessage = `Lessons must be booked at least ${STUDENT_MIN_BOOKING_NOTICE_HOURS} hours in advance. Please contact your teacher directly for anything sooner.`;
+const tooSoonMessage = `יש לקבוע שיעור לפחות ${STUDENT_MIN_BOOKING_NOTICE_HOURS} שעות מראש. לתיאום שיעור בטווח קרוב יותר אפשר לפנות ישירות למורה.`;
 
 /* Student-facing weekly schedule: shows the teacher's availability, other
    students' booked slots (grayed out), and this student's own lessons.

@@ -1,3 +1,4 @@
+import { formatMoney } from "../../utils/money";
 import { useState } from "react";
 import { inputClass, labelClass, primaryButtonClass, smallSecondaryButtonClass } from "../../constants/formStyles";
 import { formatDateTimeString, formatShortDateString, todayDateString } from "../../utils/time";
@@ -63,7 +64,7 @@ export default function PaymentRow({ payment, isTeacher, students, onSave, onCan
     return (
         <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium text-slate-900">₪{payment.amount}</span>
+                <span className="font-medium text-slate-900">{formatMoney(payment.amount)}</span>
                 {isTeacher && (
                     <span className="text-slate-500 text-sm">
                         {payment.studentFirstName} {payment.studentLastName}
@@ -81,12 +82,12 @@ export default function PaymentRow({ payment, isTeacher, students, onSave, onCan
                     {errorMessage && <p className="text-sm text-red-600 w-full">{errorMessage}</p>}
 
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Student</label>
+                        <label className={labelClass}>תלמיד</label>
                         <select value={studentId} onChange={(e) => setStudentId(e.target.value)} className={inputClass}>
                             {/* disabled - just shows who the payment belongs to */}
                             {studentMissingFromList && (
                                 <option value={studentId} disabled>
-                                    {payment.studentFirstName} {payment.studentLastName} (inactive)
+                                    {payment.studentFirstName} {payment.studentLastName} (לא פעיל)
                                 </option>
                             )}
                             {students.map((student) => (
@@ -98,17 +99,17 @@ export default function PaymentRow({ payment, isTeacher, students, onSave, onCan
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Amount</label>
+                        <label className={labelClass}>סכום</label>
                         <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className={`${inputClass} w-28`} />
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Date received</label>
+                        <label className={labelClass}>תאריך קבלה</label>
                         <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className={inputClass} />
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Method</label>
+                        <label className={labelClass}>אמצעי תשלום</label>
                         <select value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)} className={inputClass}>
                             {Object.entries(methodLabels).map(([value, label]) => (
                                 <option key={value} value={value}>{label}</option>
@@ -117,7 +118,7 @@ export default function PaymentRow({ payment, isTeacher, students, onSave, onCan
                     </div>
 
                     <div className="flex flex-col gap-1 flex-1 min-w-[160px]">
-                        <label className={labelClass}>Notes</label>
+                        <label className={labelClass}>הערות</label>
                         <input value={notes} onChange={(e) => setNotes(e.target.value)} className={`${inputClass} w-full`} />
                     </div>
 
@@ -126,22 +127,22 @@ export default function PaymentRow({ payment, isTeacher, students, onSave, onCan
                         disabled={!studentId || !amount || !paymentDate}
                         className={primaryButtonClass}
                     >
-                        Save changes
+                        שמירת שינויים
                     </button>
                     <button onClick={() => setIsEditing(false)} className={smallSecondaryButtonClass}>
-                        Cancel
+                        ביטול
                     </button>
                 </div>
             )}
 
             {isTeacher && !isEditing && (
                 <div className="flex gap-2">
-                    <button onClick={startEdit} className={smallSecondaryButtonClass}>Edit</button>
+                    <button onClick={startEdit} className={smallSecondaryButtonClass}>עריכה</button>
                     <button
                         onClick={() => onCancel(payment)}
                         className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
                     >
-                        Cancel
+                        ביטול תשלום
                     </button>
                 </div>
             )}

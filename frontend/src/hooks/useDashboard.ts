@@ -50,7 +50,7 @@ export function useDashboard() {
         setErrorMessage("");
         const response = await apiFetch(`/teacher/lessons/${lessonId}/complete`, { method: "PATCH" });
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to mark lesson as completed"));
+            setErrorMessage(await readErrorMessage(response, "סימון השיעור כהושלם נכשל"));
             return;
         }
         refresh();
@@ -62,7 +62,7 @@ export function useDashboard() {
         setErrorMessage("");
         const response = await apiFetch(`/lessons/${lessonId}`, { method: "DELETE" });
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to cancel lesson"));
+            setErrorMessage(await readErrorMessage(response, "ביטול השיעור נכשל"));
             return;
         }
         refresh();

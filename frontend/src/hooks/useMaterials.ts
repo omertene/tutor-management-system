@@ -27,14 +27,14 @@ export function useMaterials(role: string) {
                 ]);
 
                 if (studentsRes.ok) setStudents((await studentsRes.json()) as Student[]);
-                else setErrorMessage("Failed to load students");
+                else setErrorMessage("טעינת התלמידים נכשלה");
 
                 if (materialsRes.ok) setMaterials((await materialsRes.json()) as Material[]);
-                else setErrorMessage("Failed to load materials");
+                else setErrorMessage("טעינת חומרי הלימוד נכשלה");
             } else {
                 const materialsRes = await apiFetch(`/student/materials`);
                 if (materialsRes.ok) setMaterials((await materialsRes.json()) as Material[]);
-                else setErrorMessage("Failed to load materials");
+                else setErrorMessage("טעינת חומרי הלימוד נכשלה");
             }
         }
         load();
@@ -51,7 +51,7 @@ export function useMaterials(role: string) {
 
         const response = await apiFetch(`/materials/${materialId}/download`);
         if (!response.ok) {
-            setErrorMessage("Failed to download file");
+            setErrorMessage("הורדת הקובץ נכשלה");
             return;
         }
 
@@ -76,12 +76,12 @@ export function useMaterials(role: string) {
     async function deleteMaterial(material: Material) {
         setErrorMessage("");
 
-        if (!window.confirm(`Delete "${material.title}"? This can't be undone.`)) return;
+        if (!window.confirm(`למחוק את "${material.title}"? אי אפשר לבטל פעולה זו.`)) return;
 
         const response = await apiFetch(`/teacher/materials/${material.id}`, { method: "DELETE" });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to delete material"));
+            setErrorMessage(await readErrorMessage(response, "מחיקת החומר נכשלה"));
             return;
         }
 

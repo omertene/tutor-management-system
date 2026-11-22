@@ -43,7 +43,7 @@ function WeekGrid({
                     onClick={onPreviousWeek}
                     className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
                 >
-                    &larr; Previous week
+                    &rarr; השבוע הקודם
                 </button>
                 <span className="text-sm font-medium text-slate-700">
                     {formatShortDate(weekDates[0])} &ndash; {formatShortDate(weekDates[6])}
@@ -52,7 +52,7 @@ function WeekGrid({
                     onClick={onNextWeek}
                     className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
                 >
-                    Next week &rarr;
+                    השבוע הבא &larr;
                 </button>
             </div>
 
@@ -62,7 +62,7 @@ function WeekGrid({
                         onClick={() => onHourStartChange((current) => Math.max(MIN_HOUR, current - 2))}
                         className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
                     >
-                        &uarr; Show earlier hours
+                        &uarr; הצגת שעות מוקדמות
                     </button>
                 ) : <span />}
                 {(hourStart !== DEFAULT_HOUR_START || hourEnd !== DEFAULT_HOUR_END) && (
@@ -70,7 +70,7 @@ function WeekGrid({
                         onClick={() => { onHourStartChange(() => DEFAULT_HOUR_START); onHourEndChange(() => DEFAULT_HOUR_END); }}
                         className="text-sm text-slate-400 hover:text-slate-600"
                     >
-                        Reset hours
+                        איפוס שעות
                     </button>
                 )}
             </div>
@@ -100,7 +100,7 @@ function WeekGrid({
                             <div
                                 key={hour}
                                 style={{ top: `${index * ROW_HEIGHT}px` }}
-                                className="absolute right-2 -translate-y-1/2 text-xs text-slate-400"
+                                className="absolute end-2 -translate-y-1/2 text-xs text-slate-400"
                             >
                                 {String(hour).padStart(2, "0")}:00
                             </div>
@@ -129,7 +129,7 @@ function WeekGrid({
                     onClick={() => onHourEndChange((current) => Math.min(MAX_HOUR, current + 2))}
                     className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
                 >
-                    &darr; Show later hours
+                    &darr; הצגת שעות מאוחרות
                 </button>
             )}
         </>

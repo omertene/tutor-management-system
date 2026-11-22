@@ -117,7 +117,7 @@ export function useStudentSchedule() {
         });
 
         if (!response.ok) {
-            return await readErrorMessage(response, "Failed to book lesson");
+            return await readErrorMessage(response, "קביעת השיעור נכשלה");
         }
 
         const created: StudentLesson = await response.json();
@@ -137,7 +137,7 @@ export function useStudentSchedule() {
         const response = await apiFetch(`/lessons/${lessonId}`, { method: "DELETE" });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to cancel lesson"));
+            setErrorMessage(await readErrorMessage(response, "ביטול השיעור נכשל"));
             return false;
         }
 
