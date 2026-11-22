@@ -132,6 +132,7 @@ export default function AccountSection() {
                                 </div>
                                 <button onClick={handleResetPassword} className={saveButtonClass}>Save</button>
                             </div>
+                            <p className="mt-1 text-xs text-slate-500">At least 8 characters, with a letter and a digit</p>
                         </div>
                     </div>
 

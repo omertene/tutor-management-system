@@ -1,5 +1,5 @@
 
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { API_BASE_URL, readErrorMessage } from "../utils/api";
 import type { LoginResponse } from "../types";
@@ -186,13 +186,14 @@ function LoginPage() {
                   </svg>
                 </button>
               </div>
-              {/* placeholder: will send a password reset email once that feature exists */}
-              <button
-                type="button"
+              {/* opens the "forgot password" screen, carrying over any email already typed */}
+              <Link
+                to="/forgot-password"
+                state={{ email }}
                 className="self-start text-sm font-semibold text-[#3B4A8C] hover:text-[#1B2A5C] hover:underline underline-offset-4 rounded focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#FFD84D]/70"
               >
                 שכחתי סיסמה
-              </button>
+              </Link>
             </div>
 
             {errorMessage && (
