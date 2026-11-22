@@ -96,5 +96,5 @@ code {
 @media (prefers-reduced-motion: reduce) {
   .login-block { animation: none; }
 }
-.font-display { font-family: 'Bricolage Grotesque', var(--sans); }
-.font-login { font-family: 'Figtree', var(--sans); }
+.font-display { font-family: 'Rubik', var(--sans); }
+.font-login { font-family: 'Heebo', var(--sans); }
