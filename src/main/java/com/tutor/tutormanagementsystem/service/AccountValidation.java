@@ -17,7 +17,10 @@ public final class AccountValidation {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\d+$");
 
-    private static final int MIN_PASSWORD_LENGTH = 4;
+    private static final int MIN_PASSWORD_LENGTH = 8;
+
+    /* BCrypt only looks at the first 72 bytes, so a much longer password adds no safety */
+    private static final int MAX_PASSWORD_LENGTH = 64;
 
     /* Trims spaces and lowercases email to prevent duplicate accounts with different casing.
        Null-safe so missing emails throw a clean validation error instead of a NullPointerException. */
@@ -32,11 +35,22 @@ public final class AccountValidation {
         }
     }
 
-    /* Enforces minimum password length */
+    /* Enforces a reasonably strong password: 8-64 characters with at least one letter and one digit.
+       Only applies when a password is set or changed - existing accounts keep logging in as before. */
     public static void requireValidPassword(String password) {
         if (password == null || password.length() < MIN_PASSWORD_LENGTH) {
             throw new InvalidStudentDataException(
                     "Password must be at least " + MIN_PASSWORD_LENGTH + " characters");
+        }
+        if (password.length() > MAX_PASSWORD_LENGTH) {
+            throw new InvalidStudentDataException(
+                    "Password must be at most " + MAX_PASSWORD_LENGTH + " characters");
+        }
+        boolean hasLetter = password.chars().anyMatch(Character::isLetter);
+        boolean hasDigit = password.chars().anyMatch(Character::isDigit);
+        if (!hasLetter || !hasDigit) {
+            throw new InvalidStudentDataException(
+                    "Password must contain at least one letter and one digit");
         }
     }
 

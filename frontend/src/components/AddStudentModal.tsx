@@ -96,6 +96,7 @@ function AddStudentModal({ onClose, onCreated }: AddStudentModalProps) {
                     <div className="flex flex-col gap-1">
                         <label className={labelClass}>Password *</label>
                         <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClassFull} />
+                        <p className="text-xs text-slate-500">At least 8 characters, with a letter and a digit</p>
                     </div>
 
                     <div className="flex flex-col gap-1">

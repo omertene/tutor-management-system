@@ -40,18 +40,35 @@ class AccountValidationTest {
                 .isInstanceOf(InvalidStudentDataException.class);
     }
 
-    @Test
-    void passwordOfFourCharacters_isAccepted() {
-        assertThatCode(() -> AccountValidation.requireValidPassword("abcd")).doesNotThrowAnyException();
+    @ParameterizedTest
+    @ValueSource(strings = {"abc12345", "Dana2026!", "סיסמה12345"})
+    void strongPassword_isAccepted(String password) {
+        assertThatCode(() -> AccountValidation.requireValidPassword(password)).doesNotThrowAnyException();
     }
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = {"abc"})
+    @ValueSource(strings = {"abc", "abc1234"})
     void tooShortOrMissingPassword_isRejected(String password) {
         assertThatThrownBy(() -> AccountValidation.requireValidPassword(password))
                 .isInstanceOf(InvalidStudentDataException.class)
-                .hasMessageContaining("at least");
+                .hasMessageContaining("at least 8");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"abcdefgh", "12345678", "!!!!!!!!"})
+    void passwordWithoutBothLetterAndDigit_isRejected(String password) {
+        assertThatThrownBy(() -> AccountValidation.requireValidPassword(password))
+                .isInstanceOf(InvalidStudentDataException.class)
+                .hasMessageContaining("letter and one digit");
+    }
+
+    @Test
+    void tooLongPassword_isRejected() {
+        String tooLong = "a1".repeat(33); // 66 characters
+        assertThatThrownBy(() -> AccountValidation.requireValidPassword(tooLong))
+                .isInstanceOf(InvalidStudentDataException.class)
+                .hasMessageContaining("at most 64");
     }
 
     @Test

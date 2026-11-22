@@ -106,6 +106,7 @@ export default function CredentialsModal({ student, onClose, onEmailChanged }: C
                         />
                         <button onClick={handleResetPassword} className={saveButtonClass}>Reset password</button>
                     </div>
+                    <p className="text-xs text-slate-500">At least 8 characters, with a letter and a digit</p>
                 </div>
 
                 {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
