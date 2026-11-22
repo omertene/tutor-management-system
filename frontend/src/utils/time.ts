@@ -2,7 +2,7 @@
    StudentScheduleGrid) and every lesson-time form (LessonsPage, TeacherDashboard) */
 
 export const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-export const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+export const dayLabels = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
 /* The grid shows this many hour rows, starting at HOUR_START */
 export const DEFAULT_HOUR_START = 8;
@@ -55,8 +55,8 @@ export function minutesSinceMidnight(date: Date): number {
 /* ---- display formatters ---- */
 
 export const monthNames = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    "ינו׳", "פבר׳", "מרץ", "אפר׳", "מאי", "יוני",
+    "יולי", "אוג׳", "ספט׳", "אוק׳", "נוב׳", "דצמ׳",
 ];
 
 /* "2026-10-07" -> "7/10/26" */
