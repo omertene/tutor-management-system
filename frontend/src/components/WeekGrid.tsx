@@ -12,6 +12,8 @@ type WeekGridProps = {
     todayDayIndex: number;
     showNowLine: boolean;
     nowLineTop: number;
+    /* "week" draws the now-line across every day, "day" only across today's column */
+    nowLineScope?: "day" | "week";
     hours: number[];
     /* Each grid's own cell/override/lesson rendering stays owned by the caller -
        teacher and student grids differ too much to share safely (drag-select vs
@@ -33,6 +35,7 @@ function WeekGrid({
     todayDayIndex,
     showNowLine,
     nowLineTop,
+    nowLineScope = "week",
     hours,
     renderDayColumn,
 }: WeekGridProps) {
@@ -118,10 +121,15 @@ function WeekGrid({
 
                     {showNowLine && (
                         <div className="pointer-events-none relative z-10 col-span-7 col-start-2 row-start-2 h-0">
-                            <div className="absolute inset-x-0 border-t-2 border-red-500/70" style={{ top: `${nowLineTop}px` }}>
+                            <div
+                                className="absolute border-t-2 border-red-500/70"
+                                style={nowLineScope === "day"
+                                    ? { top: `${nowLineTop}px`, insetInlineStart: `calc(${todayDayIndex} * 100% / 7)`, width: "calc(100% / 7)" }
+                                    : { top: `${nowLineTop}px`, insetInlineStart: 0, insetInlineEnd: 0 }}
+                            >
                                 <span
                                     className="absolute -top-[5px] h-2.5 w-2.5 rounded-full bg-red-500"
-                                    style={{ insetInlineStart: `calc(${todayDayIndex} * 100% / 7)` }}
+                                    style={{ insetInlineStart: nowLineScope === "day" ? 0 : `calc(${todayDayIndex} * 100% / 7)` }}
                                 />
                             </div>
                         </div>
