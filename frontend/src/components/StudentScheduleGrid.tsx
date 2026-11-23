@@ -10,7 +10,6 @@ import {
     getRuleCoverageQuarters,
     overlaps,
     quarterRunStartTime,
-    ruleCoverageBackground,
     toPositionedBlock,
 } from "../utils/availability";
 import type { StudentLesson } from "../types/schedule";
@@ -18,8 +17,8 @@ import type { StudentLesson } from "../types/schedule";
 /* Scheduled and completed lessons look identical to the student - no need to
    tell them apart at a glance here like the teacher's schedule does */
 const lessonBlockStyles: Record<string, string> = {
-    SCHEDULED: "bg-blue-100 hover:bg-blue-200",
-    COMPLETED: "bg-blue-100 hover:bg-blue-200",
+    SCHEDULED: "bg-indigo-600 hover:bg-indigo-700 text-white",
+    COMPLETED: "bg-indigo-400 hover:bg-indigo-500 text-white",
 };
 
 /* Shown for a slot that's otherwise open but falls inside the minimum booking
@@ -167,6 +166,16 @@ function StudentScheduleGrid() {
             {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
             <div className="mt-4">
+            <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-slate-600">
+                <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-3 w-5 rounded border border-emerald-300 bg-emerald-50" />
+                    פנוי לקביעה
+                </span>
+                <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-3 w-3 rounded bg-indigo-600" />
+                    השיעור שלי
+                </span>
+            </div>
             <WeekGrid
                 weekDates={weekDates}
                 hourStart={hourStart}
@@ -183,8 +192,6 @@ function StudentScheduleGrid() {
                     <>
                         {hours.map((hour) => {
                             const quarters = quartersForCell(dayIndex, hour);
-                            const allCovered = quarters.every(Boolean);
-                            const noneCovered = quarters.every((covered) => !covered);
 
                             const availableRun = firstAvailableQuarterRun(quarters);
                             const isCovered = isCellCoveredByOverrideOrLesson(dayIndex, hour);
@@ -200,26 +207,15 @@ function StudentScheduleGrid() {
                                     key={hour}
                                     onClick={() => handleCellClick(dayIndex, hour)}
                                     title={isTooSoon ? tooSoonMessage : undefined}
-                                    style={{
-                                        height: `${ROW_HEIGHT}px`,
-                                        boxSizing: "border-box",
-                                        background: allCovered || noneCovered ? undefined : ruleCoverageBackground(quarters),
-                                    }}
-                                    className={`group flex w-full items-center justify-center border-b border-slate-200 transition-colors select-none ${
-                                        allCovered
-                                            ? `bg-emerald-50 ${isClickable ? "hover:bg-emerald-100 cursor-pointer" : isTooSoon ? "cursor-help" : "cursor-default"}`
-                                            : noneCovered
-                                                ? "bg-slate-200 cursor-default"
-                                                : isClickable
-                                                    ? "hover:brightness-95 cursor-pointer"
-                                                    : isTooSoon
-                                                        ? "cursor-help"
-                                                        : "cursor-default"
+                                    style={{ height: `${ROW_HEIGHT}px`, boxSizing: "border-box" }}
+                                    className={`group flex w-full items-center justify-center border-b border-slate-100 bg-white px-1.5 py-1 select-none ${
+                                        isClickable ? "cursor-pointer" : isTooSoon ? "cursor-help" : "cursor-default"
                                     }`}
                                 >
-                                    {allCovered && isClickable && (
-                                        <span className="text-xs font-medium text-emerald-700 opacity-0 transition-opacity group-hover:opacity-100">
-                                            + קביעת שיעור
+                                    {isClickable && runStartTime && (
+                                        <span className="flex h-full w-full items-center justify-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 text-xs font-semibold text-emerald-800 transition-colors group-hover:border-emerald-500 group-hover:bg-emerald-100">
+                                            <span dir="ltr">{runStartTime}</span>
+                                            <span aria-hidden="true">+</span>
                                         </span>
                                     )}
                                 </button>
@@ -231,7 +227,7 @@ function StudentScheduleGrid() {
                         {getBusySlotsForDay(dayIndex).map(({ item: slot, top, height }, index) => (
                             <div
                                 key={`busy-${slot.date}-${slot.startTime}-${index}`}
-                                className="absolute block left-0 right-0 m-0 bg-slate-200"
+                                className="absolute block left-0 right-0 m-0 bg-white"
                                 style={{ top: `${top}px`, height: `${height}px` }}
                             />
                         ))}
@@ -240,12 +236,13 @@ function StudentScheduleGrid() {
                             <button
                                 key={`lesson-${lesson.id}`}
                                 onClick={() => setViewingLesson(lesson)}
-                                className={`absolute block left-0.5 right-0.5 m-0 px-1.5 py-1 text-xs text-start leading-tight overflow-hidden rounded-md border-s-4 border-blue-500 shadow-sm transition-colors ${lessonBlockStyles[lesson.status] ?? lessonBlockStyles.SCHEDULED}`}
+                                className={`absolute block left-0.5 right-0.5 m-0 px-1.5 py-1 text-xs text-start leading-tight overflow-hidden rounded-lg shadow-sm transition-colors ${lessonBlockStyles[lesson.status] ?? lessonBlockStyles.SCHEDULED}`}
                                 style={{ top: `${top}px`, height: `${height}px` }}
                                 title={lesson.subjectName}
                             >
-                                <span className="line-clamp-2 text-slate-700 font-medium">
-                                    {lesson.subjectName}
+                                <span className="block truncate font-semibold">{lesson.subjectName}</span>
+                                <span dir="ltr" className="block text-[11px] opacity-90">
+                                    {lesson.startTime.slice(0, 5)}&ndash;{lesson.endTime.slice(0, 5)}
                                 </span>
                             </button>
                         ))}
