@@ -77,12 +77,30 @@ function MaterialsPage() {
 
                 {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
-                {lessonIdFilter !== null && (
-                    <div className="mt-3 inline-flex items-center gap-3 rounded-full bg-indigo-50 px-4 py-1.5 text-sm text-indigo-700">
-                        מוצגים החומרים של שיעור אחד
-                        <button onClick={() => setSearchParams({})} className="font-semibold underline">הצגת הכל</button>
-                    </div>
-                )}
+                {lessonIdFilter !== null && (() => {
+                    const lessonMaterial = materials.find((m) => m.lessonId === lessonIdFilter);
+                    return (
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-3">
+                            <div>
+                                <p className="text-xs font-medium text-indigo-600">מסונן לפי שיעור</p>
+                                <p className="text-base font-semibold text-slate-900">
+                                    {lessonMaterial?.lessonSubject ?? "שיעור"}
+                                    {lessonMaterial?.lessonDate && lessonMaterial.lessonStartTime && (
+                                        <span className="font-normal text-slate-600">
+                                            {" "}&middot; <span dir="ltr" className="inline-block">{formatDateAndTime(lessonMaterial.lessonDate, lessonMaterial.lessonStartTime)}</span>
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setSearchParams({})}
+                                className="rounded-full bg-white px-4 py-1.5 text-sm font-medium text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                            >
+                                הצגת כל החומרים
+                            </button>
+                        </div>
+                    );
+                })()}
 
                 {isTeacher && (
                     <AddMaterialForm students={students} onCreated={addMaterial} onError={setErrorMessage} />
