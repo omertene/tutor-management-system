@@ -19,11 +19,11 @@ export default function UpcomingLessonsPanel({ todaysLessons, tomorrowsLessons }
     return (
         <div className="lg:order-2 bg-white rounded-xl border border-slate-200 shadow-sm">
             <div className="px-6 py-4 border-b border-slate-100">
-                <h2 className="text-lg font-semibold text-slate-900">Today</h2>
+                <h2 className="text-lg font-semibold text-slate-900">היום</h2>
             </div>
             <div className="divide-y divide-slate-100">
                 {todaysLessons.length === 0 && (
-                    <p className="px-6 py-6 text-sm text-slate-500 text-center">No lessons today.</p>
+                    <p className="px-6 py-6 text-sm text-slate-500 text-center">אין שיעורים היום.</p>
                 )}
                 {todaysLessons.map((lesson) => (
                     <div key={lesson.id} className="px-6 py-3 flex flex-wrap items-center justify-between gap-2">
@@ -39,11 +39,11 @@ export default function UpcomingLessonsPanel({ todaysLessons, tomorrowsLessons }
             </div>
 
             <div className="px-6 py-4 border-b border-t border-slate-100">
-                <h2 className="text-lg font-semibold text-slate-900">Tomorrow</h2>
+                <h2 className="text-lg font-semibold text-slate-900">מחר</h2>
             </div>
             <div className="divide-y divide-slate-100">
                 {tomorrowsLessons.length === 0 && (
-                    <p className="px-6 py-6 text-sm text-slate-500 text-center">No lessons tomorrow.</p>
+                    <p className="px-6 py-6 text-sm text-slate-500 text-center">אין שיעורים מחר.</p>
                 )}
                 {tomorrowsLessons.map((lesson) => (
                     <div key={lesson.id} className="px-6 py-3 flex flex-wrap items-center justify-between gap-2">

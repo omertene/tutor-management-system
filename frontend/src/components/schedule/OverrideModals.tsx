@@ -62,7 +62,7 @@ export function OverrideFormModal({ draft, onClose, onSave }: OverrideFormModalP
 
         /* an empty time fails to deserialize on the backend with a confusing error */
         if (!date || !startTime || !endTime) {
-            setError("Please fill in all fields");
+            setError("יש למלא את כל השדות");
             return;
         }
 
@@ -77,41 +77,41 @@ export function OverrideFormModal({ draft, onClose, onSave }: OverrideFormModalP
     }
 
     return (
-        <Modal title={draft.overrideId !== null ? "Edit override" : "Add schedule override"} onClose={onClose}>
+        <Modal title={draft.overrideId !== null ? "עריכת חריגה" : "הוספת חריגה בלוח הזמנים"} onClose={onClose}>
             <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Date</label>
+                    <label className={labelClass}>תאריך</label>
                     <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClassFull} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Start time</label>
+                        <label className={labelClass}>שעת התחלה</label>
                         <TimeSelect value={startTime} onChange={setStartTime} className={inputClassFull} />
                     </div>
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>End time</label>
+                        <label className={labelClass}>שעת סיום</label>
                         <TimeSelect value={endTime} onChange={setEndTime} className={inputClassFull} />
                     </div>
                 </div>
 
                 {draft.typeLocked ? (
                     <p className="text-sm text-slate-500">
-                        {type === "ADD" ? "Adding extra availability." : "Blocking this time."}
+                        {type === "ADD" ? "מוסיפים זמינות נוספת." : "חוסמים את הזמן הזה."}
                     </p>
                 ) : (
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Type</label>
+                        <label className={labelClass}>סוג</label>
                         <select value={type} onChange={(e) => setType(e.target.value)} className={inputClassFull}>
-                            <option value="BLOCK">Block (mark unavailable)</option>
-                            <option value="ADD">Add (extra availability)</option>
+                            <option value="BLOCK">חסימה (סימון כלא זמין)</option>
+                            <option value="ADD">הוספה (זמינות נוספת)</option>
                         </select>
                     </div>
                 )}
 
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Note (optional)</label>
-                    <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Reason..." className={inputClassFull} />
+                    <label className={labelClass}>הערה (אופציונלי)</label>
+                    <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="סיבה..." className={inputClassFull} />
                 </div>
 
                 {error && <p className="text-sm text-red-600">{error}</p>}
@@ -120,7 +120,7 @@ export function OverrideFormModal({ draft, onClose, onSave }: OverrideFormModalP
                     onClick={handleSave}
                     className="w-full mt-2 rounded-lg bg-indigo-600 text-white text-sm font-medium py-2.5 hover:bg-indigo-700 transition-colors"
                 >
-                    Save
+                    שמירה
                 </button>
             </div>
         </Modal>
@@ -139,7 +139,7 @@ type ViewOverrideModalProps = {
    ADD overrides, since a BLOCK is unavailable time by definition */
 export function ViewOverrideModal({ override, onClose, onBookLesson, onEdit, onDelete }: ViewOverrideModalProps) {
     return (
-        <Modal title={override.type === "BLOCK" ? "Blocked time" : "Added availability"} onClose={onClose}>
+        <Modal title={override.type === "BLOCK" ? "זמן חסום" : "זמינות נוספת"} onClose={onClose}>
             <div className="flex flex-col gap-3">
                 <p className="text-sm text-slate-700">
                     {override.date} &middot; {override.startTime.slice(0, 5)}&ndash;{override.endTime.slice(0, 5)}
@@ -151,7 +151,7 @@ export function ViewOverrideModal({ override, onClose, onBookLesson, onEdit, onD
                         onClick={() => onBookLesson(override)}
                         className="w-full rounded-lg bg-indigo-600 text-white text-sm font-medium py-2.5 hover:bg-indigo-700 transition-colors"
                     >
-                        Book a lesson here
+                        קביעת שיעור כאן
                     </button>
                 )}
 
@@ -159,14 +159,14 @@ export function ViewOverrideModal({ override, onClose, onBookLesson, onEdit, onD
                     onClick={() => onEdit(override)}
                     className="w-full rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium py-2.5 hover:bg-slate-50 transition-colors"
                 >
-                    Edit
+                    עריכה
                 </button>
 
                 <button
                     onClick={() => onDelete(override.id)}
                     className="w-full rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium py-2.5 hover:bg-red-50 transition-colors"
                 >
-                    Delete
+                    מחיקה
                 </button>
             </div>
         </Modal>

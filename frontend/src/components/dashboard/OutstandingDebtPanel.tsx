@@ -1,3 +1,4 @@
+import { formatMoney } from "../../utils/money";
 import { useState } from "react";
 import PanelPager from "./PanelPager";
 import type { Debt } from "../../types/dashboard";
@@ -19,18 +20,18 @@ export default function OutstandingDebtPanel({ debts }: { debts: Debt[] }) {
     return (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
             <div className="px-6 py-4 border-b border-slate-100">
-                <h2 className="text-lg font-semibold text-slate-900">Outstanding debt</h2>
+                <h2 className="text-lg font-semibold text-slate-900">חובות פתוחים</h2>
             </div>
             <div className="divide-y divide-slate-100">
                 {debts.length === 0 && (
-                    <p className="px-6 py-6 text-sm text-slate-500 text-center">No outstanding debt.</p>
+                    <p className="px-6 py-6 text-sm text-slate-500 text-center">אין חובות פתוחים.</p>
                 )}
                 {pageItems.map((debt) => (
                     <div key={debt.studentId} className="px-6 py-3 flex items-center justify-between gap-2">
                         <span className="text-slate-900 text-sm">
                             {debt.studentFirstName} {debt.studentLastName}
                         </span>
-                        <span className="font-medium text-red-600 text-sm">₪{debt.debt}</span>
+                        <span className="font-medium text-red-600 text-sm">{formatMoney(debt.debt)}</span>
                     </div>
                 ))}
             </div>

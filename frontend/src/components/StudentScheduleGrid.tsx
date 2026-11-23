@@ -234,7 +234,7 @@ function StudentScheduleGrid() {
                             <button
                                 key={`lesson-${lesson.id}`}
                                 onClick={() => setViewingLesson(lesson)}
-                                className={`absolute block left-0 right-0 m-0 px-1.5 py-1 text-xs text-left leading-tight overflow-hidden transition-colors ${lessonBlockStyles[lesson.status] ?? lessonBlockStyles.SCHEDULED}`}
+                                className={`absolute block left-0 right-0 m-0 px-1.5 py-1 text-xs text-start leading-tight overflow-hidden transition-colors ${lessonBlockStyles[lesson.status] ?? lessonBlockStyles.SCHEDULED}`}
                                 style={{ top: `${top}px`, height: `${height}px` }}
                                 title={lesson.subjectName}
                             >

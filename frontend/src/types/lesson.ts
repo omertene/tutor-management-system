@@ -28,6 +28,13 @@ export const studentStatusLabels: Record<string, string> = {
     CANCELLED: "בוטל",
 };
 
+/* How each lesson status is shown in the teacher's lists */
+export const lessonStatusLabels: Record<string, string> = {
+    SCHEDULED: "מתוכנן",
+    COMPLETED: "הושלם",
+    CANCELLED: "בוטל",
+};
+
 /* Students can't cancel a lesson that starts within this many hours */
 export const STUDENT_MIN_CANCEL_NOTICE_HOURS = 6;
 

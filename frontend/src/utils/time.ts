@@ -3,6 +3,13 @@
 
 export const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
 export const dayLabels = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
+export const dayFullNames = ["יום ראשון", "יום שני", "יום שלישי", "יום רביעי", "יום חמישי", "יום שישי", "יום שבת"];
+
+/* "SUNDAY" -> "יום ראשון" */
+export function dayName(day: string): string {
+    const index = days.indexOf(day);
+    return index === -1 ? day : dayFullNames[index];
+}
 
 /* The grid shows this many hour rows, starting at HOUR_START */
 export const DEFAULT_HOUR_START = 8;

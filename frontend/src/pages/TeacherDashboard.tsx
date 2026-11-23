@@ -1,3 +1,4 @@
+import { formatMoney } from "../utils/money";
 import { useState } from "react";
 import NavBar from "../components/NavBar";
 import AddStudentModal from "../components/AddStudentModal";
@@ -35,33 +36,33 @@ function TeacherDashboard() {
             <NavBar homePath="/teacher" links={teacherLinks} />
 
             <main className="max-w-6xl mx-auto px-4 py-8">
-                <h1 className="text-2xl font-semibold text-slate-900">Teacher Dashboard</h1>
-                <p className="text-slate-500 mt-1">Here's an overview of your students.</p>
+                <h1 className="text-2xl font-semibold text-slate-900">לוח בקרה</h1>
+                <p className="text-slate-500 mt-1">סקירה כללית של התלמידים שלך.</p>
 
                 {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
                 <div className="mt-6 flex flex-wrap gap-3">
                     <button onClick={() => setShowAddStudentModal(true)} className={actionButtonClass}>
-                        + Add student
+                        + הוספת תלמיד
                     </button>
                     <button onClick={() => setShowAddLessonModal(true)} className={actionButtonClass}>
-                        + Add lesson
+                        + הוספת שיעור
                     </button>
                 </div>
 
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className={statCardClass}>
-                        <p className="text-sm text-slate-500">Revenue this month</p>
-                        <p className="text-2xl font-semibold text-slate-900 mt-1">₪{revenueThisMonth}</p>
+                        <p className="text-sm text-slate-500">הכנסות החודש</p>
+                        <p className="text-2xl font-semibold text-slate-900 mt-1">{formatMoney(revenueThisMonth)}</p>
                     </div>
                     <div className={statCardClass}>
-                        <p className="text-sm text-slate-500">Lessons this week</p>
+                        <p className="text-sm text-slate-500">שיעורים השבוע</p>
                         <p className="text-2xl font-semibold text-slate-900 mt-1">
-                            {lessonsThisWeekCount} <span className="text-base font-normal text-slate-400">&middot; {formatHoursFromMinutes(minutesThisWeek)} hrs</span>
+                            {lessonsThisWeekCount} <span className="text-base font-normal text-slate-400">&middot; {formatHoursFromMinutes(minutesThisWeek)} שעות</span>
                         </p>
                     </div>
                     <div className={statCardClass}>
-                        <p className="text-sm text-slate-500">Students this month</p>
+                        <p className="text-sm text-slate-500">תלמידים החודש</p>
                         <p className="text-2xl font-semibold text-slate-900 mt-1">{studentsThisMonthCount}</p>
                     </div>
                 </div>

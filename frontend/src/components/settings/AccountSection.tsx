@@ -33,14 +33,14 @@ export default function AccountSection() {
             });
 
             if (!response.ok) {
-                setErrorMessage(await readErrorMessage(response, "Failed to update email"));
+                setErrorMessage(await readErrorMessage(response, "עדכון האימייל נכשל"));
                 return;
             }
 
-            setSuccessMessage("Login email updated. Use your new email next time you sign in.");
+            setSuccessMessage("אימייל ההתחברות עודכן. בכניסה הבאה יש להתחבר עם האימייל החדש.");
             setEmail("");
         } catch {
-            setErrorMessage("Could not reach the server. Please try again.");
+            setErrorMessage("אין חיבור לשרת. נסו שוב.");
         }
     }
 
@@ -62,14 +62,14 @@ export default function AccountSection() {
             });
 
             if (!response.ok) {
-                setErrorMessage(await readErrorMessage(response, "Failed to reset password"));
+                setErrorMessage(await readErrorMessage(response, "עדכון הסיסמה נכשל"));
                 return;
             }
 
-            setSuccessMessage("Password updated. Use your new password next time you sign in.");
+            setSuccessMessage("הסיסמה עודכנה. בכניסה הבאה יש להתחבר עם הסיסמה החדשה.");
             setNewPassword("");
         } catch {
-            setErrorMessage("Could not reach the server. Please try again.");
+            setErrorMessage("אין חיבור לשרת. נסו שוב.");
         }
     }
 
@@ -77,9 +77,9 @@ export default function AccountSection() {
         <div className="mt-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-lg font-semibold text-slate-900 mb-1">Your account</h2>
+                    <h2 className="text-lg font-semibold text-slate-900 mb-1">החשבון שלך</h2>
                     <p className="text-sm text-slate-500">
-                        Change the email or password you use to log in.
+                        שינוי האימייל או הסיסמה שבהם אתם נכנסים למערכת.
                     </p>
                 </div>
                 {!showForm && (
@@ -87,7 +87,7 @@ export default function AccountSection() {
                         onClick={() => setShowForm(true)}
                         className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
                     >
-                        Change email or password
+                        שינוי אימייל או סיסמה
                     </button>
                 )}
             </div>
@@ -96,22 +96,22 @@ export default function AccountSection() {
                 <>
                     <div className="mt-4 bg-white rounded-xl border border-slate-200 shadow-sm p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div>
-                            <label className={fieldLabelClass}>Login email</label>
+                            <label className={fieldLabelClass}>אימייל התחברות</label>
                             <div className="flex gap-2">
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     onKeyDown={(e) => e.key === "Enter" && handleUpdateEmail()}
-                                    placeholder="New email"
+                                    placeholder="אימייל חדש"
                                     className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 />
-                                <button onClick={handleUpdateEmail} className={saveButtonClass}>Save</button>
+                                <button onClick={handleUpdateEmail} className={saveButtonClass}>שמירה</button>
                             </div>
                         </div>
 
                         <div>
-                            <label className={fieldLabelClass}>New password</label>
+                            <label className={fieldLabelClass}>סיסמה חדשה</label>
                             <div className="flex gap-2">
                                 <div className="relative flex-1">
                                     <input
@@ -119,20 +119,20 @@ export default function AccountSection() {
                                         value={newPassword}
                                         onChange={(e) => setNewPassword(e.target.value)}
                                         onKeyDown={(e) => e.key === "Enter" && handleResetPassword()}
-                                        placeholder="New password"
-                                        className="w-full rounded-lg border border-slate-300 pl-3 pr-16 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="סיסמה חדשה"
+                                        className="w-full rounded-lg border border-slate-300 ps-3 pe-16 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword((v) => !v)}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-500 hover:text-slate-700"
+                                        className="absolute end-2 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-500 hover:text-slate-700"
                                     >
-                                        {showPassword ? "Hide" : "Show"}
+                                        {showPassword ? "הסתרה" : "הצגה"}
                                     </button>
                                 </div>
-                                <button onClick={handleResetPassword} className={saveButtonClass}>Save</button>
+                                <button onClick={handleResetPassword} className={saveButtonClass}>שמירה</button>
                             </div>
-                            <p className="mt-1 text-xs text-slate-500">At least 8 characters, with a letter and a digit</p>
+                            <p className="mt-1 text-xs text-slate-500">לפחות 8 תווים, כולל אות וספרה</p>
                         </div>
                     </div>
 

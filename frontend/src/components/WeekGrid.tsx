@@ -116,7 +116,7 @@ function WeekGrid({
                                     className="absolute left-0 right-0 pointer-events-none border-t-2 border-red-500 z-10"
                                     style={{ top: `${nowLineTop}px` }}
                                 >
-                                    <span className="absolute -left-1.5 -top-1.5 w-3 h-3 rounded-full bg-red-500" />
+                                    <span className="absolute -start-1.5 -top-1.5 w-3 h-3 rounded-full bg-red-500" />
                                 </div>
                             )}
                         </div>

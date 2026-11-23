@@ -34,11 +34,11 @@ export default function NeedsCompletionPanel({ lessons, onComplete, onCancel }: 
     return (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
             <div className="px-6 py-4 border-b border-slate-100">
-                <h2 className="text-lg font-semibold text-slate-900">Needs completion</h2>
+                <h2 className="text-lg font-semibold text-slate-900">שיעורים לסימון</h2>
             </div>
             <div className="divide-y divide-slate-100">
                 {lessons.length === 0 && (
-                    <p className="px-6 py-6 text-sm text-slate-500 text-center">Nothing to mark.</p>
+                    <p className="px-6 py-6 text-sm text-slate-500 text-center">אין שיעורים לסימון.</p>
                 )}
                 {pageItems.map((lesson) => (
                     <div key={lesson.id} className="px-6 py-3 flex flex-col gap-2">
@@ -55,13 +55,13 @@ export default function NeedsCompletionPanel({ lessons, onComplete, onCancel }: 
                                 onClick={() => onComplete(lesson.id)}
                                 className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
                             >
-                                Mark completed
+                                סימון כהושלם
                             </button>
                             <button
                                 onClick={() => onCancel(lesson.id)}
                                 className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
                             >
-                                Cancel
+                                ביטול
                             </button>
                         </div>
                     </div>

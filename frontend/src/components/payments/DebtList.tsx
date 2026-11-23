@@ -1,3 +1,4 @@
+import { formatMoney } from "../../utils/money";
 import ListPager from "../ListPager";
 import { usePagination } from "../../hooks/usePagination";
 import type { Debt } from "../../types/payment";
@@ -28,7 +29,7 @@ export default function DebtList({ debts, searchQuery }: DebtListProps) {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
                 {visibleItems.length === 0 && (
                     <p className="px-4 py-6 text-sm text-slate-500 text-center">
-                        {debts.length === 0 ? "No debts yet." : "No students match your search."}
+                        {debts.length === 0 ? "אין חובות עדיין." : "לא נמצאו תלמידים התואמים לחיפוש."}
                     </p>
                 )}
                 {visibleItems.map((debt) => (
@@ -37,10 +38,10 @@ export default function DebtList({ debts, searchQuery }: DebtListProps) {
                             {debt.studentFirstName} {debt.studentLastName}
                         </span>
                         <div className="flex items-center gap-4 text-sm">
-                            <span className="text-slate-500">Owed: ₪{debt.totalOwed}</span>
-                            <span className="text-slate-500">Paid: ₪{debt.totalPaid}</span>
+                            <span className="text-slate-500">חויב: {formatMoney(debt.totalOwed)}</span>
+                            <span className="text-slate-500">שולם: {formatMoney(debt.totalPaid)}</span>
                             <span className={`font-medium ${debt.debt > 0 ? "text-red-600" : "text-green-600"}`}>
-                                Balance: ₪{debt.debt}
+                                יתרה: {formatMoney(debt.debt)}
                             </span>
                         </div>
                     </div>

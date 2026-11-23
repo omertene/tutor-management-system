@@ -37,7 +37,7 @@ function monthLabel(year: number, month: number): string {
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string; unit?: string }[]; label?: string }) {
     if (!active || !payload || payload.length === 0) return null;
     return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm px-3 py-2 text-sm">
+        <div dir="rtl" className="bg-white border border-slate-200 rounded-lg shadow-sm px-3 py-2 text-sm">
             {label && <p className="text-slate-500 mb-1">{label}</p>}
             {payload.map((entry) => (
                 <p key={entry.name} className="font-medium" style={{ color: entry.color }}>
@@ -59,9 +59,9 @@ type StatisticsChartsProps = {
 export default function StatisticsCharts({ monthlyTrend, subjectBreakdown, subjectFilterActive }: StatisticsChartsProps) {
     const trendChartData = monthlyTrend.map((row) => ({
         label: monthLabel(row.year, row.month),
-        Revenue: row.revenue,
-        "Income received": row.incomeReceived,
-        Hours: row.hours,
+        "הכנסות": row.revenue,
+        "הכנסה שהתקבלה": row.incomeReceived,
+        "שעות": row.hours,
     }));
 
     const subjectChartData = subjectBreakdown.map((row) => ({
@@ -72,13 +72,13 @@ export default function StatisticsCharts({ monthlyTrend, subjectBreakdown, subje
     return (
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-                <h2 className={sectionTitleClass}>Monthly performance (last 12 months)</h2>
+                <h2 className={sectionTitleClass}>ביצועים חודשיים (12 החודשים האחרונים)</h2>
                 {subjectFilterActive && (
                     <p className="text-xs text-slate-400 -mt-2 mb-3">
-                        Revenue is filtered to the selected subject; income received always covers every subject.
+                        ההכנסות מסוננות לפי המקצוע שנבחר; ההכנסה שהתקבלה מכסה תמיד את כל המקצועות.
                     </p>
                 )}
-                <div className={cardClass}>
+                <div dir="ltr" className={cardClass}>
                     <ResponsiveContainer width="100%" height={300}>
                         <ComposedChart data={trendChartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -87,19 +87,19 @@ export default function StatisticsCharts({ monthlyTrend, subjectBreakdown, subje
                             <YAxis yAxisId="hours" orientation="right" tick={{ fontSize: 12, fill: COLORS.slate }} />
                             <Tooltip content={<ChartTooltip />} cursor={{ fill: "#f1f5f9" }} />
                             <Legend wrapperStyle={{ fontSize: 12 }} />
-                            <Bar yAxisId="money" dataKey="Revenue" fill={COLORS.indigo} radius={[3, 3, 0, 0]} />
-                            <Bar yAxisId="money" dataKey="Income received" fill={COLORS.sky} radius={[3, 3, 0, 0]} />
-                            <Line yAxisId="hours" type="monotone" dataKey="Hours" stroke={COLORS.slate} strokeWidth={2} dot={false} />
+                            <Bar yAxisId="money" dataKey="הכנסות" fill={COLORS.indigo} radius={[3, 3, 0, 0]} />
+                            <Bar yAxisId="money" dataKey="הכנסה שהתקבלה" fill={COLORS.sky} radius={[3, 3, 0, 0]} />
+                            <Line yAxisId="hours" type="monotone" dataKey="שעות" stroke={COLORS.slate} strokeWidth={2} dot={false} />
                         </ComposedChart>
                     </ResponsiveContainer>
                 </div>
             </div>
 
             <div>
-                <h2 className={sectionTitleClass}>Revenue by subject</h2>
+                <h2 className={sectionTitleClass}>הכנסות לפי מקצוע</h2>
                 <div className={cardClass}>
                     {subjectChartData.length === 0 ? (
-                        <p className="text-sm text-slate-500 text-center py-24">No completed lessons in this range.</p>
+                        <p className="text-sm text-slate-500 text-center py-24">אין שיעורים שהושלמו בטווח הזה.</p>
                     ) : (
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
