@@ -33,21 +33,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMalformedRequestBody(HttpMessageNotReadableException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse("The request body is missing or not valid JSON"));
+                .body(new ErrorResponse("גוף הבקשה חסר או שאינו JSON תקין"));
     }
 
     /* a required @RequestParam was left out of the request entirely */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorResponse> handleMissingRequestParameter(MissingServletRequestParameterException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse("Missing required parameter: " + ex.getParameterName()));
+                .body(new ErrorResponse("חסר פרמטר חובה: " + ex.getParameterName()));
     }
 
     /* uploaded file (or whole multipart request) is larger than the configured limit */
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException ex) {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                .body(new ErrorResponse("The uploaded file is too large"));
+                .body(new ErrorResponse("הקובץ שהועלה גדול מדי"));
     }
 
     /* a @PreAuthorize check failed (wrong role for this endpoint) - without this
@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(new ErrorResponse("You don't have permission to do that"));
+                .body(new ErrorResponse("אין לך הרשאה לבצע פעולה זו"));
     }
 
     /* someone else changed this row between our read and our write (@Version on
@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public ResponseEntity<ErrorResponse> handleOptimisticLockFailure(ObjectOptimisticLockingFailureException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ErrorResponse("Someone else changed this while you were editing it. Reload and try again."));
+                .body(new ErrorResponse("מישהו אחר שינה את זה בזמן העריכה. יש לרענן ולנסות שוב."));
     }
 
     /* a database constraint was violated in a way no service-level check caught -
@@ -72,7 +72,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         log.warn("Data integrity violation", ex);
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ErrorResponse("This request conflicts with existing data"));
+                .body(new ErrorResponse("הבקשה מתנגשת עם נתונים קיימים"));
     }
 
     /* final fallback for anything not handled above, so it never falls through
@@ -81,6 +81,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex) {
         log.error("Unhandled exception", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Something went wrong. Please try again."));
+                .body(new ErrorResponse("משהו השתבש. נסו שוב."));
     }
 }

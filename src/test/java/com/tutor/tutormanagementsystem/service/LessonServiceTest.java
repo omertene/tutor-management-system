@@ -132,7 +132,7 @@ class LessonServiceTest {
 
         assertThatThrownBy(() -> service.cancelLesson(LESSON_ID, STUDENT_ID, Role.STUDENT))
                 .isInstanceOf(InvalidLessonStateException.class)
-                .hasMessageContaining("6 hours");
+                .hasMessageContaining("6 שעות");
         verify(lessonRepository, never()).save(any());
     }
 
@@ -196,7 +196,7 @@ class LessonServiceTest {
 
         assertThatThrownBy(() -> service.completeLesson(LESSON_ID))
                 .isInstanceOf(InvalidLessonStateException.class)
-                .hasMessageContaining("before it has started");
+                .hasMessageContaining("לפני שהתחיל");
     }
 
     @Test
@@ -260,7 +260,7 @@ class LessonServiceTest {
         assertThatThrownBy(() -> service.createLessonForStudent(
                 teacherRequest(LocalTime.of(10, 0), LocalTime.of(11, 0))))
                 .isInstanceOf(SlotNotAvailableException.class)
-                .hasMessageContaining("already booked");
+                .hasMessageContaining("כבר תפוסה");
         verify(lessonRepository, never()).save(any());
     }
 
@@ -300,11 +300,11 @@ class LessonServiceTest {
         assertThatThrownBy(() -> service.createLessonAsStudent(STUDENT_ID,
                 studentRequest(soon.toLocalDate(), soon.toLocalTime().withSecond(0).withNano(0), LocalTime.MAX)))
                 .isInstanceOf(SlotNotAvailableException.class)
-                .hasMessageContaining("2 hours");
+                .hasMessageContaining("2 שעות");
         verify(lessonRepository, never()).save(any());
     }
 
-    /* a student must not learn that another student has a lesson there, so "already booked"
+    /* a student must not learn that another student has a lesson there, so "כבר תפוסה"
        and "not available" produce exactly the same message for a student */
     @Test
     void studentBookingATakenSlot_getsTheGenericMessage() {
@@ -316,7 +316,7 @@ class LessonServiceTest {
         assertThatThrownBy(() -> service.createLessonAsStudent(STUDENT_ID,
                 studentRequest(LocalDate.now().plusDays(1), LocalTime.of(10, 0), LocalTime.of(11, 0))))
                 .isInstanceOf(SlotNotAvailableException.class)
-                .hasMessage("This time is not available");
+                .hasMessage("השעה הזו לא פנויה");
     }
 
     @Test
@@ -388,6 +388,6 @@ class LessonServiceTest {
         assertThatThrownBy(() -> service.updateLesson(LESSON_ID,
                 teacherRequest(LocalTime.of(10, 0), LocalTime.of(11, 0))))
                 .isInstanceOf(SlotNotAvailableException.class)
-                .hasMessageContaining("already booked");
+                .hasMessageContaining("כבר תפוסה");
     }
 }

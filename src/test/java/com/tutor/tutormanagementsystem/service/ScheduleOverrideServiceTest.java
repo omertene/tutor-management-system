@@ -99,7 +99,7 @@ class ScheduleOverrideServiceTest {
 
         assertThatThrownBy(() -> service.createScheduleOverride(request(NEXT_WEEK, OverrideType.BLOCK, 11, 13)))
                 .isInstanceOf(ScheduleConflictException.class)
-                .hasMessageContaining("overlaps an existing override");
+                .hasMessageContaining("חופפת לחריגה קיימת");
     }
 
     /* ---------- create: redundant overrides ---------- */
@@ -111,7 +111,7 @@ class ScheduleOverrideServiceTest {
 
         assertThatThrownBy(() -> service.createScheduleOverride(request(NEXT_WEEK, OverrideType.BLOCK, 10, 11)))
                 .isInstanceOf(ScheduleConflictException.class)
-                .hasMessageContaining("already unavailable");
+                .hasMessageContaining("כבר חסומה");
         verify(overrideRepository, never()).save(any());
     }
 
@@ -122,7 +122,7 @@ class ScheduleOverrideServiceTest {
 
         assertThatThrownBy(() -> service.createScheduleOverride(request(NEXT_WEEK, OverrideType.ADD, 10, 11)))
                 .isInstanceOf(ScheduleConflictException.class)
-                .hasMessageContaining("already available");
+                .hasMessageContaining("כבר פנויה");
     }
 
     /* ---------- create: the successful cases ---------- */
@@ -162,7 +162,7 @@ class ScheduleOverrideServiceTest {
 
         assertThatThrownBy(() -> service.createScheduleOverride(request(NEXT_WEEK, OverrideType.BLOCK, 10, 11)))
                 .isInstanceOf(ScheduleConflictException.class)
-                .hasMessageContaining("scheduled lesson");
+                .hasMessageContaining("שיעור מתוזמן");
         verify(overrideRepository, never()).save(any());
     }
 
@@ -207,7 +207,7 @@ class ScheduleOverrideServiceTest {
         assertThatThrownBy(() -> service.updateScheduleOverride(5L,
                 request(LocalDate.now().minusDays(1), OverrideType.ADD, 19, 21)))
                 .isInstanceOf(PastDateException.class)
-                .hasMessageContaining("past date");
+                .hasMessageContaining("לתאריך שעבר");
     }
 
     /* ---------- delete and the student's view ---------- */

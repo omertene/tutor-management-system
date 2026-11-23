@@ -61,7 +61,7 @@ function ResetPasswordPage() {
       }
 
       const serverMessage = await readErrorMessage(response, "");
-      if (response.status === 400 && serverMessage.includes("invalid or has expired")) {
+      if (response.status === 400 && serverMessage.includes("אינו תקין או שפג תוקפו")) {
         setLinkInvalid(true);
       } else {
         setErrorMessage("לא הצלחנו לעדכן את הסיסמה. נסו שוב.");

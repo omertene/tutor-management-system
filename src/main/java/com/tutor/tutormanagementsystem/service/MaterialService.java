@@ -52,7 +52,7 @@ public class MaterialService {
 
         /* Block students from viewing materials of lessons that belong to others */
         if (callerRole == Role.STUDENT && !isOwner) {
-            throw new LessonAccessDeniedException("You can only view materials for your own lessons");
+            throw new LessonAccessDeniedException("אפשר לצפות רק בחומרים של השיעורים שלך");
         }
 
         return materialRepository.findAllByLessonIdProjected(lessonId);
@@ -64,18 +64,18 @@ public class MaterialService {
     public MaterialResponse addLink(AddLinkRequest request) {
 
         if (request.title() == null || request.title().isBlank()) {
-            throw new InvalidMaterialException("Title is required");
+            throw new InvalidMaterialException("חובה להזין כותרת");
         }
 
         if (request.url() == null || request.url().isBlank()) {
-            throw new InvalidMaterialException("URL is required");
+            throw new InvalidMaterialException("חובה להזין כתובת קישור");
         }
 
         /* Prevent XSS vulnerabilities by strictly allowing only http and https protocols */
         String url = request.url().trim();
         String lowerUrl = url.toLowerCase();
         if (!lowerUrl.startsWith("http://") && !lowerUrl.startsWith("https://")) {
-            throw new InvalidMaterialException("Link must start with http:// or https://");
+            throw new InvalidMaterialException("הקישור חייב להתחיל ב-http:// או ב-https://");
         }
 
         Material material = newMaterialFor(request.studentId(), request.lessonId(), request.title(), request.description())
@@ -93,11 +93,11 @@ public class MaterialService {
     public MaterialResponse addNote(AddNoteRequest request) {
 
         if (request.title() == null || request.title().isBlank()) {
-            throw new InvalidMaterialException("Title is required");
+            throw new InvalidMaterialException("חובה להזין כותרת");
         }
 
         if (request.description() == null || request.description().isBlank()) {
-            throw new InvalidMaterialException("Note description is required");
+            throw new InvalidMaterialException("חובה להזין תוכן להערה");
         }
 
         Material material = newMaterialFor(request.studentId(), request.lessonId(), request.title(), request.description())
@@ -113,11 +113,11 @@ public class MaterialService {
     @Transactional
     public MaterialResponse uploadFile(Long studentId, Long lessonId, String title, String description, MultipartFile file) {
         if (title == null || title.isBlank()) {
-            throw new InvalidMaterialException("Title is required");
+            throw new InvalidMaterialException("חובה להזין כותרת");
         }
 
         if (file == null || file.isEmpty()) {
-            throw new InvalidMaterialException("A file is required");
+            throw new InvalidMaterialException("חובה לצרף קובץ");
         }
 
         byte[] data;
@@ -142,17 +142,17 @@ public class MaterialService {
     /* Returns raw material entity for file streaming with student ownership verification */
     public Material getMaterialEntity(Long materialId, Long callerId, Role callerRole) {
         Material material = materialRepository.findById(materialId)
-                .orElseThrow(() -> new MaterialNotFoundException("Material not found"));
+                .orElseThrow(() -> new MaterialNotFoundException("החומר לא נמצא"));
 
         boolean isOwner = material.getStudent().getId().equals(callerId);
 
         /* Block students from downloading files belonging to other students */
         if (callerRole == Role.STUDENT && !isOwner) {
-            throw new LessonAccessDeniedException("You can only download your own materials");
+            throw new LessonAccessDeniedException("אפשר להוריד רק חומרים שלך");
         }
 
         if (material.getType() != MaterialType.FILE) {
-            throw new InvalidMaterialException("Only file materials can be downloaded");
+            throw new InvalidMaterialException("אפשר להוריד רק חומרים מסוג קובץ");
         }
 
         return material;
@@ -163,7 +163,7 @@ public class MaterialService {
     public void deleteMaterial(Long materialId) {
 
         if (!materialRepository.existsById(materialId)) {
-            throw new MaterialNotFoundException("Material not found");
+            throw new MaterialNotFoundException("החומר לא נמצא");
         }
 
         materialRepository.deleteById(materialId);
@@ -180,7 +180,7 @@ public class MaterialService {
 
         /* Prevent attaching study materials to a canceled lesson */
         if (lesson != null && lesson.getStatus() == LessonStatus.CANCELLED) {
-            throw new InvalidMaterialException("Can't attach a material to a cancelled lesson");
+            throw new InvalidMaterialException("אי אפשר לצרף חומר לשיעור שבוטל");
         }
 
         return Material.builder()

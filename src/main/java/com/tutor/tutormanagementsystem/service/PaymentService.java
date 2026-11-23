@@ -35,17 +35,17 @@ public class PaymentService {
 
         /* Payment amount must be strictly positive */
         if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new InvalidPaymentAmountException("Payment amount must be greater than zero");
+            throw new InvalidPaymentAmountException("סכום התשלום חייב להיות גדול מאפס");
         }
 
         /* Payment method (cash, bit, bank transfer) is mandatory */
         if (request.method() == null) {
-            throw new InvalidRequestDataException("Payment method is required");
+            throw new InvalidRequestDataException("חובה לבחור אמצעי תשלום");
         }
 
         /* A payment can't be dated after today - it records money already received */
         if (request.paymentDate() != null && request.paymentDate().isAfter(LocalDate.now())) {
-            throw new InvalidRequestDataException("Payment date can't be in the future");
+            throw new InvalidRequestDataException("תאריך התשלום לא יכול להיות בעתיד");
         }
 
         Student student = studentService.getStudentEntity(request.studentId());
@@ -69,25 +69,25 @@ public class PaymentService {
 
         /* Ensure updated amount remains positive */
         if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new InvalidPaymentAmountException("Payment amount must be greater than zero");
+            throw new InvalidPaymentAmountException("סכום התשלום חייב להיות גדול מאפס");
         }
 
         if (request.method() == null) {
-            throw new InvalidRequestDataException("Payment method is required");
+            throw new InvalidRequestDataException("חובה לבחור אמצעי תשלום");
         }
 
         /* A payment can't be dated after today - it records money already received */
         if (request.paymentDate() != null && request.paymentDate().isAfter(LocalDate.now())) {
-            throw new InvalidRequestDataException("Payment date can't be in the future");
+            throw new InvalidRequestDataException("תאריך התשלום לא יכול להיות בעתיד");
         }
 
         /* Locate target payment */
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
+                .orElseThrow(() -> new PaymentNotFoundException("התשלום לא נמצא"));
 
         /* Block editing historically canceled records */
         if (payment.isCancelled()) {
-            throw new InvalidRequestDataException("A cancelled payment can't be edited");
+            throw new InvalidRequestDataException("אי אפשר לערוך תשלום שבוטל");
         }
 
         /* Re-assign payment to a different student if teacher logged it against the wrong student */
@@ -111,11 +111,11 @@ public class PaymentService {
     @Transactional
     public void cancelPayment(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
+                .orElseThrow(() -> new PaymentNotFoundException("התשלום לא נמצא"));
 
         /* Prevent cancelling an already cancelled record */
         if (payment.isCancelled()) {
-            throw new InvalidRequestDataException("This payment is already cancelled");
+            throw new InvalidRequestDataException("התשלום כבר בוטל");
         }
 
         /* Flag as cancelled instead of deleting the DB row */

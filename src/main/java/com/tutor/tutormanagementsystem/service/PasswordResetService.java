@@ -36,7 +36,7 @@ public class PasswordResetService {
     static final Duration REQUEST_COOLDOWN = Duration.ofMinutes(1);
 
     private static final int TOKEN_BYTES = 32;
-    private static final String INVALID_LINK_MESSAGE = "This reset link is invalid or has expired";
+    private static final String INVALID_LINK_MESSAGE = "קישור האיפוס אינו תקין או שפג תוקפו";
 
     private static final SecureRandom RANDOM = new SecureRandom();
 

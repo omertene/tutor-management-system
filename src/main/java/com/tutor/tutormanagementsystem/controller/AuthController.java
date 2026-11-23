@@ -37,14 +37,14 @@ public class AuthController {
     public ResponseEntity<MessageResponse> forgotPassword(@RequestBody ForgotPasswordRequest request) {
         passwordResetService.requestReset(request.email());
         return ResponseEntity.ok(new MessageResponse(
-                "If this email is registered, a password reset link has been sent"));
+                "אם האימייל רשום במערכת, נשלח אליו קישור לאיפוס סיסמה"));
     }
 
     /* sets a new password using the token from the emailed link */
     @PostMapping("/reset-password")
     public ResponseEntity<MessageResponse> resetPassword(@RequestBody ResetPasswordRequest request) {
         passwordResetService.resetPassword(request.token(), request.newPassword());
-        return ResponseEntity.ok(new MessageResponse("Password updated"));
+        return ResponseEntity.ok(new MessageResponse("הסיסמה עודכנה"));
     }
 
 }
