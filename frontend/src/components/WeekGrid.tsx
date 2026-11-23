@@ -90,7 +90,7 @@ function WeekGrid({
                         </div>
                     ))}
 
-                    <div className="relative">
+                    <div className="relative col-start-1 row-start-2">
                         {hours.map((hour) => (
                             <div
                                 key={hour}
@@ -110,7 +110,7 @@ function WeekGrid({
                     </div>
 
                     {dayLabels.map((_, dayIndex) => (
-                        <div key={dayIndex} className={`relative border-e border-slate-200 ${dayIndex === todayDayIndex ? "ring-1 ring-inset ring-indigo-200" : ""}`}>
+                        <div key={dayIndex} style={{ gridColumnStart: dayIndex + 2, gridRowStart: 2 }} className={`relative border-e border-slate-200 ${dayIndex === todayDayIndex ? "ring-1 ring-inset ring-indigo-200" : ""}`}>
                             {renderDayColumn(dayIndex)}
 
                         </div>
