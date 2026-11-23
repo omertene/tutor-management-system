@@ -35,7 +35,7 @@ public class ScheduleOverrideService {
     public ScheduleOverrideResponse createScheduleOverride(ScheduleOverrideRequest request) {
 
         /* Run validations, acquire mutex date lock, and verify no conflicts exist */
-        requireWritableSlot(request, null, "Cannot create an override for a past date");
+        requireWritableSlot(request, null, "אי אפשר ליצור חריגה לתאריך שעבר");
 
         ScheduleOverride scheduleOverride = ScheduleOverride.builder()
                 .date(request.date())
@@ -56,10 +56,10 @@ public class ScheduleOverrideService {
     public ScheduleOverrideResponse updateScheduleOverride(Long overrideId, ScheduleOverrideRequest request) {
 
         ScheduleOverride scheduleOverride = scheduleOverrideRepository.findById(overrideId)
-                .orElseThrow(() -> new ScheduleOverrideNotFoundException("Schedule override not found"));
+                .orElseThrow(() -> new ScheduleOverrideNotFoundException("החריגה לא נמצאה"));
 
         /* Validate new slot constraints while excluding the current override from self-overlap */
-        requireWritableSlot(request, overrideId, "Cannot move an override to a past date");
+        requireWritableSlot(request, overrideId, "אי אפשר להעביר חריגה לתאריך שעבר");
 
         scheduleOverride.setDate(request.date());
         scheduleOverride.setStartTime(request.startTime());
@@ -95,7 +95,7 @@ public class ScheduleOverrideService {
                 .anyMatch(other -> !other.getId().equals(excludeOverrideId));
 
         if (overlapping) {
-            throw new ScheduleConflictException("This time overlaps an existing override");
+            throw new ScheduleConflictException("השעה הזו חופפת לחריגה קיימת");
         }
 
         /* Check if the slot is already covered by a recurring weekly rule */
@@ -106,16 +106,16 @@ public class ScheduleOverrideService {
 
         /* Block redundant states*/
         if (request.type() == OverrideType.BLOCK && !coveredByRule) {
-            throw new ScheduleConflictException("This time is already unavailable - no need to block it");
+            throw new ScheduleConflictException("השעה הזו כבר חסומה - אין צורך לחסום אותה");
         }
         if (request.type() == OverrideType.ADD && coveredByRule) {
-            throw new ScheduleConflictException("This time is already available - no need to add it");
+            throw new ScheduleConflictException("השעה הזו כבר פנויה - אין צורך להוסיף אותה");
         }
 
         /* Prevent blocking hours that currently have an active booked lesson */
         if (request.type() == OverrideType.BLOCK
                 && lessonService.hasScheduledLessonInRange(request.date(), request.startTime(), request.endTime())) {
-            throw new ScheduleConflictException("This time has a scheduled lesson - cancel it before blocking this time");
+            throw new ScheduleConflictException("בשעה הזו יש שיעור מתוזמן - יש לבטל אותו לפני חסימת השעה");
         }
     }
 
@@ -151,7 +151,7 @@ public class ScheduleOverrideService {
     @Transactional
     public void deleteScheduleOverride(Long overrideId) {
         if (!scheduleOverrideRepository.existsById(overrideId)) {
-            throw new ScheduleOverrideNotFoundException("Schedule override not found");
+            throw new ScheduleOverrideNotFoundException("החריגה לא נמצאה");
         }
 
         scheduleOverrideRepository.deleteById(overrideId);

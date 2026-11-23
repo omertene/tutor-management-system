@@ -7,7 +7,7 @@ const PHONE_PATTERN = /^\d+$/;
 
 /* Each returns an error message, or null when the value is fine */
 export function validateEmailField(email: string): string | null {
-    if (!EMAIL_PATTERN.test(email)) return "Please enter a valid email address";
+    if (!EMAIL_PATTERN.test(email)) return "יש להזין כתובת אימייל תקינה";
     return null;
 }
 
@@ -22,21 +22,21 @@ export function passwordProblem(password: string): "short" | "long" | "weak" | n
 
 export function validatePasswordField(password: string): string | null {
     switch (passwordProblem(password)) {
-        case "short": return "Password must be at least 8 characters";
-        case "long": return "Password must be at most 64 characters";
-        case "weak": return "Password must contain at least one letter and one digit";
+        case "short": return "הסיסמה חייבת להכיל לפחות 8 תווים";
+        case "long": return "הסיסמה יכולה להכיל עד 64 תווים";
+        case "weak": return "הסיסמה חייבת לכלול לפחות אות אחת וספרה אחת";
         default: return null;
     }
 }
 
 export function validatePhoneField(phone: string): string | null {
-    if (!PHONE_PATTERN.test(phone)) return "Phone number must contain digits only";
+    if (!PHONE_PATTERN.test(phone)) return "מספר הטלפון חייב להכיל ספרות בלבד";
     return null;
 }
 
 export function validateHourlyRateField(hourlyRate: string): string | null {
     if (!PHONE_PATTERN.test(hourlyRate) || Number(hourlyRate) <= 0) {
-        return "Hourly rate must be a positive whole number";
+        return "המחיר לשעה חייב להיות מספר שלם וחיובי";
     }
     return null;
 }

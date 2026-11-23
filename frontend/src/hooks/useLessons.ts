@@ -20,16 +20,16 @@ export function useLessons(role: string) {
         async function load() {
             const lessonsRes = await apiFetch(isTeacher ? `/teacher/lessons` : `/student/lessons`);
             if (lessonsRes.ok) setLessons((await lessonsRes.json()) as Lesson[]);
-            else setErrorMessage("Failed to load lessons");
+            else setErrorMessage("טעינת השיעורים נכשלה");
 
             const subjectsRes = await apiFetch(`/subjects`);
             if (subjectsRes.ok) setSubjects((await subjectsRes.json()) as Subject[]);
-            else setErrorMessage("Failed to load subjects");
+            else setErrorMessage("טעינת המקצועות נכשלה");
 
             if (isTeacher) {
                 const studentsRes = await apiFetch(`/teacher/students`);
                 if (studentsRes.ok) setStudents((await studentsRes.json()) as Student[]);
-                else setErrorMessage("Failed to load students");
+                else setErrorMessage("טעינת התלמידים נכשלה");
             }
         }
         load();
@@ -52,7 +52,7 @@ export function useLessons(role: string) {
         });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to create lesson"));
+            setErrorMessage(await readErrorMessage(response, "יצירת השיעור נכשלה"));
             return false;
         }
 
@@ -72,7 +72,7 @@ export function useLessons(role: string) {
         });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to add subject"));
+            setErrorMessage(await readErrorMessage(response, "הוספת המקצוע נכשלה"));
             return null;
         }
 
@@ -104,7 +104,7 @@ export function useLessons(role: string) {
 
         if (lesson.status === "COMPLETED") {
             const confirmed = window.confirm(
-                "Cancel this completed lesson? This will reverse its effect on debt and revenue."
+                "לבטל שיעור שכבר הושלם? הביטול יבטל את ההשפעה שלו על החוב וההכנסות."
             );
             if (!confirmed) return;
         }
@@ -112,7 +112,7 @@ export function useLessons(role: string) {
         const response = await apiFetch(`/lessons/${lesson.id}`, { method: "DELETE" });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to cancel lesson"));
+            setErrorMessage(await readErrorMessage(response, "ביטול השיעור נכשל"));
             return;
         }
 
@@ -127,7 +127,7 @@ export function useLessons(role: string) {
         const response = await apiFetch(`/teacher/lessons/${lessonId}/complete`, { method: "PATCH" });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to complete lesson"));
+            setErrorMessage(await readErrorMessage(response, "סימון השיעור כהושלם נכשל"));
             return;
         }
 

@@ -27,7 +27,7 @@ public class AuthService {
     public LoginResponse login(LoginRequest request) {
         // Reject missing or blank input early before hitting DB or rate limiter
         if (request.email() == null || request.email().isBlank() || request.password() == null) {
-            throw new InvalidCredentialsException("Invalid email or password");
+            throw new InvalidCredentialsException("אימייל או סיסמה שגויים");
         }
         // Block request if this email had too many recent failed attempts (Brute Force defense)
         loginRateLimiter.checkNotLocked(request.email());
@@ -35,13 +35,13 @@ public class AuthService {
         User user = userRepository.findByEmailIgnoreCase(request.email())
                 .orElseThrow(() -> {
                     loginRateLimiter.recordFailedAttempt(request.email());
-                    return new InvalidCredentialsException("Invalid email or password");
+                    return new InvalidCredentialsException("אימייל או סיסמה שגויים");
                 });
 
         // Compare raw password against hashed password in DB
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             loginRateLimiter.recordFailedAttempt(request.email());
-            throw new InvalidCredentialsException("Invalid email or password");
+            throw new InvalidCredentialsException("אימייל או סיסמה שגויים");
         }
 
         // Reset lockout counter on successful authentication

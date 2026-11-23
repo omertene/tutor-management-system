@@ -23,7 +23,7 @@ function Modal({ title, onClose, children }: ModalProps) {
                     <button
                         onClick={onClose}
                         className="text-slate-400 hover:text-slate-600 text-xl leading-none"
-                        aria-label="Close"
+                        aria-label="סגירה"
                     >
                         &times;
                     </button>

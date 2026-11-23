@@ -25,7 +25,7 @@ public class LessonBookingService {
         /* Step 1: Open an ADD override slot so AvailabilityService won't reject the lesson */
         scheduleOverrideService.createScheduleOverride(new ScheduleOverrideRequest(
                 request.date(), request.startTime(), request.endTime(),
-                OverrideType.ADD, "Lesson booked outside regular hours"));
+                OverrideType.ADD, "שיעור שנקבע מחוץ לשעות הרגילות"));
         /* Step 2: Book the lesson normally using the newly opened slot.
            If this fails, @Transactional rolls back Step 1 automatically. */
         return lessonService.createLessonForStudent(request);

@@ -51,7 +51,7 @@ export default function AddLessonModal({ students, onClose, onCreated }: AddLess
         setErrorMessage("");
 
         if (!studentId || !subjectId || !date || !startTime || !endTime) {
-            setErrorMessage("Please fill in all fields");
+            setErrorMessage("יש למלא את כל השדות");
             return;
         }
 
@@ -67,7 +67,7 @@ export default function AddLessonModal({ students, onClose, onCreated }: AddLess
         });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to create lesson"));
+            setErrorMessage(await readErrorMessage(response, "יצירת השיעור נכשלה"));
             return;
         }
 
@@ -76,12 +76,12 @@ export default function AddLessonModal({ students, onClose, onCreated }: AddLess
     }
 
     return (
-        <Modal title="Add lesson" onClose={onClose}>
+        <Modal title="הוספת שיעור" onClose={onClose}>
             <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Student</label>
+                    <label className={labelClass}>תלמיד</label>
                     <select value={studentId} onChange={(e) => setStudentId(e.target.value)} className={inputClassFull}>
-                        <option value="">Select student</option>
+                        <option value="">בחירת תלמיד</option>
                         {students.map((student) => (
                             <option key={student.id} value={student.id}>
                                 {student.firstName} {student.lastName}
@@ -91,9 +91,9 @@ export default function AddLessonModal({ students, onClose, onCreated }: AddLess
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Subject</label>
+                    <label className={labelClass}>מקצוע</label>
                     <select value={subjectId} onChange={(e) => setSubjectId(e.target.value)} className={inputClassFull}>
-                        <option value="">Select subject</option>
+                        <option value="">בחירת מקצוע</option>
                         {subjects.map((subject) => (
                             <option key={subject.id} value={subject.id}>
                                 {subject.name}
@@ -103,17 +103,17 @@ export default function AddLessonModal({ students, onClose, onCreated }: AddLess
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Date</label>
+                    <label className={labelClass}>תאריך</label>
                     <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClassFull} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Start time</label>
+                        <label className={labelClass}>שעת התחלה</label>
                         <TimeSelect value={startTime} onChange={handleStartTimeChange} className={inputClassFull} />
                     </div>
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>End time</label>
+                        <label className={labelClass}>שעת סיום</label>
                         <TimeSelect value={endTime} onChange={setEndTime} className={inputClassFull} />
                     </div>
                 </div>
@@ -124,7 +124,7 @@ export default function AddLessonModal({ students, onClose, onCreated }: AddLess
                     onClick={handleCreate}
                     className="w-full mt-2 rounded-lg bg-indigo-600 text-white text-sm font-medium py-2.5 hover:bg-indigo-700 transition-colors"
                 >
-                    Add lesson
+                    הוספת שיעור
                 </button>
             </div>
         </Modal>

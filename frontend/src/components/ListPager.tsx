@@ -17,15 +17,15 @@ export default function ListPager({ page, totalPages, totalItems, perPage, onCha
     return (
         <div className="mt-3 flex items-center justify-between">
             <p className="text-sm text-slate-500">
-                Showing {firstShown}-{lastShown} of {totalItems}
+                מוצגים {firstShown}-{lastShown} מתוך {totalItems}
             </p>
             <div className="flex items-center gap-2">
                 <button onClick={() => onChange(Math.max(1, page - 1))} disabled={page === 1} className={smallSecondaryButtonClass}>
-                    &larr; Previous
+                    &rarr; הקודם
                 </button>
-                <span className="text-sm text-slate-500">Page {page} of {totalPages}</span>
+                <span className="text-sm text-slate-500">עמוד {page} מתוך {totalPages}</span>
                 <button onClick={() => onChange(Math.min(totalPages, page + 1))} disabled={page === totalPages} className={smallSecondaryButtonClass}>
-                    Next &rarr;
+                    הבא &larr;
                 </button>
             </div>
         </div>

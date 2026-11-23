@@ -40,7 +40,7 @@ export default function CredentialsModal({ student, onClose, onEmailChanged }: C
             });
 
             if (!response.ok) {
-                setErrorMessage(await readErrorMessage(response, "Failed to update email"));
+                setErrorMessage(await readErrorMessage(response, "עדכון האימייל נכשל"));
                 return;
             }
 
@@ -48,9 +48,9 @@ export default function CredentialsModal({ student, onClose, onEmailChanged }: C
             onEmailChanged(updated);
             /* show what the backend actually stored (it lowercases it), not what was typed */
             setEmail(updated.email);
-            setSuccessMessage("Email updated");
+            setSuccessMessage("האימייל עודכן");
         } catch {
-            setErrorMessage("Could not reach the server. Please try again.");
+            setErrorMessage("אין חיבור לשרת. נסו שוב.");
         }
     }
 
@@ -72,41 +72,41 @@ export default function CredentialsModal({ student, onClose, onEmailChanged }: C
             });
 
             if (!response.ok) {
-                setErrorMessage(await readErrorMessage(response, "Failed to reset password"));
+                setErrorMessage(await readErrorMessage(response, "איפוס הסיסמה נכשל"));
                 return;
             }
 
             setNewPassword("");
-            setSuccessMessage("Password reset");
+            setSuccessMessage("הסיסמה אופסה");
         } catch {
-            setErrorMessage("Could not reach the server. Please try again.");
+            setErrorMessage("אין חיבור לשרת. נסו שוב.");
         }
     }
 
     return (
-        <Modal title={`Credentials — ${student.firstName} ${student.lastName}`} onClose={onClose}>
+        <Modal title={`פרטי התחברות — ${student.firstName} ${student.lastName}`} onClose={onClose}>
             <div className="flex flex-col gap-5">
                 <div className="flex flex-col gap-2">
-                    <label className={labelClass}>Email</label>
+                    <label className={labelClass}>אימייל</label>
                     <div className="flex gap-2">
                         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClassFull} />
-                        <button onClick={handleSaveEmail} className={saveButtonClass}>Save email</button>
+                        <button onClick={handleSaveEmail} className={saveButtonClass}>שמירת אימייל</button>
                     </div>
                 </div>
 
                 <div className="flex flex-col gap-2 pt-3 border-t border-slate-200">
-                    <label className={labelClass}>Reset password</label>
+                    <label className={labelClass}>איפוס סיסמה</label>
                     <div className="flex gap-2">
                         <input
                             type="text"
-                            placeholder="New password"
+                            placeholder="סיסמה חדשה"
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
                             className={inputClassFull}
                         />
-                        <button onClick={handleResetPassword} className={saveButtonClass}>Reset password</button>
+                        <button onClick={handleResetPassword} className={saveButtonClass}>איפוס סיסמה</button>
                     </div>
-                    <p className="text-xs text-slate-500">At least 8 characters, with a letter and a digit</p>
+                    <p className="text-xs text-slate-500">לפחות 8 תווים, כולל אות וספרה</p>
                 </div>
 
                 {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}

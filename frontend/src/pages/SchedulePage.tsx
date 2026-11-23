@@ -177,13 +177,13 @@ function SchedulePage() {
             <main className="max-w-6xl mx-auto px-4 py-8">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                     <div>
-                        <h1 className="text-2xl font-semibold text-slate-900">Schedule</h1>
+                        <h1 className="text-2xl font-semibold text-slate-900">לוח זמנים</h1>
                     </div>
                     <button
                         onClick={() => setShowRulesModal(true)}
                         className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
                     >
-                        Edit weekly availability
+                        עריכת זמינות שבועית
                     </button>
                 </div>
 
@@ -224,11 +224,11 @@ function SchedulePage() {
                                                         ? undefined
                                                         : ruleCoverageBackground(quarters),
                                             }}
-                                            className={`block w-full border-b border-slate-300 transition-colors select-none ${
+                                            className={`block w-full border-b border-slate-200 transition-colors select-none ${
                                                 inDragSelection
                                                     ? "bg-indigo-200"
                                                     : allCovered
-                                                        ? "bg-white hover:bg-slate-50"
+                                                        ? "bg-emerald-50 hover:bg-emerald-100"
                                                         : noneCovered
                                                             ? "bg-slate-200 hover:bg-slate-300"
                                                             : ""
@@ -245,7 +245,7 @@ function SchedulePage() {
                                         <button
                                             key={`override-${override.id}`}
                                             onClick={() => setViewingOverride(override)}
-                                            className={`absolute block left-0 right-0 m-0 px-1.5 py-1 text-xs text-left leading-tight overflow-hidden transition-colors ${overrideBlockStyles[override.type]}`}
+                                            className={`absolute block left-0 right-0 m-0 px-1.5 py-1 text-xs text-start leading-tight overflow-hidden transition-colors ${overrideBlockStyles[override.type]}`}
                                             style={{ top: `${top}px`, height: `${height}px` }}
                                         />
                                     ))}
@@ -258,7 +258,7 @@ function SchedulePage() {
                                         <button
                                             key={`lesson-${lesson.id}`}
                                             onClick={() => setViewingLesson(lesson)}
-                                            className={`absolute block left-0 right-0 m-0 px-1.5 py-1 text-xs text-left leading-tight overflow-hidden transition-colors ${lessonBlockStyles[lesson.status] ?? lessonBlockStyles.SCHEDULED}`}
+                                            className={`absolute block left-0.5 right-0.5 m-0 px-1.5 py-1 text-xs text-start leading-tight overflow-hidden rounded-md border-s-4 border-blue-500 shadow-sm transition-colors ${lessonBlockStyles[lesson.status] ?? lessonBlockStyles.SCHEDULED}`}
                                             style={{ top: `${top}px`, height: `${height}px` }}
                                             title={`${lesson.studentFirstName} ${lesson.studentLastName} - ${lesson.subjectName}`}
                                         >

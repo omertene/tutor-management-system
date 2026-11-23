@@ -41,7 +41,7 @@ public class StudentService {
 
         /* Ensure email is not already taken */
         if (userRepository.findByEmailIgnoreCase(email).isPresent()) {
-            throw new DuplicateEmailException("email already registered");
+            throw new DuplicateEmailException("האימייל כבר רשום");
         }
 
         /* Build and persist base user entity with encrypted password and enforced STUDENT role */
@@ -108,7 +108,7 @@ public class StudentService {
 
         if (!email.equalsIgnoreCase(user.getEmail())
                 && userRepository.findByEmailIgnoreCase(email).isPresent()) {
-            throw new DuplicateEmailException("email already registered");
+            throw new DuplicateEmailException("האימייל כבר רשום");
         }
 
         user.setEmail(email);
@@ -159,7 +159,7 @@ public class StudentService {
     /* Fetches raw student entity for internal domain service communication */
     public Student getStudentEntity(Long studentId) {
         return studentRepository.findById(studentId)
-                .orElseThrow(() -> new StudentNotFoundException("Student not found"));
+                .orElseThrow(() -> new StudentNotFoundException("התלמיד לא נמצא"));
     }
 
     /* Returns all raw student entities across the system for batch calculations */

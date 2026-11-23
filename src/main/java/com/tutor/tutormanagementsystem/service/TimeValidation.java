@@ -14,11 +14,11 @@ public final class TimeValidation {
     /* Enforces that start time precedes end time and both adhere to 15-minute intervals */
     public static void requireValidRange(LocalTime startTime, LocalTime endTime) {
         if (!startTime.isBefore(endTime)) {
-            throw new InvalidTimeRangeException("Start time must be before end time");
+            throw new InvalidTimeRangeException("שעת ההתחלה חייבת להיות לפני שעת הסיום");
         }
 
         if (!isOnQuarterHour(startTime) || !isOnQuarterHour(endTime)) {
-            throw new InvalidTimeRangeException("Times must be on a 15-minute increment (e.g. 07:00, 07:15, 07:30, 07:45)");
+            throw new InvalidTimeRangeException("השעות חייבות להיות בקפיצות של 15 דקות (למשל 07:00, 07:15, 07:30, 07:45)");
         }
     }
 

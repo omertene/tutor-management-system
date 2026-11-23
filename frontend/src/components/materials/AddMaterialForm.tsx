@@ -42,7 +42,7 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
 
         const response = await apiFetch(`/teacher/students/${newStudentId}/lessons`);
         if (!response.ok) {
-            onError("Failed to load lessons");
+            onError("טעינת השיעורים נכשלה");
             return;
         }
 
@@ -72,7 +72,7 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
         try {
             if (addType === "FILE") {
                 if (!file) {
-                    onError("Choose a file first");
+                    onError("יש לבחור קובץ");
                     return;
                 }
                 const formData = new FormData();
@@ -102,14 +102,14 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
                here is the request itself failing (e.g. connection reset by a
                file too large for the server to even respond with a clean 413) */
             if (e instanceof SessionExpiredError) throw e;
-            onError("Upload failed - the file may be too large, or the connection was interrupted");
+            onError("ההעלאה נכשלה - ייתכן שהקובץ גדול מדי או שהחיבור נקטע");
             return;
         }
 
         if (!response.ok) {
-            const fallback = addType === "LINK" ? "Failed to add link"
-                : addType === "NOTE" ? "Failed to add note"
-                : "Failed to upload file";
+            const fallback = addType === "LINK" ? "הוספת הקישור נכשלה"
+                : addType === "NOTE" ? "הוספת ההערה נכשלה"
+                : "העלאת הקובץ נכשלה";
             onError(await readErrorMessage(response, fallback));
             return;
         }
@@ -127,13 +127,13 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
 
     return (
         <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Add material</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">הוספת חומר לימוד</h2>
 
             <div className="flex flex-wrap gap-3 items-end">
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Student *</label>
+                    <label className={labelClass}>תלמיד *</label>
                     <select value={studentId} onChange={(e) => handleStudentChange(e.target.value)} className={inputClass}>
-                        <option value="">Select student</option>
+                        <option value="">בחירת תלמיד</option>
                         {students.map((student) => (
                             <option key={student.id} value={student.id}>
                                 {student.firstName} {student.lastName}
@@ -143,9 +143,9 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Lesson (optional)</label>
+                    <label className={labelClass}>שיעור (אופציונלי)</label>
                     <select value={lessonId} onChange={(e) => setLessonId(e.target.value)} disabled={!studentId} className={inputClass}>
-                        <option value="">No specific lesson</option>
+                        <option value="">ללא שיעור מסוים</option>
                         {lessons.map((lesson) => (
                             <option key={lesson.id} value={lesson.id}>
                                 {formatDateAndTime(lesson.date, lesson.startTime)} — {lesson.subjectName}
@@ -155,8 +155,8 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
                 </div>
 
                 <div className="flex flex-col gap-1 flex-1 min-w-[160px]">
-                    <label className={labelClass}>Title *</label>
-                    <input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className={`${inputClass} w-full`} />
+                    <label className={labelClass}>כותרת *</label>
+                    <input placeholder="כותרת" value={title} onChange={(e) => setTitle(e.target.value)} className={`${inputClass} w-full`} />
                 </div>
             </div>
 
@@ -172,7 +172,7 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
                                 : "border-transparent text-slate-500 hover:text-slate-700"
                         }`}
                     >
-                        {type === "LINK" ? "Link" : type === "NOTE" ? "Note" : "File"}
+                        {type === "LINK" ? "קישור" : type === "NOTE" ? "הערה" : "קובץ"}
                     </button>
                 ))}
             </div>
@@ -181,21 +181,21 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
                 {addType === "LINK" && (
                     <>
                         <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
-                            <label className={labelClass}>URL *</label>
+                            <label className={labelClass}>כתובת (URL) *</label>
                             <input placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)} className={`${inputClass} w-full`} />
                         </div>
                         <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
-                            <label className={labelClass}>Description (optional)</label>
-                            <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className={`${inputClass} w-full`} />
+                            <label className={labelClass}>תיאור (אופציונלי)</label>
+                            <input placeholder="תיאור" value={description} onChange={(e) => setDescription(e.target.value)} className={`${inputClass} w-full`} />
                         </div>
                     </>
                 )}
 
                 {addType === "NOTE" && (
                     <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
-                        <label className={labelClass}>Note text *</label>
+                        <label className={labelClass}>טקסט ההערה *</label>
                         <textarea
-                            placeholder="Write the note here..."
+                            placeholder="כאן כותבים את ההערה..."
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             rows={3}
@@ -207,7 +207,7 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
                 {addType === "FILE" && (
                     <>
                         <div className="flex flex-col gap-1">
-                            <label className={labelClass}>File *</label>
+                            <label className={labelClass}>קובץ *</label>
                             <label className="flex flex-col gap-1 cursor-pointer">
                                 <input
                                     type="file"
@@ -215,17 +215,17 @@ export default function AddMaterialForm({ students, onCreated, onError }: AddMat
                                     className="text-sm text-slate-600 file:mr-2 file:px-3 file:py-1.5 file:rounded-lg file:border file:border-slate-300 file:bg-white file:text-slate-700 file:text-sm file:font-medium hover:file:bg-slate-50 file:cursor-pointer cursor-pointer"
                                 />
                             </label>
-                            {file && <p className="text-xs text-slate-500 mt-1 truncate">Selected: {file.name}</p>}
+                            {file && <p className="text-xs text-slate-500 mt-1 truncate">נבחר: {file.name}</p>}
                         </div>
                         <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
-                            <label className={labelClass}>Description (optional)</label>
-                            <input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className={`${inputClass} w-full`} />
+                            <label className={labelClass}>תיאור (אופציונלי)</label>
+                            <input placeholder="תיאור" value={description} onChange={(e) => setDescription(e.target.value)} className={`${inputClass} w-full`} />
                         </div>
                     </>
                 )}
 
                 <button onClick={handleSubmit} disabled={submitDisabled} className={primaryButtonClass}>
-                    {addType === "FILE" ? "Upload file" : "Add material"}
+                    {addType === "FILE" ? "העלאת קובץ" : "הוספת חומר"}
                 </button>
             </div>
         </div>

@@ -25,7 +25,7 @@ class TimeValidationTest {
     void startEqualToEnd_throws() {
         assertThatThrownBy(() -> TimeValidation.requireValidRange(LocalTime.of(9, 0), LocalTime.of(9, 0)))
                 .isInstanceOf(InvalidTimeRangeException.class)
-                .hasMessageContaining("before");
+                .hasMessageContaining("לפני שעת הסיום");
     }
 
     @Test
@@ -45,7 +45,7 @@ class TimeValidationTest {
     void timesNotOnQuarterHour_throw(String start, String end) {
         assertThatThrownBy(() -> TimeValidation.requireValidRange(LocalTime.parse(start), LocalTime.parse(end)))
                 .isInstanceOf(InvalidTimeRangeException.class)
-                .hasMessageContaining("15-minute");
+                .hasMessageContaining("15 דקות");
     }
 
     @Test

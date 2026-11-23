@@ -43,7 +43,7 @@ public class LoginRateLimiter {
             long millisLeft = Instant.now().until(record.lockedUntil(), ChronoUnit.MILLIS);
             long secondsLeft = (millisLeft + 999) / 1000;
             throw new TooManyAttemptsException(
-                    "Too many failed login attempts. Try again in " + secondsLeft + " seconds.");
+                    "יותר מדי ניסיונות התחברות כושלים. נסו שוב בעוד " + secondsLeft + " שניות.");
         }
 
         /* lockout expired - clear it, fresh set of attempts */
@@ -72,7 +72,7 @@ public class LoginRateLimiter {
             long millisLeft = Instant.now().until(updated.lockedUntil(), ChronoUnit.MILLIS);
             long secondsLeft = (millisLeft + 999) / 1000;
             throw new TooManyAttemptsException(
-                    "Too many failed login attempts. Try again in " + secondsLeft + " seconds.");
+                    "יותר מדי ניסיונות התחברות כושלים. נסו שוב בעוד " + secondsLeft + " שניות.");
         }
     }
 

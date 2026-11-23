@@ -1,3 +1,5 @@
+import { lessonStatusLabels } from "../../types/lesson";
+import { formatMoney } from "../../utils/money";
 import { smallSecondaryButtonClass } from "../../constants/formStyles";
 import { formatShortDateString, formatTimeOfDay } from "../../utils/time";
 import { hasLessonStarted, statusStyles } from "../../types/lesson";
@@ -32,12 +34,12 @@ export default function TeacherLessonRow({
                     {lesson.studentFirstName} {lesson.studentLastName}
                 </span>
                 <span className="text-slate-500 text-sm">
-                    ₪{lesson.priceAtBooking}
+                    {formatMoney(lesson.priceAtBooking)}
                 </span>
                 <span
                     className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusStyles[lesson.status] ?? "bg-slate-100 text-slate-500"}`}
                 >
-                    {lesson.status}
+                    {lessonStatusLabels[lesson.status] ?? lesson.status}
                 </span>
             </div>
 
@@ -45,7 +47,7 @@ export default function TeacherLessonRow({
                 {/* backend rejects completing a lesson before it starts */}
                 {lesson.status === "SCHEDULED" && hasLessonStarted(lesson) && (
                     <button onClick={() => onComplete(lesson.id)} className={smallSecondaryButtonClass}>
-                        Mark completed
+                        סימון כהושלם
                     </button>
                 )}
                 {/* completed lessons count as real income, so cancelling one is
@@ -55,29 +57,29 @@ export default function TeacherLessonRow({
                         onClick={() => onCancel(lesson)}
                         className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
                     >
-                        Cancel
+                        ביטול
                     </button>
                 )}
                 {lesson.status === "COMPLETED" && canCancel && (
                     <div className="relative" onClick={(e) => e.stopPropagation()}>
                         <button
                             onClick={onToggleMenu}
-                            title="More actions"
-                            aria-label="More actions"
+                            title="פעולות נוספות"
+                            aria-label="פעולות נוספות"
                             className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
                         >
                             &#8942;
                         </button>
                         {isMenuOpen && (
-                            <div className="absolute right-0 top-full mt-1 z-10 bg-white border border-slate-200 rounded-lg shadow-md py-1 w-44">
+                            <div className="absolute end-0 top-full mt-1 z-10 bg-white border border-slate-200 rounded-lg shadow-md py-1 w-44">
                                 <button
                                     onClick={() => {
                                         onCloseMenu();
                                         onCancel(lesson);
                                     }}
-                                    className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                    className="w-full text-start px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                                 >
-                                    Void / Cancel Lesson
+                                    ביטול שיעור שהושלם
                                 </button>
                             </div>
                         )}

@@ -26,7 +26,7 @@ export default function StudentLessonModal({ lesson, now, onClose, onCancel }: S
     const canCancel = canCancelLesson(lesson, now);
 
     return (
-        <Modal title="Lesson" onClose={onClose}>
+        <Modal title="שיעור" onClose={onClose}>
             <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-slate-900">{lesson.subjectName}</p>
                 <p className="text-sm text-slate-500">
@@ -41,11 +41,11 @@ export default function StudentLessonModal({ lesson, now, onClose, onCancel }: S
                             title={
                                 canCancel
                                     ? undefined
-                                    : `Can't be cancelled within ${STUDENT_MIN_CANCEL_NOTICE_HOURS} hours of the start time.`
+                                    : `לא ניתן לבטל פחות מ-${STUDENT_MIN_CANCEL_NOTICE_HOURS} שעות לפני תחילת השיעור.`
                             }
                             className="w-full rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium py-2.5 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
                         >
-                            Cancel lesson
+                            ביטול השיעור
                         </button>
                     </div>
                 )}

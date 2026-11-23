@@ -48,10 +48,10 @@ public class LessonReminderListener {
             String startTime = lesson.getStartTime().format(TIME_FORMAT);
             String endTime = lesson.getEndTime().format(TIME_FORMAT);
 
-            String subject = "Reminder: your upcoming lesson";
-            String body = "Hi " + studentFirstName + ",\n\n"
-                    + "This is a reminder that you have a " + subjectName + " lesson on "
-                    + date + " at " + startTime + "-" + endTime + ".";
+            String subject = "תזכורת: השיעור הקרוב שלך";
+            String body = "שלום " + studentFirstName + ",\n\n"
+                    + "זוהי תזכורת לשיעור " + subjectName + " שלך בתאריך "
+                    + date + " בשעה " + startTime + "-" + endTime + ".";
 
             emailService.sendEmail(to, subject, body);
 

@@ -66,7 +66,7 @@ function MaterialsPage() {
             <NavBar homePath={isTeacher ? "/teacher" : "/student"} links={isTeacher ? teacherLinks : studentLinks} />
 
             <main className="max-w-6xl mx-auto px-4 py-8">
-                <h1 className="text-2xl font-semibold text-slate-900">Materials</h1>
+                <h1 className="text-2xl font-semibold text-slate-900">חומרי לימוד</h1>
 
                 {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
@@ -76,35 +76,35 @@ function MaterialsPage() {
 
                 <div className="mt-8">
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                        <h2 className="text-lg font-semibold text-slate-900">Materials</h2>
+                        <h2 className="text-lg font-semibold text-slate-900">חומרי לימוד</h2>
                         <div className="flex flex-wrap gap-2">
                             <input
                                 type="text"
-                                placeholder={isTeacher ? "Search by student or title..." : "Search by title..."}
+                                placeholder={isTeacher ? "חיפוש לפי תלמיד או כותרת..." : "חיפוש לפי כותרת..."}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className={inputClass}
                             />
                             <input
                                 type="text"
-                                placeholder="Filter by lesson..."
-                                title="Filter by lesson date or subject"
+                                placeholder="סינון לפי שיעור..."
+                                title="סינון לפי תאריך או מקצוע השיעור"
                                 value={lessonFilterQuery}
                                 onChange={(e) => setLessonFilterQuery(e.target.value)}
                                 className={`${inputClass} w-32`}
                             />
                             <select value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)} className={inputClass}>
-                                <option value="ALL">All subjects</option>
+                                <option value="ALL">כל המקצועות</option>
                                 {subjects.map((subject) => (
                                     <option key={subject.id} value={subject.name}>{subject.name}</option>
                                 ))}
                             </select>
                             {isTeacher && (
                                 <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className={inputClass}>
-                                    <option value="ALL">All types</option>
-                                    <option value="FILE">File</option>
-                                    <option value="LINK">Link</option>
-                                    <option value="NOTE">Note</option>
+                                    <option value="ALL">כל הסוגים</option>
+                                    <option value="FILE">קובץ</option>
+                                    <option value="LINK">קישור</option>
+                                    <option value="NOTE">הערה</option>
                                 </select>
                             )}
                         </div>
@@ -113,7 +113,7 @@ function MaterialsPage() {
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
                         {visibleItems.length === 0 && (
                             <p className="px-4 py-6 text-sm text-slate-500 text-center">
-                                {materials.length === 0 ? "No materials yet." : "No materials match your search."}
+                                {materials.length === 0 ? "אין חומרי לימוד עדיין." : "לא נמצאו חומרים התואמים לחיפוש."}
                             </p>
                         )}
 

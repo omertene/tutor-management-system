@@ -14,7 +14,7 @@ export default function SubjectsSection() {
         async function loadSubjects() {
             const response = await apiFetch(`/subjects`);
             if (!response.ok) {
-                setErrorMessage("Failed to load subjects");
+                setErrorMessage("טעינת המקצועות נכשלה");
                 return;
             }
             setSubjects((await response.json()) as Subject[]);
@@ -32,7 +32,7 @@ export default function SubjectsSection() {
         });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to add subject"));
+            setErrorMessage(await readErrorMessage(response, "הוספת המקצוע נכשלה"));
             return;
         }
 
@@ -45,14 +45,14 @@ export default function SubjectsSection() {
     async function handleDelete(subject: Subject) {
         setErrorMessage("");
 
-        if (!window.confirm(`Delete "${subject.name}"? This can't be undone.`)) {
+        if (!window.confirm(`למחוק את "${subject.name}"? אי אפשר לבטל פעולה זו.`)) {
             return;
         }
 
         const response = await apiFetch(`/subjects/${subject.id}`, { method: "DELETE" });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to delete subject"));
+            setErrorMessage(await readErrorMessage(response, "מחיקת המקצוע נכשלה"));
             return;
         }
 
@@ -61,9 +61,9 @@ export default function SubjectsSection() {
 
     return (
         <div className="mt-8">
-            <h2 className="text-lg font-semibold text-slate-900 mb-1">Subjects</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-1">מקצועות</h2>
             <p className="text-sm text-slate-500 mb-4">
-                Manage the subjects lessons can be booked under. You can also add a new one directly from the Lessons page while booking.
+                ניהול המקצועות שאפשר לקבוע בהם שיעורים. אפשר גם להוסיף מקצוע חדש ישירות מדף השיעורים בזמן קביעת שיעור.
             </p>
 
             {errorMessage && <p className="text-sm text-red-600 mb-3">{errorMessage}</p>}
@@ -74,21 +74,21 @@ export default function SubjectsSection() {
                         value={newSubject}
                         onChange={(e) => setNewSubject(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                        placeholder="Subject name"
+                        placeholder="שם המקצוע"
                         className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
                     <button
                         onClick={handleAdd}
                         className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
                     >
-                        Add subject
+                        הוספת מקצוע
                     </button>
                 </div>
             </div>
 
             <div className="mt-4 bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
                 {subjects.length === 0 && (
-                    <p className="px-4 py-6 text-sm text-slate-500 text-center">No subjects yet.</p>
+                    <p className="px-4 py-6 text-sm text-slate-500 text-center">אין מקצועות עדיין.</p>
                 )}
                 {subjects.map((subject) => (
                     <div key={subject.id} className="px-4 py-3 flex items-center justify-between">
@@ -97,7 +97,7 @@ export default function SubjectsSection() {
                             onClick={() => handleDelete(subject)}
                             className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-colors"
                         >
-                            Delete
+                            מחיקה
                         </button>
                     </div>
                 ))}

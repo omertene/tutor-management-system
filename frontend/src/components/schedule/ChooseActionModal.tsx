@@ -21,7 +21,7 @@ export default function ChooseActionModal({
     onClose, onBookLesson, onBlockTime, onAddAvailability,
 }: ChooseActionModalProps) {
     return (
-        <Modal title={isUnavailable ? "Unavailable time" : "Available time"} onClose={onClose}>
+        <Modal title={isUnavailable ? "זמן לא זמין" : "זמן זמין"} onClose={onClose}>
             <div className="flex flex-col gap-3">
                 <p className="text-sm text-slate-500">
                     {date} &middot; {startTime}&ndash;{endTime}
@@ -30,21 +30,21 @@ export default function ChooseActionModal({
                     onClick={onBookLesson}
                     className="w-full rounded-lg bg-indigo-600 text-white text-sm font-medium py-2.5 hover:bg-indigo-700 transition-colors"
                 >
-                    Book a lesson here
+                    קביעת שיעור כאן
                 </button>
                 {isUnavailable ? (
                     <button
                         onClick={onAddAvailability}
                         className="w-full rounded-lg bg-white border border-green-200 text-green-700 text-sm font-medium py-2.5 hover:bg-green-50 transition-colors"
                     >
-                        Add availability
+                        הוספת זמינות
                     </button>
                 ) : (
                     <button
                         onClick={onBlockTime}
                         className="w-full rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium py-2.5 hover:bg-red-50 transition-colors"
                     >
-                        Block this time
+                        חסימת הזמן הזה
                     </button>
                 )}
             </div>

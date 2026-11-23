@@ -57,7 +57,7 @@ class LoginRateLimiterTest {
 
         assertThatThrownBy(() -> limiter.checkNotLocked(EMAIL))
                 .isInstanceOf(TooManyAttemptsException.class)
-                .hasMessageContaining("Try again in");
+                .hasMessageContaining("נסו שוב בעוד");
     }
 
     @Test

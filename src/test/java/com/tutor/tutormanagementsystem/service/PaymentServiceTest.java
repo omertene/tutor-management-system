@@ -90,7 +90,7 @@ class PaymentServiceTest {
 
         assertThatThrownBy(() -> service.recordPayment(bad))
                 .isInstanceOf(InvalidRequestDataException.class)
-                .hasMessageContaining("method");
+                .hasMessageContaining("אמצעי תשלום");
     }
 
     @Test
@@ -99,7 +99,7 @@ class PaymentServiceTest {
 
         assertThatThrownBy(() -> service.recordPayment(bad))
                 .isInstanceOf(InvalidRequestDataException.class)
-                .hasMessageContaining("future");
+                .hasMessageContaining("בעתיד");
     }
 
     @Test
@@ -168,7 +168,7 @@ class PaymentServiceTest {
         assertThatThrownBy(() -> service.updatePayment(7L,
                 request(new BigDecimal("100"), PaymentMethod.CASH, null)))
                 .isInstanceOf(InvalidRequestDataException.class)
-                .hasMessageContaining("cancelled");
+                .hasMessageContaining("שבוטל");
     }
 
     /* ---------- debt = completed lessons owed - payments made ---------- */

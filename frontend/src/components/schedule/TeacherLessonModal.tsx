@@ -1,3 +1,4 @@
+import { lessonStatusLabels } from "../../types/lesson";
 import { useEffect, useState } from "react";
 import Modal from "../Modal";
 import type { TeacherLesson } from "../../types/schedule";
@@ -35,7 +36,7 @@ export default function TeacherLessonModal({
     }
 
     return (
-        <Modal title="Lesson" onClose={onClose}>
+        <Modal title="שיעור" onClose={onClose}>
             <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-slate-900">
                     {lesson.studentFirstName} {lesson.studentLastName}
@@ -44,15 +45,15 @@ export default function TeacherLessonModal({
                 <p className="text-sm text-slate-500">
                     {lesson.date} &middot; {lesson.startTime.slice(0, 5)}&ndash;{lesson.endTime.slice(0, 5)}
                 </p>
-                <p className="text-sm text-slate-500">Status: {lesson.status}</p>
+                <p className="text-sm text-slate-500">סטטוס: {lessonStatusLabels[lesson.status] ?? lesson.status}</p>
 
                 {lesson.status !== "CANCELLED" && (
                     <div className="flex flex-col gap-1 mt-2">
-                        <label className="text-sm font-medium text-slate-700">Notes</label>
+                        <label className="text-sm font-medium text-slate-700">הערות</label>
                         <textarea
                             value={notesDraft}
                             onChange={(e) => setNotesDraft(e.target.value)}
-                            placeholder="What was covered, homework assigned, anything worth remembering..."
+                            placeholder="מה נלמד, שיעורי בית, כל דבר שכדאי לזכור..."
                             rows={3}
                             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
                         />
@@ -61,7 +62,7 @@ export default function TeacherLessonModal({
                             disabled={savingNotes || notesDraft === (lesson.notes ?? "")}
                             className="self-end px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
                         >
-                            {savingNotes ? "Saving..." : "Save notes"}
+                            {savingNotes ? "שומר..." : "שמירת הערות"}
                         </button>
                     </div>
                 )}
@@ -73,22 +74,22 @@ export default function TeacherLessonModal({
                                 onClick={() => onComplete(lesson.id)}
                                 className="w-full rounded-lg bg-indigo-600 text-white text-sm font-medium py-2.5 hover:bg-indigo-700 transition-colors"
                             >
-                                Mark completed
+                                סימון כהושלם
                             </button>
                         ) : (
-                            <p className="text-xs text-slate-400">Can be marked completed once it starts.</p>
+                            <p className="text-xs text-slate-400">אפשר לסמן כהושלם רק אחרי שהשיעור מתחיל.</p>
                         )}
                         <button
                             onClick={() => onEdit(lesson)}
                             className="w-full rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium py-2.5 hover:bg-slate-50 transition-colors"
                         >
-                            Edit lesson
+                            עריכת שיעור
                         </button>
                         <button
                             onClick={() => onCancel(lesson.id)}
                             className="w-full rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium py-2.5 hover:bg-red-50 transition-colors"
                         >
-                            Cancel lesson
+                            ביטול שיעור
                         </button>
                     </div>
                 )}
@@ -96,17 +97,17 @@ export default function TeacherLessonModal({
                 {lesson.status === "COMPLETED" && (
                     <div className="flex flex-col gap-2 mt-2">
                         <p className="text-xs text-slate-400">
-                            Cancelling a completed lesson removes it from the student's debt and this month's revenue.
+                            ביטול שיעור שהושלם מסיר אותו מהחוב של התלמיד ומהכנסות החודש.
                         </p>
                         <button
                             onClick={() => {
-                                if (window.confirm("Cancel this completed lesson? This will reverse its effect on debt and revenue.")) {
+                                if (window.confirm("לבטל שיעור שכבר הושלם? הביטול יבטל את ההשפעה שלו על החוב וההכנסות.")) {
                                     onCancel(lesson.id);
                                 }
                             }}
                             className="w-full rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium py-2.5 hover:bg-red-50 transition-colors"
                         >
-                            Cancel lesson
+                            ביטול שיעור
                         </button>
                     </div>
                 )}

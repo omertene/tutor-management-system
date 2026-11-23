@@ -28,7 +28,7 @@ export default function RecordPaymentForm({ students, onSubmit, onError }: Recor
 
         /* without this, an empty student/date fails on the backend with a confusing error */
         if (!studentId || !paymentDate) {
-            onError("Please fill in all fields");
+            onError("יש למלא את כל השדות");
             return;
         }
 
@@ -54,13 +54,13 @@ export default function RecordPaymentForm({ students, onSubmit, onError }: Recor
 
     return (
         <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Record a payment</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">רישום תשלום</h2>
 
             <div className="flex flex-wrap gap-3 items-end">
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Student *</label>
+                    <label className={labelClass}>תלמיד *</label>
                     <select value={studentId} onChange={(e) => setStudentId(e.target.value)} className={inputClass}>
-                        <option value="">Select student</option>
+                        <option value="">בחירת תלמיד</option>
                         {students.map((student) => (
                             <option key={student.id} value={student.id}>
                                 {student.firstName} {student.lastName}
@@ -70,10 +70,10 @@ export default function RecordPaymentForm({ students, onSubmit, onError }: Recor
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Amount *</label>
+                    <label className={labelClass}>סכום *</label>
                     <input
                         type="number"
-                        placeholder="Amount"
+                        placeholder="סכום"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         className={`${inputClass} w-32`}
@@ -81,12 +81,12 @@ export default function RecordPaymentForm({ students, onSubmit, onError }: Recor
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Date received *</label>
+                    <label className={labelClass}>תאריך קבלה *</label>
                     <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className={inputClass} />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Method</label>
+                    <label className={labelClass}>אמצעי תשלום</label>
                     <select value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)} className={inputClass}>
                         {Object.entries(methodLabels).map(([value, label]) => (
                             <option key={value} value={value}>{label}</option>
@@ -95,8 +95,8 @@ export default function RecordPaymentForm({ students, onSubmit, onError }: Recor
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Notes (optional)</label>
-                    <input placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} />
+                    <label className={labelClass}>הערות (אופציונלי)</label>
+                    <input placeholder="הערות" value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} />
                 </div>
 
                 <button
@@ -104,7 +104,7 @@ export default function RecordPaymentForm({ students, onSubmit, onError }: Recor
                     disabled={!studentId || !amount || !paymentDate}
                     className={primaryButtonClass}
                 >
-                    Record payment
+                    רישום תשלום
                 </button>
             </div>
         </div>

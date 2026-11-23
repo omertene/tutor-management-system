@@ -1,5 +1,12 @@
 export type MaterialType = "FILE" | "LINK" | "NOTE";
 
+/* How each material type is shown to the user */
+export const materialTypeLabels: Record<MaterialType, string> = {
+    FILE: "קובץ",
+    LINK: "קישור",
+    NOTE: "הערה",
+};
+
 export type Material = {
     id: number;
     studentId: number;

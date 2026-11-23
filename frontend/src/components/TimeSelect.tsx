@@ -21,7 +21,7 @@ function TimeSelect({ value, onChange, className }: TimeSelectProps) {
     const minute = MINUTE_OPTIONS.includes(rawMinute) ? rawMinute : MINUTE_OPTIONS[0];
 
     return (
-        <div className="flex gap-1">
+        <div dir="ltr" className="flex gap-1">
             <select value={hour} onChange={(e) => onChange(`${e.target.value}:${minute}`)} className={className}>
                 {HOUR_OPTIONS.map((h) => (
                     <option key={h} value={h}>{h}</option>

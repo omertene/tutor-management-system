@@ -31,7 +31,7 @@ public final class AccountValidation {
     /* Validates email format against standard regex pattern */
     public static void requireValidEmail(String email) {
         if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
-            throw new InvalidStudentDataException("Please enter a valid email address");
+            throw new InvalidStudentDataException("נא להזין כתובת אימייל תקינה");
         }
     }
 
@@ -40,24 +40,24 @@ public final class AccountValidation {
     public static void requireValidPassword(String password) {
         if (password == null || password.length() < MIN_PASSWORD_LENGTH) {
             throw new InvalidStudentDataException(
-                    "Password must be at least " + MIN_PASSWORD_LENGTH + " characters");
+                    "הסיסמה חייבת להכיל לפחות " + MIN_PASSWORD_LENGTH + " תווים");
         }
         if (password.length() > MAX_PASSWORD_LENGTH) {
             throw new InvalidStudentDataException(
-                    "Password must be at most " + MAX_PASSWORD_LENGTH + " characters");
+                    "הסיסמה יכולה להכיל עד " + MAX_PASSWORD_LENGTH + " תווים");
         }
         boolean hasLetter = password.chars().anyMatch(Character::isLetter);
         boolean hasDigit = password.chars().anyMatch(Character::isDigit);
         if (!hasLetter || !hasDigit) {
             throw new InvalidStudentDataException(
-                    "Password must contain at least one letter and one digit");
+                    "הסיסמה חייבת להכיל לפחות אות אחת וספרה אחת");
         }
     }
 
     /* Ensures phone number contains digits only */
     public static void requireValidPhone(String phone) {
         if (phone == null || !PHONE_PATTERN.matcher(phone).matches()) {
-            throw new InvalidStudentDataException("Phone number must contain digits only");
+            throw new InvalidStudentDataException("מספר הטלפון יכול להכיל ספרות בלבד");
         }
     }
 
@@ -66,7 +66,7 @@ public final class AccountValidation {
         if (hourlyRate == null
                 || hourlyRate.stripTrailingZeros().scale() > 0
                 || hourlyRate.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new InvalidStudentDataException("Hourly rate must be a positive whole number");
+            throw new InvalidStudentDataException("תעריף שעתי חייב להיות מספר שלם וחיובי");
         }
     }
 }

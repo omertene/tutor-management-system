@@ -12,7 +12,7 @@ function SettingsPage() {
             <NavBar homePath="/teacher" links={teacherLinks} />
 
             <main className="max-w-6xl mx-auto px-4 py-8">
-                <h1 className="text-2xl font-semibold text-slate-900">Settings</h1>
+                <h1 className="text-2xl font-semibold text-slate-900">הגדרות</h1>
 
                 <AccountSection />
                 <SubjectsSection />

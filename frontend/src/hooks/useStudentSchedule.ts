@@ -85,6 +85,13 @@ export function useStudentSchedule() {
     }, [hourStart, hourEnd]);
 
     /* Moves the visible week back by 7 days */
+    /* Jumps back to the week that contains today */
+    function goToCurrentWeek() {
+        setWeekStart(getStartOfWeek(new Date()));
+    }
+
+    const isCurrentWeek = toDateString(weekStart) === toDateString(getStartOfWeek(new Date()));
+
     function goToPreviousWeek() {
         setWeekStart((current) => {
             const previous = new Date(current);
@@ -117,7 +124,7 @@ export function useStudentSchedule() {
         });
 
         if (!response.ok) {
-            return await readErrorMessage(response, "Failed to book lesson");
+            return await readErrorMessage(response, "קביעת השיעור נכשלה");
         }
 
         const created: StudentLesson = await response.json();
@@ -137,7 +144,7 @@ export function useStudentSchedule() {
         const response = await apiFetch(`/lessons/${lessonId}`, { method: "DELETE" });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to cancel lesson"));
+            setErrorMessage(await readErrorMessage(response, "ביטול השיעור נכשל"));
             return false;
         }
 
@@ -154,7 +161,7 @@ export function useStudentSchedule() {
     return {
         weekDates, hours,
         hourStart, hourEnd, setHourStart, setHourEnd,
-        goToPreviousWeek, goToNextWeek,
+        goToPreviousWeek, goToNextWeek, goToCurrentWeek, isCurrentWeek,
         scheduleRules, scheduleOverrides, lessons, busySlots, subjects,
         now,
         errorMessage,

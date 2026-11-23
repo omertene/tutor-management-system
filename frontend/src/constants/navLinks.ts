@@ -2,17 +2,17 @@
 export type NavLink = { label: string; to: string };
 
 export const teacherLinks: NavLink[] = [
-    { label: "Students", to: "/teacher/register" },
-    { label: "Schedule", to: "/teacher/schedule-rules" },
-    { label: "Lessons", to: "/teacher/lessons" },
-    { label: "Payments", to: "/teacher/payments" },
-    { label: "Materials", to: "/teacher/materials" },
-    { label: "Statistics", to: "/teacher/statistics" },
-    { label: "Settings", to: "/teacher/settings" },
+    { label: "תלמידים", to: "/teacher/register" },
+    { label: "לוח זמנים", to: "/teacher/schedule-rules" },
+    { label: "שיעורים", to: "/teacher/lessons" },
+    { label: "תשלומים", to: "/teacher/payments" },
+    { label: "חומרי לימוד", to: "/teacher/materials" },
+    { label: "סטטיסטיקה", to: "/teacher/statistics" },
+    { label: "הגדרות", to: "/teacher/settings" },
 ];
 
 export const studentLinks: NavLink[] = [
-    { label: "Lessons", to: "/student/lessons" },
-    { label: "Payments", to: "/student/payments" },
-    { label: "Materials", to: "/student/materials" },
+    { label: "שיעורים", to: "/student/lessons" },
+    { label: "תשלומים", to: "/student/payments" },
+    { label: "חומרי לימוד", to: "/student/materials" },
 ];

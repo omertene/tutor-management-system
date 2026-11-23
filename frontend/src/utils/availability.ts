@@ -59,7 +59,7 @@ export function ruleCoverageBackground(quarters: boolean[]): string {
         .map((covered, i) => {
             const from = i * 25;
             const to = from + 25;
-            const color = covered ? "#ffffff" : "#e2e8f0";
+            const color = covered ? "#ecfdf5" : "#e2e8f0";
             return `${color} ${from}%, ${color} ${to}%`;
         })
         .join(", ");

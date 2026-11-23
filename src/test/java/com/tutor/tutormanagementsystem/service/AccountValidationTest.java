@@ -52,7 +52,7 @@ class AccountValidationTest {
     void tooShortOrMissingPassword_isRejected(String password) {
         assertThatThrownBy(() -> AccountValidation.requireValidPassword(password))
                 .isInstanceOf(InvalidStudentDataException.class)
-                .hasMessageContaining("at least 8");
+                .hasMessageContaining("לפחות 8");
     }
 
     @ParameterizedTest
@@ -60,7 +60,7 @@ class AccountValidationTest {
     void passwordWithoutBothLetterAndDigit_isRejected(String password) {
         assertThatThrownBy(() -> AccountValidation.requireValidPassword(password))
                 .isInstanceOf(InvalidStudentDataException.class)
-                .hasMessageContaining("letter and one digit");
+                .hasMessageContaining("אות אחת וספרה אחת");
     }
 
     @Test
@@ -68,7 +68,7 @@ class AccountValidationTest {
         String tooLong = "a1".repeat(33); // 66 characters
         assertThatThrownBy(() -> AccountValidation.requireValidPassword(tooLong))
                 .isInstanceOf(InvalidStudentDataException.class)
-                .hasMessageContaining("at most 64");
+                .hasMessageContaining("עד 64");
     }
 
     @Test

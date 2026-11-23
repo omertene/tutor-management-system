@@ -37,7 +37,7 @@ public class ScheduleRuleService {
                         request.dayOfWeek(), request.endTime(), request.startTime());
 
         if (!overlapping.isEmpty()) {
-            throw new ScheduleConflictException("This time overlaps an existing rule");
+            throw new ScheduleConflictException("השעה הזו חופפת לכלל קיים");
         }
 
         ScheduleRule scheduleRule = ScheduleRule.builder()
@@ -66,7 +66,7 @@ public class ScheduleRuleService {
     /* Counts how many future scheduled lessons will lose their recurring time slot if this rule is deleted */
     public long countUpcomingLessonsAffectedByDeletion(Long ruleId) {
         ScheduleRule rule = scheduleRuleRepository.findById(ruleId)
-                .orElseThrow(() -> new ScheduleRuleNotFoundException("Schedule rule not found"));
+                .orElseThrow(() -> new ScheduleRuleNotFoundException("הכלל לא נמצא"));
 
         return lessonService.countUpcomingLessonsInWeeklySlot(rule.getDayOfWeek(), rule.getStartTime(), rule.getEndTime());
     }
@@ -75,7 +75,7 @@ public class ScheduleRuleService {
     public long countUpcomingLessonsAffectedByEdit(Long ruleId, ScheduleRuleRequest newRequest) {
 
         ScheduleRule rule = scheduleRuleRepository.findById(ruleId)
-                .orElseThrow(() -> new ScheduleRuleNotFoundException("Schedule rule not found"));
+                .orElseThrow(() -> new ScheduleRuleNotFoundException("הכלל לא נמצא"));
 
         return lessonService.countUpcomingLessonsLosingCoverage(
                 rule.getDayOfWeek(), rule.getStartTime(), rule.getEndTime(),
@@ -87,7 +87,7 @@ public class ScheduleRuleService {
     @Transactional
     public ScheduleRuleResponse updateScheduleRule(Long ruleId, ScheduleRuleRequest request) {
         ScheduleRule rule = scheduleRuleRepository.findById(ruleId)
-                .orElseThrow(() -> new ScheduleRuleNotFoundException("Schedule rule not found"));
+                .orElseThrow(() -> new ScheduleRuleNotFoundException("הכלל לא נמצא"));
 
         TimeValidation.requireValidRange(request.startTime(), request.endTime());
 
@@ -99,7 +99,7 @@ public class ScheduleRuleService {
                 .anyMatch(other -> !other.getId().equals(ruleId));
 
         if (overlapping) {
-            throw new ScheduleConflictException("This time overlaps an existing rule");
+            throw new ScheduleConflictException("השעה הזו חופפת לכלל קיים");
         }
 
         rule.setDayOfWeek(request.dayOfWeek());
@@ -116,7 +116,7 @@ public class ScheduleRuleService {
     @Transactional
     public void deleteScheduleRule(Long ruleId) {
         if (!scheduleRuleRepository.existsById(ruleId)) {
-            throw new ScheduleRuleNotFoundException("Schedule rule not found");
+            throw new ScheduleRuleNotFoundException("הכלל לא נמצא");
         }
 
         scheduleRuleRepository.deleteById(ruleId);

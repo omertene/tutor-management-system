@@ -29,7 +29,7 @@ public class SubjectService {
     public SubjectResponse createSubject(SubjectRequest request) {
 
         if (request.name() == null || request.name().isBlank()) {
-            throw new InvalidRequestDataException("Subject name is required");
+            throw new InvalidRequestDataException("חובה להזין שם מקצוע");
         }
 
         /* Strip surrounding whitespace while keeping the original casing for display */
@@ -37,7 +37,7 @@ public class SubjectService {
 
         /* Prevent duplicate subject names regardless of letter case */
         if (subjectRepository.findByNameIgnoreCase(name).isPresent()) {
-            throw new DuplicateSubjectException("Subject already exists");
+            throw new DuplicateSubjectException("המקצוע כבר קיים");
         }
 
         Subject subject = Subject.builder().name(name).build();
@@ -57,7 +57,7 @@ public class SubjectService {
         long lessonCount = lessonRepository.countBySubjectId(subjectId);
         if (lessonCount > 0) {
             throw new SubjectInUseException(
-                    lessonCount + " lesson(s) use this subject - it can't be deleted");
+                    "אי אפשר למחוק את המקצוע - " + lessonCount + " שיעורים משתמשים בו");
         }
 
         subjectRepository.delete(subject);
@@ -71,6 +71,6 @@ public class SubjectService {
     /* Fetches raw subject entity for internal domain service operations */
     public Subject getSubjectEntity(Long subjectId) {
         return subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new SubjectNotFoundException("Subject not found"));
+                .orElseThrow(() -> new SubjectNotFoundException("המקצוע לא נמצא"));
     }
 }

@@ -1,3 +1,4 @@
+import { dayName } from "../utils/time";
 import { useState } from "react";
 import Modal from "./Modal";
 import TimeSelect from "./TimeSelect";
@@ -69,7 +70,7 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
         const isEditing = editingRuleId !== null;
 
         if (ranges.some((range) => !range.startTime || !range.endTime)) {
-            setErrorMessage("Please fill in every time range, or remove the empty one");
+            setErrorMessage("יש למלא כל טווח שעות, או להסיר את הטווח הריק");
             return;
         }
 
@@ -83,8 +84,8 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
 
             if (affectedCount > 0) {
                 const confirmed = window.confirm(
-                    `${affectedCount} upcoming lesson${affectedCount === 1 ? "" : "s"} would no longer fall inside this slot. ` +
-                    `${affectedCount === 1 ? "It" : "They"} will stay scheduled, just outside your regular hours. Save anyway?`
+                    `${affectedCount === 1 ? "שיעור קרוב אחד לא ייפול" : `${affectedCount} שיעורים קרובים לא ייפלו`} יותר בתוך החלון הזה. ` +
+                    `${affectedCount === 1 ? "הוא יישאר" : "הם יישארו"} במערכת, מחוץ לשעות הקבועות שלך. לשמור בכל זאת?`
                 );
                 if (!confirmed) return;
             }
@@ -95,7 +96,7 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
             });
 
             if (!response.ok) {
-                setErrorMessage(await readErrorMessage(response, "Failed to save rule"));
+                setErrorMessage(await readErrorMessage(response, "שמירת הכלל נכשלה"));
                 return;
             }
 
@@ -115,10 +116,10 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
             });
 
             if (!response.ok) {
-                const baseMessage = await readErrorMessage(response, "Failed to add rule");
+                const baseMessage = await readErrorMessage(response, "הוספת הכלל נכשלה");
                 setErrorMessage(
                     baseMessage +
-                    (createdRules.length > 0 ? ` (${createdRules.length} of ${ranges.length} range(s) were saved before this one failed)` : "")
+                    (createdRules.length > 0 ? ` (${createdRules.length} מתוך ${ranges.length} טווחים נשמרו לפני הכישלון)` : "")
                 );
                 if (createdRules.length > 0) onRulesChanged(sortRules([...scheduleRules, ...createdRules]));
                 return;
@@ -141,8 +142,8 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
 
         if (affectedCount > 0) {
             const confirmed = window.confirm(
-                `${affectedCount} upcoming lesson${affectedCount === 1 ? "" : "s"} fall inside this slot. ` +
-                `Deleting this rule won't cancel ${affectedCount === 1 ? "it" : "them"} - ${affectedCount === 1 ? "it" : "they"} will stay scheduled, just outside your regular hours. Delete anyway?`
+                `${affectedCount === 1 ? "שיעור קרוב אחד נופל" : `${affectedCount} שיעורים קרובים נופלים`} בתוך החלון הזה. ` +
+                `מחיקת הכלל לא תבטל ${affectedCount === 1 ? "אותו" : "אותם"} - ${affectedCount === 1 ? "הוא יישאר" : "הם יישארו"} במערכת, מחוץ לשעות הקבועות שלך. למחוק בכל זאת?`
             );
             if (!confirmed) return;
         }
@@ -152,7 +153,7 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
         });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to delete rule"));
+            setErrorMessage(await readErrorMessage(response, "מחיקת הכלל נכשלה"));
             return;
         }
 
@@ -160,7 +161,7 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
     }
 
     return (
-        <Modal title="Weekly availability" onClose={onClose}>
+        <Modal title="זמינות שבועית" onClose={onClose}>
             <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
                     <select
@@ -174,7 +175,7 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
                         className={inputClass}
                     >
                         {days.map((day) => (
-                            <option key={day} value={day}>{day}</option>
+                            <option key={day} value={day}>{dayName(day)}</option>
                         ))}
                     </select>
 
@@ -195,7 +196,7 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
                                     onClick={() => removeRange(index)}
                                     className="px-2 py-1 rounded-md bg-white border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors"
                                 >
-                                    Remove
+                                    הסרה
                                 </button>
                             )}
                         </div>
@@ -215,14 +216,14 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
                             onClick={handleSaveRule}
                             className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
                         >
-                            {editingRuleId !== null ? "Save changes" : ranges.length > 1 ? `Add ${ranges.length} rules` : "Add rule"}
+                            {editingRuleId !== null ? "שמירת שינויים" : ranges.length > 1 ? `הוספת ${ranges.length} כללים` : "הוספת כלל"}
                         </button>
                         {editingRuleId !== null && (
                             <button
                                 onClick={resetForm}
                                 className="px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
                             >
-                                Cancel
+                                ביטול
                             </button>
                         )}
                     </div>
@@ -232,13 +233,13 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
 
                 <div className="border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-64 overflow-y-auto">
                     {scheduleRules.length === 0 && (
-                        <p className="px-4 py-6 text-sm text-slate-500 text-center">No rules yet.</p>
+                        <p className="px-4 py-6 text-sm text-slate-500 text-center">אין כללים עדיין.</p>
                     )}
                     {days
                         .filter((day) => scheduleRules.some((rule) => rule.dayOfWeek === day))
                         .map((day) => (
                             <div key={day} className="px-4 py-2">
-                                <p className="text-xs font-semibold text-slate-500 mb-1">{day}</p>
+                                <p className="text-xs font-semibold text-slate-500 mb-1">{dayName(day)}</p>
                                 <div className="flex flex-col gap-1">
                                     {scheduleRules
                                         .filter((rule) => rule.dayOfWeek === day)
@@ -252,13 +253,13 @@ export default function ScheduleRulesModal({ scheduleRules, onRulesChanged, onCl
                                                         onClick={() => startEditRule(rule)}
                                                         className="px-2 py-1 rounded-md bg-white border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors"
                                                     >
-                                                        Edit
+                                                        עריכה
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteRule(rule.id)}
                                                         className="px-2 py-1 rounded-md bg-white border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition-colors"
                                                     >
-                                                        Delete
+                                                        מחיקה
                                                     </button>
                                                 </div>
                                             </div>

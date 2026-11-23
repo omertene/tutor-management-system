@@ -1,3 +1,4 @@
+import { formatMoney } from "../../utils/money";
 import { useState } from "react";
 import { apiFetch, readErrorMessage } from "../../utils/api";
 import { validatePhoneField, validateHourlyRateField } from "../../utils/fieldValidation";
@@ -45,7 +46,7 @@ export default function StudentRow({
         onError("");
 
         if (!firstName.trim() || !lastName.trim()) {
-            onError("First and last name are required");
+            onError("שם פרטי ושם משפחה הם שדות חובה");
             return;
         }
 
@@ -66,14 +67,14 @@ export default function StudentRow({
             });
 
             if (!response.ok) {
-                onError(await readErrorMessage(response, "Failed to update student"));
+                onError(await readErrorMessage(response, "עדכון התלמיד נכשל"));
                 return;
             }
 
             onSaved((await response.json()) as Student);
             setIsEditing(false);
         } catch {
-            onError("Could not reach the server. Please try again.");
+            onError("אין חיבור לשרת. נסו שוב.");
         }
     }
 
@@ -81,20 +82,20 @@ export default function StudentRow({
         return (
             <div className="px-4 py-3">
                 <div className="flex flex-wrap gap-2 items-center">
-                    <input placeholder="first name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className={`${editInputClass} w-32`} />
-                    <input placeholder="last name" value={lastName} onChange={(e) => setLastName(e.target.value)} className={`${editInputClass} w-32`} />
-                    <input placeholder="phone" value={phone} onChange={(e) => setPhone(e.target.value)} className={`${editInputClass} w-32`} />
-                    <input placeholder="hourly rate" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} className={`${editInputClass} w-24`} />
-                    <input placeholder="education level" value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)} className={`${editInputClass} w-32`} />
-                    <input placeholder="notes" value={notes} onChange={(e) => setNotes(e.target.value)} className={`${editInputClass} w-40`} />
+                    <input placeholder="שם פרטי" value={firstName} onChange={(e) => setFirstName(e.target.value)} className={`${editInputClass} w-32`} />
+                    <input placeholder="שם משפחה" value={lastName} onChange={(e) => setLastName(e.target.value)} className={`${editInputClass} w-32`} />
+                    <input placeholder="טלפון" value={phone} onChange={(e) => setPhone(e.target.value)} className={`${editInputClass} w-32`} />
+                    <input placeholder="מחיר לשעה" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} className={`${editInputClass} w-24`} />
+                    <input placeholder="רמת לימוד" value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)} className={`${editInputClass} w-32`} />
+                    <input placeholder="הערות" value={notes} onChange={(e) => setNotes(e.target.value)} className={`${editInputClass} w-40`} />
                     <button
                         onClick={handleSave}
                         className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
                     >
-                        Save
+                        שמירה
                     </button>
                     <button onClick={() => setIsEditing(false)} className={rowButtonClass}>
-                        Cancel
+                        ביטול
                     </button>
                 </div>
             </div>
@@ -111,16 +112,16 @@ export default function StudentRow({
                         </span>
                         <span className="text-slate-500 text-sm">{student.email}</span>
                         <span className="text-slate-500 text-sm">{student.phone}</span>
-                        <span className="text-slate-500 text-sm">₪{student.hourlyRate}/hr</span>
+                        <span className="text-slate-500 text-sm">{formatMoney(student.hourlyRate)} לשעה</span>
                         {debt > 0 && (
-                            <span className="text-sm font-medium text-red-600">Debt: ₪{debt}</span>
+                            <span className="text-sm font-medium text-red-600">חוב: {formatMoney(debt)}</span>
                         )}
                         <span
                             className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                                 student.active ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500"
                             }`}
                         >
-                            {student.active ? "Active" : "Inactive"}
+                            {student.active ? "פעיל" : "לא פעיל"}
                         </span>
                     </div>
                     {(student.educationLevel || student.notes) && (
@@ -135,10 +136,10 @@ export default function StudentRow({
                     )}
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={startEdit} className={rowButtonClass}>Edit</button>
-                    <button onClick={() => onOpenCredentials(student)} className={rowButtonClass}>Credentials</button>
+                    <button onClick={startEdit} className={rowButtonClass}>עריכה</button>
+                    <button onClick={() => onOpenCredentials(student)} className={rowButtonClass}>פרטי התחברות</button>
                     <button onClick={() => onToggleActive(student)} className={rowButtonClass}>
-                        {student.active ? "Deactivate" : "Reactivate"}
+                        {student.active ? "השבתה" : "הפעלה מחדש"}
                     </button>
                 </div>
             </div>

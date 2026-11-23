@@ -1,3 +1,4 @@
+import { formatMoney } from "../../utils/money";
 import { formatHours } from "../../utils/time";
 import type { SubjectPerformance, StudentPerformance } from "../../types/statistics";
 
@@ -5,9 +6,9 @@ import type { SubjectPerformance, StudentPerformance } from "../../types/statist
 
 const sectionTitleClass = "text-lg font-semibold text-slate-900 mb-3";
 const tableWrapClass = "bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden";
-const headRowClass = "bg-slate-50 text-slate-500 text-left";
+const headRowClass = "bg-slate-50 text-slate-500 text-start";
 const thClass = "px-4 py-2 font-medium";
-const thNumClass = "px-4 py-2 font-medium text-right";
+const thNumClass = "px-4 py-2 font-medium text-end";
 
 type StatisticsTablesProps = {
     subjectBreakdown: SubjectPerformance[];
@@ -19,27 +20,27 @@ export default function StatisticsTables({ subjectBreakdown, topStudents }: Stat
     return (
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-                <h2 className={sectionTitleClass}>Subject summary</h2>
+                <h2 className={sectionTitleClass}>סיכום לפי מקצוע</h2>
                 <div className={tableWrapClass}>
                     <table className="w-full text-sm">
                         <thead>
                             <tr className={headRowClass}>
-                                <th className={thClass}>Subject</th>
-                                <th className={thNumClass}>Lessons</th>
-                                <th className={thNumClass}>Hours</th>
-                                <th className={thNumClass}>Revenue</th>
+                                <th className={thClass}>מקצוע</th>
+                                <th className={thNumClass}>שיעורים</th>
+                                <th className={thNumClass}>שעות</th>
+                                <th className={thNumClass}>הכנסות</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {subjectBreakdown.length === 0 && (
-                                <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-500">No completed lessons in this range.</td></tr>
+                                <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-500">אין שיעורים שהושלמו בטווח הזה.</td></tr>
                             )}
                             {subjectBreakdown.map((row) => (
                                 <tr key={row.subjectName}>
                                     <td className="px-4 py-3 font-medium text-slate-900">{row.subjectName}</td>
-                                    <td className="px-4 py-3 text-right text-slate-700">{row.lessonCount}</td>
-                                    <td className="px-4 py-3 text-right text-slate-700">{formatHours(row.totalHours)}</td>
-                                    <td className="px-4 py-3 text-right text-slate-900 font-medium">₪{row.totalRevenue}</td>
+                                    <td className="px-4 py-3 text-end text-slate-700">{row.lessonCount}</td>
+                                    <td className="px-4 py-3 text-end text-slate-700">{formatHours(row.totalHours)}</td>
+                                    <td className="px-4 py-3 text-end text-slate-900 font-medium">{formatMoney(row.totalRevenue)}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -48,25 +49,25 @@ export default function StatisticsTables({ subjectBreakdown, topStudents }: Stat
             </div>
 
             <div>
-                <h2 className={sectionTitleClass}>Top students</h2>
+                <h2 className={sectionTitleClass}>תלמידים מובילים</h2>
                 <div className={tableWrapClass}>
                     <table className="w-full text-sm">
                         <thead>
                             <tr className={headRowClass}>
-                                <th className={thClass}>Student</th>
-                                <th className={thNumClass}>Lessons</th>
-                                <th className={thNumClass}>Total Billed</th>
+                                <th className={thClass}>תלמיד</th>
+                                <th className={thNumClass}>שיעורים</th>
+                                <th className={thNumClass}>סך חיוב</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {topStudents.length === 0 && (
-                                <tr><td colSpan={3} className="px-4 py-6 text-center text-slate-500">No completed lessons in this range.</td></tr>
+                                <tr><td colSpan={3} className="px-4 py-6 text-center text-slate-500">אין שיעורים שהושלמו בטווח הזה.</td></tr>
                             )}
                             {topStudents.slice(0, 5).map((row) => (
                                 <tr key={row.studentId}>
                                     <td className="px-4 py-3 font-medium text-slate-900">{row.firstName} {row.lastName}</td>
-                                    <td className="px-4 py-3 text-right text-slate-700">{row.lessonCount}</td>
-                                    <td className="px-4 py-3 text-right text-slate-900 font-medium">₪{row.totalBilled}</td>
+                                    <td className="px-4 py-3 text-end text-slate-700">{row.lessonCount}</td>
+                                    <td className="px-4 py-3 text-end text-slate-900 font-medium">{formatMoney(row.totalBilled)}</td>
                                 </tr>
                             ))}
                         </tbody>

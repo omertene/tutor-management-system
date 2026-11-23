@@ -1,3 +1,4 @@
+import { materialTypeLabels } from "../../types/material";
 import { smallSecondaryButtonClass } from "../../constants/formStyles";
 import { formatDateAndTime, formatDateTimeString } from "../../utils/time";
 import { typeStyles } from "../../types/material";
@@ -20,7 +21,7 @@ export default function MaterialRow({ material, isTeacher, onDownload, onDelete 
         <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-wrap">
                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${typeStyles[material.type] ?? "bg-slate-100 text-slate-500"}`}>
-                    {material.type}
+                    {materialTypeLabels[material.type]}
                 </span>
                 <span className="font-medium text-slate-900">{material.title}</span>
                 {isTeacher && (
@@ -31,8 +32,8 @@ export default function MaterialRow({ material, isTeacher, onDownload, onDelete 
                 {material.description && <span className="text-slate-500 text-sm">— {material.description}</span>}
                 <span className="text-slate-400 text-xs italic">
                     {material.lessonDate && material.lessonStartTime
-                        ? `from lesson: ${formatDateAndTime(material.lessonDate, material.lessonStartTime)} — ${material.lessonSubject}`
-                        : "general material"}
+                        ? `משיעור: ${formatDateAndTime(material.lessonDate, material.lessonStartTime)} — ${material.lessonSubject}`
+                        : "חומר כללי"}
                 </span>
                 <span className="text-slate-400 text-xs">{formatDateTimeString(material.uploadedAt)}</span>
             </div>
@@ -40,7 +41,7 @@ export default function MaterialRow({ material, isTeacher, onDownload, onDelete 
             <div className="flex gap-2 items-center">
                 {material.type === "LINK" && material.url && (
                     <a href={material.url} target="_blank" rel="noreferrer" className={smallSecondaryButtonClass}>
-                        Open link
+                        פתיחת קישור
                     </a>
                 )}
 
@@ -48,7 +49,7 @@ export default function MaterialRow({ material, isTeacher, onDownload, onDelete 
                     const fileName = material.fileName;
                     return (
                         <button onClick={() => onDownload(material.id, fileName)} className={smallSecondaryButtonClass}>
-                            Download
+                            הורדה
                         </button>
                     );
                 })()}
@@ -58,7 +59,7 @@ export default function MaterialRow({ material, isTeacher, onDownload, onDelete 
                         onClick={() => onDelete(material)}
                         className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
                     >
-                        Delete
+                        מחיקה
                     </button>
                 )}
             </div>

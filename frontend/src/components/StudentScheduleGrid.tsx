@@ -2,15 +2,16 @@ import { useState } from "react";
 import WeekGrid from "./WeekGrid";
 import StudentBookLessonModal, { STUDENT_MIN_BOOKING_NOTICE_HOURS } from "./schedule/StudentBookLessonModal";
 import StudentLessonModal from "./schedule/StudentLessonModal";
+import { useDragSelect } from "../hooks/useDragSelect";
 import { useStudentSchedule } from "../hooks/useStudentSchedule";
-import { ROW_HEIGHT, addOneHour, minutesSinceMidnight, toDateString } from "../utils/time";
+import { ROW_HEIGHT, minutesSinceMidnight, toDateString } from "../utils/time";
 import {
     dayDateString,
     firstAvailableQuarterRun,
+    hourToTime,
     getRuleCoverageQuarters,
     overlaps,
     quarterRunStartTime,
-    ruleCoverageBackground,
     toPositionedBlock,
 } from "../utils/availability";
 import type { StudentLesson } from "../types/schedule";
@@ -18,13 +19,13 @@ import type { StudentLesson } from "../types/schedule";
 /* Scheduled and completed lessons look identical to the student - no need to
    tell them apart at a glance here like the teacher's schedule does */
 const lessonBlockStyles: Record<string, string> = {
-    SCHEDULED: "bg-blue-100 hover:bg-blue-200",
-    COMPLETED: "bg-blue-100 hover:bg-blue-200",
+    SCHEDULED: "bg-indigo-600 hover:bg-indigo-700 text-white",
+    COMPLETED: "bg-indigo-400 hover:bg-indigo-500 text-white",
 };
 
 /* Shown for a slot that's otherwise open but falls inside the minimum booking
    notice - kept in one place so the tooltip and the click message always match */
-const tooSoonMessage = `Lessons must be booked at least ${STUDENT_MIN_BOOKING_NOTICE_HOURS} hours in advance. Please contact your teacher directly for anything sooner.`;
+const tooSoonMessage = `יש לקבוע שיעור לפחות ${STUDENT_MIN_BOOKING_NOTICE_HOURS} שעות מראש. לתיאום שיעור בטווח קרוב יותר אפשר לפנות ישירות למורה.`;
 
 /* Student-facing weekly schedule: shows the teacher's availability, other
    students' booked slots (grayed out), and this student's own lessons.
@@ -34,7 +35,7 @@ function StudentScheduleGrid() {
     const {
         weekDates, hours,
         hourStart, hourEnd, setHourStart, setHourEnd,
-        goToPreviousWeek, goToNextWeek,
+        goToPreviousWeek, goToNextWeek, goToCurrentWeek, isCurrentWeek,
         scheduleRules, scheduleOverrides, lessons, busySlots, subjects,
         now,
         errorMessage,
@@ -130,29 +131,66 @@ function StudentScheduleGrid() {
         return cellStart < now;
     }
 
-    /* Opens the booking form only when part of the hour is actually bookable - a
-       student can't add availability like a teacher can, so a fully unavailable
-       cell does nothing. A partially-available cell (rule starts at 08:15) still
-       opens the form, pre-filled to the exact time that's actually free */
-    function handleCellClick(dayIndex: number, hour: number) {
-        if (isCellCoveredByOverrideOrLesson(dayIndex, hour)) return;
+    /* Start time of the bookable part of this hour cell (e.g. "08:15" when the
+       rule starts a quarter in), or null when nothing in it can be booked: covered
+       by a block/lesson/another student, outside the rules, already past, or inside
+       the minimum booking notice */
+    function bookableStart(dayIndex: number, hour: number): string | null {
+        if (isCellCoveredByOverrideOrLesson(dayIndex, hour)) return null;
+        const availableRun = firstAvailableQuarterRun(quartersForCell(dayIndex, hour));
+        if (!availableRun) return null;
+        const startTime = quarterRunStartTime(hour, availableRun.startQuarter);
+        if (isCellInThePast(dayIndex, hour, startTime)) return null;
+        if (isCellTooSoonToBook(dayIndex, hour, startTime)) return null;
+        return startTime;
+    }
 
+    /* A plain click on a slot that is open but too close to now explains why it
+       can't be booked. Booking itself goes through the drag/click handler below. */
+    function handleCellClick(dayIndex: number, hour: number) {
+        if (bookableStart(dayIndex, hour) !== null) return;
+        if (isCellCoveredByOverrideOrLesson(dayIndex, hour)) return;
         const availableRun = firstAvailableQuarterRun(quartersForCell(dayIndex, hour));
         if (!availableRun) return;
-
         const startTime = quarterRunStartTime(hour, availableRun.startQuarter);
         if (isCellInThePast(dayIndex, hour, startTime)) return;
-        if (isCellTooSoonToBook(dayIndex, hour, startTime)) {
-            alert(tooSoonMessage);
-            return;
-        }
+        if (isCellTooSoonToBook(dayIndex, hour, startTime)) alert(tooSoonMessage);
+    }
 
+    /* Narrows a drag to the unbroken run of bookable hours around where it began,
+       so a drag across a gap or someone else's lesson stops at the gap */
+    function clampToBookable(dayIndex: number, startHour: number, hour: number): [number, number] {
+        const lo = Math.min(startHour, hour);
+        const hi = Math.max(startHour, hour);
+        let rangeStart = startHour;
+        let rangeEnd = startHour;
+        for (let h = startHour; h >= lo; h--) {
+            if (bookableStart(dayIndex, h) === null) break;
+            rangeStart = h;
+        }
+        for (let h = startHour; h <= hi; h++) {
+            if (bookableStart(dayIndex, h) === null) break;
+            rangeEnd = h;
+        }
+        return [rangeStart, rangeEnd + 1];
+    }
+
+    /* Opens the booking modal for the selected hours (one click = one hour) */
+    function openBookingForRange(dayIndex: number, startHour: number, endHour: number) {
+        const startTime = bookableStart(dayIndex, startHour);
+        if (startTime === null) return;
         setBookingSlot({
             date: dayDateString(weekDates, dayIndex),
             startTime,
-            endTime: addOneHour(startTime),
+            endTime: hourToTime(endHour),
         });
     }
+
+    const { handleCellMouseDown, handleCellMouseEnter, isCellInDragSelection } = useDragSelect({
+        isCellBlocked: (dayIndex, hour) => bookableStart(dayIndex, hour) === null,
+        clampRange: clampToBookable,
+        onRangeSelected: openBookingForRange,
+    });
 
     /* Cancels a lesson and closes the view modal if it worked */
     async function handleCancelLesson(lessonId: number) {
@@ -167,6 +205,16 @@ function StudentScheduleGrid() {
             {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
             <div className="mt-4">
+            <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-slate-600">
+                <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-3 w-5 rounded border border-emerald-300 bg-emerald-50" />
+                    פנוי לקביעה (אפשר לגרור כמה שעות)
+                </span>
+                <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-3 w-3 rounded bg-indigo-600" />
+                    השיעור שלי
+                </span>
+            </div>
             <WeekGrid
                 weekDates={weekDates}
                 hourStart={hourStart}
@@ -175,16 +223,18 @@ function StudentScheduleGrid() {
                 onHourEndChange={setHourEnd}
                 onPreviousWeek={goToPreviousWeek}
                 onNextWeek={goToNextWeek}
+                onCurrentWeek={goToCurrentWeek}
+                isCurrentWeek={isCurrentWeek}
                 todayDayIndex={todayDayIndex}
                 showNowLine={showNowLine}
                 nowLineTop={nowLineTop}
+                nowLineScope="day"
+                maxHeight="max(26rem, calc(100vh - 15rem))"
                 hours={hours}
                 renderDayColumn={(dayIndex) => (
                     <>
                         {hours.map((hour) => {
                             const quarters = quartersForCell(dayIndex, hour);
-                            const allCovered = quarters.every(Boolean);
-                            const noneCovered = quarters.every((covered) => !covered);
 
                             const availableRun = firstAvailableQuarterRun(quarters);
                             const isCovered = isCellCoveredByOverrideOrLesson(dayIndex, hour);
@@ -193,30 +243,27 @@ function StudentScheduleGrid() {
                                 : undefined;
                             const isPast = availableRun !== null && isCellInThePast(dayIndex, hour, runStartTime);
                             const isTooSoon = !isCovered && !isPast && availableRun !== null && isCellTooSoonToBook(dayIndex, hour, runStartTime);
-                            const isClickable = !isCovered && availableRun !== null && !isTooSoon;
+                            const isClickable = runStartTime !== undefined && bookableStart(dayIndex, hour) !== null;
 
                             return (
                                 <button
                                     key={hour}
                                     onClick={() => handleCellClick(dayIndex, hour)}
+                                    onMouseDown={() => handleCellMouseDown(dayIndex, hour)}
+                                    onMouseEnter={() => handleCellMouseEnter(dayIndex, hour)}
                                     title={isTooSoon ? tooSoonMessage : undefined}
-                                    style={{
-                                        height: `${ROW_HEIGHT}px`,
-                                        boxSizing: "border-box",
-                                        background: allCovered || noneCovered ? undefined : ruleCoverageBackground(quarters),
-                                    }}
-                                    className={`block w-full border-b border-slate-300 transition-colors select-none ${
-                                        allCovered
-                                            ? `bg-white ${isClickable ? "hover:bg-slate-50 cursor-pointer" : isTooSoon ? "cursor-help" : "cursor-default"}`
-                                            : noneCovered
-                                                ? "bg-slate-200 cursor-default"
-                                                : isClickable
-                                                    ? "hover:brightness-95 cursor-pointer"
-                                                    : isTooSoon
-                                                        ? "cursor-help"
-                                                        : "cursor-default"
+                                    style={{ height: `${ROW_HEIGHT}px`, boxSizing: "border-box" }}
+                                    className={`group flex w-full items-center justify-center border-b border-slate-100 bg-white px-1.5 py-1 select-none ${
+                                        isClickable ? "cursor-pointer" : isTooSoon ? "cursor-help" : "cursor-default"
                                     }`}
-                                />
+                                >
+                                    {isClickable && runStartTime && (
+                                        <span className={`flex h-full w-full items-center justify-center gap-1 rounded-lg border text-xs font-semibold transition-colors ${isCellInDragSelection(dayIndex, hour) ? "border-emerald-600 bg-emerald-200 text-emerald-900" : "border-emerald-300 bg-emerald-50 text-emerald-800 group-hover:border-emerald-500 group-hover:bg-emerald-100"}`}>
+                                            <span dir="ltr">{runStartTime}</span>
+                                            <span aria-hidden="true">+</span>
+                                        </span>
+                                    )}
+                                </button>
                             );
                         })}
 
@@ -225,7 +272,7 @@ function StudentScheduleGrid() {
                         {getBusySlotsForDay(dayIndex).map(({ item: slot, top, height }, index) => (
                             <div
                                 key={`busy-${slot.date}-${slot.startTime}-${index}`}
-                                className="absolute block left-0 right-0 m-0 bg-slate-200"
+                                className="absolute block left-0 right-0 m-0 bg-white"
                                 style={{ top: `${top}px`, height: `${height}px` }}
                             />
                         ))}
@@ -234,12 +281,13 @@ function StudentScheduleGrid() {
                             <button
                                 key={`lesson-${lesson.id}`}
                                 onClick={() => setViewingLesson(lesson)}
-                                className={`absolute block left-0 right-0 m-0 px-1.5 py-1 text-xs text-left leading-tight overflow-hidden transition-colors ${lessonBlockStyles[lesson.status] ?? lessonBlockStyles.SCHEDULED}`}
+                                className={`absolute block left-0.5 right-0.5 m-0 px-1.5 py-1 text-xs text-start leading-tight overflow-hidden rounded-lg shadow-sm transition-colors ${lessonBlockStyles[lesson.status] ?? lessonBlockStyles.SCHEDULED}`}
                                 style={{ top: `${top}px`, height: `${height}px` }}
                                 title={lesson.subjectName}
                             >
-                                <span className="line-clamp-2 text-slate-700 font-medium">
-                                    {lesson.subjectName}
+                                <span className="block truncate font-semibold">{lesson.subjectName}</span>
+                                <span dir="ltr" className="block text-[11px] opacity-90">
+                                    {lesson.startTime.slice(0, 5)}&ndash;{lesson.endTime.slice(0, 5)}
                                 </span>
                             </button>
                         ))}

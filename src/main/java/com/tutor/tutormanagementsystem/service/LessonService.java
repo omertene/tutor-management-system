@@ -66,7 +66,7 @@ public class LessonService {
         LocalDateTime requestedStart = LocalDateTime.of(request.date(), request.startTime());
         if (requestedStart.isBefore(LocalDateTime.now().plusHours(STUDENT_MIN_BOOKING_NOTICE_HOURS))) {
             throw new SlotNotAvailableException(
-                    "Lessons must be booked at least " + STUDENT_MIN_BOOKING_NOTICE_HOURS + " hours in advance");
+                    "אפשר לקבוע שיעור לפחות " + STUDENT_MIN_BOOKING_NOTICE_HOURS + " שעות מראש");
         }
 
         LessonResponse response;
@@ -75,7 +75,7 @@ public class LessonService {
         } catch (SlotNotAvailableException e) {
             /* Don't let a student learn that another student has a lesson booked here -
                "already booked" and "outside working hours" must look identical to them */
-            throw new SlotNotAvailableException("This time is not available");
+            throw new SlotNotAvailableException("השעה הזו לא פנויה");
         }
 
         /* Send email notification to teacher only when student books by themselves */
@@ -86,10 +86,10 @@ public class LessonService {
 
     /* Sends an email to teacher about a new student booking */
     private void notifyTeacherOfNewBooking(LessonResponse lesson) {
-        String subject = "New lesson booked";
-        String body = lesson.studentFirstName() + " " + lesson.studentLastName() + " booked a "
-                + lesson.subjectName() + " lesson on " + lesson.date().format(NOTIFICATION_DATE_FORMAT)
-                + " at " + lesson.startTime().format(NOTIFICATION_TIME_FORMAT) + "-"
+        String subject = "נקבע שיעור חדש";
+        String body = lesson.studentFirstName() + " " + lesson.studentLastName() + " קבע/ה שיעור "
+                + lesson.subjectName() + " בתאריך " + lesson.date().format(NOTIFICATION_DATE_FORMAT)
+                + " בשעה " + lesson.startTime().format(NOTIFICATION_TIME_FORMAT) + "-"
                 + lesson.endTime().format(NOTIFICATION_TIME_FORMAT) + ".";
 
         /* a failed notification must never break the booking itself */
@@ -123,7 +123,7 @@ public class LessonService {
 
         /* Check if slot is open in tutor's weekly rules and overrides */
         if (!availabilityService.isTimeAvailable(date, startTime, endTime)) {
-            throw new SlotNotAvailableException("This time is not available");
+            throw new SlotNotAvailableException("השעה הזו לא פנויה");
         }
 
         /* Check if another active lesson is already booked in this time range */
@@ -132,7 +132,7 @@ public class LessonService {
                 .isEmpty();
 
         if (alreadyBooked) {
-            throw new SlotNotAvailableException("This time is already booked");
+            throw new SlotNotAvailableException("השעה הזו כבר תפוסה");
         }
 
         /* Build and save new scheduled lesson entity with locked-in booking price */
@@ -156,10 +156,10 @@ public class LessonService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public LessonResponse updateLesson(Long lessonId, LessonRequest request) {
         Lesson lesson = lessonRepository.findById(lessonId)
-                .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
+                .orElseThrow(() -> new LessonNotFoundException("השיעור לא נמצא"));
 
         if (lesson.getStatus() != LessonStatus.SCHEDULED) {
-            throw new InvalidLessonStateException("Only a scheduled lesson can be edited");
+            throw new InvalidLessonStateException("אפשר לערוך רק שיעור מתוזמן");
         }
 
         TimeValidation.requireValidRange(request.startTime(), request.endTime());
@@ -171,7 +171,7 @@ public class LessonService {
         lessonRepository.acquireDateLock(request.date().toEpochDay());
 
         if (!availabilityService.isTimeAvailable(request.date(), request.startTime(), request.endTime())) {
-            throw new SlotNotAvailableException("This time is not available");
+            throw new SlotNotAvailableException("השעה הזו לא פנויה");
         }
 
         /* Make sure no other lesson overlaps this slot (ignore current lesson being updated) */
@@ -182,7 +182,7 @@ public class LessonService {
                 .anyMatch(other -> !other.getId().equals(lessonId));
 
         if (alreadyBooked) {
-            throw new SlotNotAvailableException("This time is already booked");
+            throw new SlotNotAvailableException("השעה הזו כבר תפוסה");
         }
 
         lesson.setStudent(student);
@@ -201,22 +201,22 @@ public class LessonService {
     @Transactional
     public LessonResponse cancelLesson(Long lessonId, Long callerId, Role callerRole) {
         Lesson lesson = lessonRepository.findById(lessonId)
-                .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
+                .orElseThrow(() -> new LessonNotFoundException("השיעור לא נמצא"));
 
         boolean isOwner = lesson.getStudent().getId().equals(callerId);
 
         /* Students can only cancel their own lessons */
         if (callerRole == Role.STUDENT && !isOwner) {
-            throw new LessonAccessDeniedException("You can only cancel your own lessons");
+            throw new LessonAccessDeniedException("אפשר לבטל רק שיעורים שלך");
         }
 
         /* Completed lessons can only be canceled by the teacher */
         if (lesson.getStatus() == LessonStatus.COMPLETED && callerRole != Role.TEACHER) {
-            throw new LessonAccessDeniedException("Only a teacher can cancel a completed lesson");
+            throw new LessonAccessDeniedException("רק מורה יכול לבטל שיעור שהושלם");
         }
 
         if (lesson.getStatus() != LessonStatus.SCHEDULED && lesson.getStatus() != LessonStatus.COMPLETED) {
-            throw new InvalidLessonStateException("This lesson can't be cancelled");
+            throw new InvalidLessonStateException("אי אפשר לבטל את השיעור הזה");
         }
 
         /* Students must cancel at least 6 hours in advance */
@@ -224,7 +224,7 @@ public class LessonService {
             LocalDateTime lessonStart = LocalDateTime.of(lesson.getDate(), lesson.getStartTime());
             if (lessonStart.isBefore(LocalDateTime.now().plusHours(STUDENT_MIN_CANCEL_NOTICE_HOURS))) {
                 throw new InvalidLessonStateException(
-                        "Lessons can only be cancelled at least " + STUDENT_MIN_CANCEL_NOTICE_HOURS + " hours in advance");
+                        "אפשר לבטל שיעור לפחות " + STUDENT_MIN_CANCEL_NOTICE_HOURS + " שעות מראש");
             }
         }
 
@@ -239,15 +239,15 @@ public class LessonService {
     @Transactional
     public LessonResponse completeLesson(Long lessonId) {
         Lesson lesson = lessonRepository.findById(lessonId)
-                .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
+                .orElseThrow(() -> new LessonNotFoundException("השיעור לא נמצא"));
 
         if (lesson.getStatus() != LessonStatus.SCHEDULED) {
-            throw new InvalidLessonStateException("Only a scheduled lesson can be marked as completed");
+            throw new InvalidLessonStateException("אפשר לסמן כהושלם רק שיעור מתוזמן");
         }
 
         LocalDateTime lessonStart = LocalDateTime.of(lesson.getDate(), lesson.getStartTime());
         if (lessonStart.isAfter(LocalDateTime.now())) {
-            throw new InvalidLessonStateException("Cannot mark a lesson as completed before it has started");
+            throw new InvalidLessonStateException("אי אפשר לסמן שיעור כהושלם לפני שהתחיל");
         }
 
         lesson.setStatus(LessonStatus.COMPLETED);
@@ -260,10 +260,10 @@ public class LessonService {
     @Transactional
     public LessonResponse updateLessonNotes(Long lessonId, String notes) {
         Lesson lesson = lessonRepository.findById(lessonId)
-                .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
+                .orElseThrow(() -> new LessonNotFoundException("השיעור לא נמצא"));
 
         if (lesson.getStatus() == LessonStatus.CANCELLED) {
-            throw new InvalidLessonStateException("Can't add notes to a cancelled lesson");
+            throw new InvalidLessonStateException("אי אפשר להוסיף הערות לשיעור שבוטל");
         }
 
         lesson.setNotes(notes);
@@ -301,7 +301,7 @@ public class LessonService {
     /* Gets a lesson entity by ID or throws exception */
     public Lesson getLessonEntity(Long lessonId) {
         return lessonRepository.findById(lessonId)
-                .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
+                .orElseThrow(() -> new LessonNotFoundException("השיעור לא נמצא"));
     }
 
     /* Checks if any scheduled lesson exists in a specific date and time interval */

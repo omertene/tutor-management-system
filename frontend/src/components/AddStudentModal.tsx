@@ -32,7 +32,7 @@ function AddStudentModal({ onClose, onCreated }: AddStudentModalProps) {
         setSuccessMessage("");
 
         if (!email || !password || !firstName || !lastName || !phone || !hourlyRate) {
-            setErrorMessage("Please fill in all required fields");
+            setErrorMessage("יש למלא את כל שדות החובה");
             return;
         }
 
@@ -63,11 +63,11 @@ function AddStudentModal({ onClose, onCreated }: AddStudentModalProps) {
             });
 
             if (!response.ok) {
-                setErrorMessage(await readErrorMessage(response, "Failed to create student"));
+                setErrorMessage(await readErrorMessage(response, "יצירת התלמיד נכשלה"));
                 return;
             }
 
-            setSuccessMessage("Student created successfully");
+            setSuccessMessage("התלמיד נוצר בהצלחה");
             setEmail("");
             setPassword("");
             setFirstName("");
@@ -80,52 +80,52 @@ function AddStudentModal({ onClose, onCreated }: AddStudentModalProps) {
             onCreated();
             onClose();
         } catch {
-            setErrorMessage("Could not reach the server. Please try again.");
+            setErrorMessage("אין חיבור לשרת. נסו שוב.");
         }
     }
 
     return (
-        <Modal title="Add student" onClose={onClose}>
+        <Modal title="הוספת תלמיד" onClose={onClose}>
             <div className="flex flex-col gap-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Email *</label>
-                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClassFull} />
+                        <label className={labelClass}>אימייל *</label>
+                        <input type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClassFull} />
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Password *</label>
+                        <label className={labelClass}>סיסמה *</label>
                         <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClassFull} />
-                        <p className="text-xs text-slate-500">At least 8 characters, with a letter and a digit</p>
+                        <p className="text-xs text-slate-500">לפחות 8 תווים, כולל אות וספרה</p>
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>First name *</label>
+                        <label className={labelClass}>שם פרטי *</label>
                         <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputClassFull} />
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Last name *</label>
+                        <label className={labelClass}>שם משפחה *</label>
                         <input value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputClassFull} />
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Phone *</label>
+                        <label className={labelClass}>טלפון *</label>
                         <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClassFull} />
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Hourly rate *</label>
+                        <label className={labelClass}>מחיר לשעה *</label>
                         <input value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} className={inputClassFull} />
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Education level</label>
+                        <label className={labelClass}>רמת לימוד</label>
                         <input value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)} className={inputClassFull} />
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <label className={labelClass}>Notes (optional)</label>
+                        <label className={labelClass}>הערות (אופציונלי)</label>
                         <input value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClassFull} />
                     </div>
                 </div>
@@ -137,7 +137,7 @@ function AddStudentModal({ onClose, onCreated }: AddStudentModalProps) {
                     onClick={handleRegister}
                     className="w-full mt-2 rounded-lg bg-indigo-600 text-white text-sm font-medium py-2.5 hover:bg-indigo-700 transition-colors"
                 >
-                    Add student
+                    הוספת תלמיד
                 </button>
             </div>
         </Modal>

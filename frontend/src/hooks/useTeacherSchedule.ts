@@ -116,7 +116,7 @@ export function useTeacherSchedule() {
         });
 
         if (!response.ok) {
-            return await readErrorMessage(response, isEditing ? "Failed to update lesson" : "Failed to create lesson");
+            return await readErrorMessage(response, isEditing ? "עדכון השיעור נכשל" : "יצירת השיעור נכשלה");
         }
 
         const saved: TeacherLesson = await response.json();
@@ -143,7 +143,7 @@ export function useTeacherSchedule() {
         );
 
         if (!response.ok) {
-            return await readErrorMessage(response, isEditing ? "Failed to update override" : "Failed to add override");
+            return await readErrorMessage(response, isEditing ? "עדכון החריגה נכשל" : "הוספת החריגה נכשלה");
         }
 
         const saved: ScheduleOverride = await response.json();
@@ -163,7 +163,7 @@ export function useTeacherSchedule() {
         });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to save notes"));
+            setErrorMessage(await readErrorMessage(response, "שמירת ההערות נכשלה"));
             return null;
         }
 
@@ -179,7 +179,7 @@ export function useTeacherSchedule() {
         const response = await apiFetch(`/teacher/lessons/${lessonId}/complete`, { method: "PATCH" });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to mark lesson as completed"));
+            setErrorMessage(await readErrorMessage(response, "סימון השיעור כהושלם נכשל"));
             return false;
         }
 
@@ -196,7 +196,7 @@ export function useTeacherSchedule() {
         const response = await apiFetch(`/lessons/${lessonId}`, { method: "DELETE" });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to cancel lesson"));
+            setErrorMessage(await readErrorMessage(response, "ביטול השיעור נכשל"));
             return false;
         }
 
@@ -211,7 +211,7 @@ export function useTeacherSchedule() {
         const response = await apiFetch(`/teacher/schedule-overrides/${overrideId}`, { method: "DELETE" });
 
         if (!response.ok) {
-            setErrorMessage(await readErrorMessage(response, "Failed to delete override"));
+            setErrorMessage(await readErrorMessage(response, "מחיקת החריגה נכשלה"));
             return false;
         }
 

@@ -38,14 +38,14 @@ function RegisterPage() {
             <NavBar homePath="/teacher" links={teacherLinks} />
 
             <main className="max-w-4xl mx-auto px-4 py-8">
-                <h1 className="text-2xl font-semibold text-slate-900">Students</h1>
+                <h1 className="text-2xl font-semibold text-slate-900">תלמידים</h1>
 
                 <div className="mt-6">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div className="flex items-center gap-3 flex-wrap">
                             <input
                                 type="text"
-                                placeholder="Search by name..."
+                                placeholder="חיפוש לפי שם..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64"
@@ -54,15 +54,15 @@ function RegisterPage() {
                                 onClick={() => setShowAddStudentModal(true)}
                                 className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
                             >
-                                + Add student
+                                + הוספת תלמיד
                             </button>
                         </div>
                         <div className="flex gap-2">
                             <button onClick={() => loadStudents(false)} className={filterButtonClass(!showingInactive)}>
-                                Show active
+                                הצגת פעילים
                             </button>
                             <button onClick={() => loadStudents(true)} className={filterButtonClass(showingInactive)}>
-                                Show inactive
+                                הצגת לא פעילים
                             </button>
                         </div>
                     </div>
@@ -70,18 +70,18 @@ function RegisterPage() {
                     {errorMessage && <p className="text-sm text-red-600 mt-2">{errorMessage}</p>}
 
                     <p className="text-sm text-slate-500 mt-4">
-                        {shownCount} {showingInactive ? "inactive" : "active"} student{shownCount === 1 ? "" : "s"}
+                        תלמידים {showingInactive ? "לא פעילים" : "פעילים"}: {shownCount}
                     </p>
 
                     <div className="mt-2 bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
                         {students.length === 0 && (
                             <p className="px-4 py-6 text-sm text-slate-500 text-center">
-                                {showingInactive ? "No inactive students." : "You have no active students yet."}
+                                {showingInactive ? "אין תלמידים לא פעילים." : "אין לך תלמידים פעילים עדיין."}
                             </p>
                         )}
 
                         {students.length > 0 && filteredStudents.length === 0 && (
-                            <p className="px-4 py-6 text-sm text-slate-500 text-center">No students match "{searchQuery}".</p>
+                            <p className="px-4 py-6 text-sm text-slate-500 text-center">לא נמצאו תלמידים התואמים ל-"{searchQuery}".</p>
                         )}
 
                         {filteredStudents.map((student) => (

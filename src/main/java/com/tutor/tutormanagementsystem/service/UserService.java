@@ -31,7 +31,7 @@ public class UserService {
         /* Verify email is not already claimed by another account */
         if (!email.equalsIgnoreCase(user.getEmail())
                 && userRepository.findByEmailIgnoreCase(email).isPresent()) {
-            throw new DuplicateEmailException("email already registered");
+            throw new DuplicateEmailException("האימייל כבר רשום");
         }
 
         user.setEmail(email);
@@ -55,7 +55,14 @@ public class UserService {
     /* Retrieves user entity by ID or throws domain not-found exception */
     private User getUserEntity(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("המשתמש לא נמצא"));
+    }
+
+    /* The logged-in user's own account info (name shown in the greeting) */
+    public UserResponse getOwnAccount(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("המשתמש לא נמצא"));
+        return toResponse(user);
     }
 
     /* Projects User entity into clean UserResponse DTO */

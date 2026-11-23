@@ -1,3 +1,4 @@
+import { formatMoney } from "../../utils/money";
 import { useState } from "react";
 import ListPager from "../ListPager";
 import { usePagination } from "../../hooks/usePagination";
@@ -43,10 +44,10 @@ export default function StudentLessonSections({
     return (
         <div className="mt-8 flex flex-col gap-8">
             <div>
-                <h2 className="text-lg font-semibold text-slate-900 mb-3">Upcoming</h2>
+                <h2 className="text-lg font-semibold text-slate-900 mb-3">שיעורים קרובים</h2>
                 <div className={listClass}>
                     {upcoming.length === 0 && (
-                        <p className={emptyClass}>No upcoming lessons. Book one from the Schedule tab!</p>
+                        <p className={emptyClass}>אין שיעורים קרובים. אפשר לקבוע שיעור בדף הבית!</p>
                     )}
                     {visibleUpcoming.map((lesson) => (
                         <div key={lesson.id} className={rowClass}>
@@ -55,7 +56,7 @@ export default function StudentLessonSections({
                                     {formatRelativeLessonDate(lesson.date, today)} {formatTimeOfDay(lesson.startTime)}-{formatTimeOfDay(lesson.endTime)}
                                 </span>
                                 <span className="text-slate-500 text-sm">{lesson.subjectName}</span>
-                                <span className="text-slate-500 text-sm">₪{lesson.priceAtBooking}</span>
+                                <span className="text-slate-500 text-sm">{formatMoney(lesson.priceAtBooking)}</span>
                                 <span className={`${badgeClass} ${statusStyles[lesson.status]}`}>
                                     {studentStatusLabels[lesson.status]}
                                 </span>
@@ -64,10 +65,10 @@ export default function StudentLessonSections({
                             <button
                                 onClick={() => onCancel(lesson)}
                                 disabled={!canCancel(lesson)}
-                                title={canCancel(lesson) ? undefined : `Can't be cancelled within ${STUDENT_MIN_CANCEL_NOTICE_HOURS} hours of the start time.`}
+                                title={canCancel(lesson) ? undefined : `לא ניתן לבטל פחות מ-${STUDENT_MIN_CANCEL_NOTICE_HOURS} שעות לפני תחילת השיעור.`}
                                 className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
                             >
-                                Cancel
+                                ביטול
                             </button>
                         </div>
                     ))}
@@ -84,10 +85,10 @@ export default function StudentLessonSections({
             </div>
 
             <div>
-                <h2 className="text-lg font-semibold text-slate-900 mb-3">Completed</h2>
+                <h2 className="text-lg font-semibold text-slate-900 mb-3">שיעורים שהושלמו</h2>
                 <div className={listClass}>
                     {completed.length === 0 && (
-                        <p className={emptyClass}>No completed lessons yet.</p>
+                        <p className={emptyClass}>עדיין אין שיעורים שהושלמו.</p>
                     )}
                     {visibleCompleted.map((lesson) => (
                         <div key={lesson.id} className={rowClass}>
@@ -96,7 +97,7 @@ export default function StudentLessonSections({
                                     {formatShortDateString(lesson.date)} {formatTimeOfDay(lesson.startTime)}-{formatTimeOfDay(lesson.endTime)}
                                 </span>
                                 <span className="text-slate-500 text-sm">{lesson.subjectName}</span>
-                                <span className="text-slate-500 text-sm">₪{lesson.priceAtBooking}</span>
+                                <span className="text-slate-500 text-sm">{formatMoney(lesson.priceAtBooking)}</span>
                                 <span className={`${badgeClass} ${statusStyles[lesson.status]}`}>
                                     {studentStatusLabels[lesson.status]}
                                 </span>
@@ -121,7 +122,7 @@ export default function StudentLessonSections({
                         onClick={() => setShowCancelledLessons((v) => !v)}
                         className="text-sm text-slate-400 hover:text-slate-600"
                     >
-                        {showCancelledLessons ? "Hide" : "Show"} {cancelled.length} cancelled
+                        {showCancelledLessons ? "הסתרת" : "הצגת"} שיעורים שבוטלו ({cancelled.length})
                     </button>
                     {showCancelledLessons && (
                         <div className="mt-3 bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">

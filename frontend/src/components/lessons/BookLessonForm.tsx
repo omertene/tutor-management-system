@@ -58,7 +58,7 @@ export default function BookLessonForm({ students, subjects, onBook, onCreateSub
        problem rather than an unfilled field */
     function handleBook() {
         if (!selectedStudentId || !selectedSubjectId || !date || !startTime || !endTime) {
-            onValidationError("Please fill in all fields");
+            onValidationError("יש למלא את כל השדות");
             return;
         }
 
@@ -73,17 +73,17 @@ export default function BookLessonForm({ students, subjects, onBook, onCreateSub
 
     return (
         <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Book a lesson for a student</h2>
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">קביעת שיעור לתלמיד</h2>
 
             <div className="flex flex-wrap gap-3 items-end">
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Student</label>
+                    <label className={labelClass}>תלמיד</label>
                     <select
                         value={selectedStudentId}
                         onChange={(e) => setSelectedStudentId(e.target.value)}
                         className={inputClass}
                     >
-                        <option value="">Select student</option>
+                        <option value="">בחירת תלמיד</option>
                         {students.map((student) => (
                             <option key={student.id} value={student.id}>
                                 {student.firstName} {student.lastName}
@@ -93,7 +93,7 @@ export default function BookLessonForm({ students, subjects, onBook, onCreateSub
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Subject</label>
+                    <label className={labelClass}>מקצוע</label>
                     {isAddingSubject ? (
                         <div className="flex gap-1">
                             <input
@@ -101,11 +101,11 @@ export default function BookLessonForm({ students, subjects, onBook, onCreateSub
                                 value={newSubjectName}
                                 onChange={(e) => setNewSubjectName(e.target.value)}
                                 onKeyDown={(e) => e.key === "Enter" && handleCreateSubjectInline()}
-                                placeholder="New subject name"
+                                placeholder="שם המקצוע החדש"
                                 className={inputClass}
                             />
                             <button onClick={handleCreateSubjectInline} className={smallSecondaryButtonClass}>
-                                Add
+                                הוספה
                             </button>
                             <button
                                 onClick={() => { setIsAddingSubject(false); setNewSubjectName(""); }}
@@ -126,34 +126,34 @@ export default function BookLessonForm({ students, subjects, onBook, onCreateSub
                             }}
                             className={inputClass}
                         >
-                            <option value="">Select subject</option>
+                            <option value="">בחירת מקצוע</option>
                             {subjects.map((subject) => (
                                 <option key={subject.id} value={subject.id}>
                                     {subject.name}
                                 </option>
                             ))}
-                            <option value="__new__">+ New subject...</option>
+                            <option value="__new__">+ מקצוע חדש...</option>
                         </select>
                     )}
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Date</label>
+                    <label className={labelClass}>תאריך</label>
                     <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>Start time</label>
+                    <label className={labelClass}>שעת התחלה</label>
                     <TimeSelect value={startTime} onChange={handleStartTimeChange} className={inputClass} />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                    <label className={labelClass}>End time</label>
+                    <label className={labelClass}>שעת סיום</label>
                     <TimeSelect value={endTime} onChange={setEndTime} className={inputClass} />
                 </div>
 
                 <button onClick={handleBook} className={primaryButtonClass}>
-                    Book lesson
+                    קביעת שיעור
                 </button>
             </div>
         </div>
