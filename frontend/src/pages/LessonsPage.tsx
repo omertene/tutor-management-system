@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import ListPager from "../components/ListPager";
 import BookLessonForm from "../components/lessons/BookLessonForm";
@@ -96,7 +97,22 @@ function LessonsPage() {
             <NavBar homePath={isTeacher ? "/teacher" : "/student"} links={isTeacher ? teacherLinks : studentLinks} />
 
             <main className="max-w-6xl mx-auto px-4 py-8">
-                <h1 className="text-2xl font-semibold text-slate-900">שיעורים</h1>
+                {isTeacher ? (
+                    <h1 className="text-2xl font-semibold text-slate-900">שיעורים</h1>
+                ) : (
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-slate-900">שיעורים</h1>
+                            <p className="mt-1 text-slate-500">צפו בשיעורים הקרובים שלכם, נהלו את הזמנים ועברו על היסטוריית הלימוד.</p>
+                        </div>
+                        <Link
+                            to="/student"
+                            className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors"
+                        >
+                            + קביעת שיעור חדש
+                        </Link>
+                    </div>
+                )}
 
                 {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 

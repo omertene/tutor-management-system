@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import ListPager from "../components/ListPager";
 import AddMaterialForm from "../components/materials/AddMaterialForm";
@@ -27,6 +28,11 @@ function MaterialsPage() {
         addMaterial, downloadMaterial, deleteMaterial,
     } = useMaterials(role);
 
+    /* "?lesson=ID" (from the student's lessons page) narrows the list to one lesson's materials */
+    const [searchParams, setSearchParams] = useSearchParams();
+    const lessonIdParam = searchParams.get("lesson");
+    const lessonIdFilter = lessonIdParam !== null && /^\d+$/.test(lessonIdParam) ? Number(lessonIdParam) : null;
+
     const [searchQuery, setSearchQuery] = useState("");
     const [typeFilter, setTypeFilter] = useState("ALL");
     const [subjectFilter, setSubjectFilter] = useState("ALL");
@@ -35,6 +41,7 @@ function MaterialsPage() {
     const [lessonFilterQuery, setLessonFilterQuery] = useState("");
 
     const filteredMaterials = materials
+        .filter((material) => lessonIdFilter === null || material.lessonId === lessonIdFilter)
         .filter((material) => typeFilter === "ALL" || material.type === typeFilter)
         .filter((material) => subjectFilter === "ALL" || material.lessonSubject === subjectFilter)
         .filter((material) => {
@@ -58,7 +65,7 @@ function MaterialsPage() {
     const { page, totalPages, visibleItems, setPage } = usePagination(
         filteredMaterials,
         MATERIALS_PER_PAGE,
-        `${searchQuery}|${typeFilter}|${subjectFilter}|${lessonFilterQuery}`
+        `${searchQuery}|${typeFilter}|${subjectFilter}|${lessonFilterQuery}|${lessonIdFilter}`
     );
 
     return (
@@ -69,6 +76,31 @@ function MaterialsPage() {
                 <h1 className="text-2xl font-semibold text-slate-900">חומרי לימוד</h1>
 
                 {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
+
+                {lessonIdFilter !== null && (() => {
+                    const lessonMaterial = materials.find((m) => m.lessonId === lessonIdFilter);
+                    return (
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-3">
+                            <div>
+                                <p className="text-xs font-medium text-indigo-600">מסונן לפי שיעור</p>
+                                <p className="text-base font-semibold text-slate-900">
+                                    {lessonMaterial?.lessonSubject ?? "שיעור"}
+                                    {lessonMaterial?.lessonDate && lessonMaterial.lessonStartTime && (
+                                        <span className="font-normal text-slate-600">
+                                            {" "}&middot; <span dir="ltr" className="inline-block">{formatDateAndTime(lessonMaterial.lessonDate, lessonMaterial.lessonStartTime)}</span>
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setSearchParams({})}
+                                className="rounded-full bg-white px-4 py-1.5 text-sm font-medium text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                            >
+                                הצגת כל החומרים
+                            </button>
+                        </div>
+                    );
+                })()}
 
                 {isTeacher && (
                     <AddMaterialForm students={students} onCreated={addMaterial} onError={setErrorMessage} />
