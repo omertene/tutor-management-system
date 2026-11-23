@@ -77,14 +77,16 @@ function WeekGrid({
 
             <div className="mt-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
                 <div className="min-w-[700px] grid grid-cols-[60px_repeat(7,1fr)] items-start">
-                    <div className="border-b border-slate-300 bg-slate-50" />
+                    <div className="border-b border-slate-200 bg-slate-50" />
                     {dayLabels.map((label, dayIndex) => (
                         <div
                             key={label}
-                            className={`border-b border-e border-slate-300 bg-slate-50 px-2 py-2 text-center ${dayIndex === todayDayIndex ? "!bg-indigo-100" : ""}`}
+                            className={`border-b border-e border-slate-200 bg-slate-50 px-2 py-2.5 text-center`}
                         >
                             <p className={`text-xs font-medium ${dayIndex === todayDayIndex ? "text-indigo-500" : "text-slate-500"}`}>{label}</p>
-                            <p className={`text-sm font-semibold ${dayIndex === todayDayIndex ? "text-indigo-700" : "text-slate-900"}`}>{formatShortDate(weekDates[dayIndex])}</p>
+                            <p className="mt-0.5">
+                                <span className={`inline-block rounded-full px-2.5 py-0.5 text-sm font-semibold ${dayIndex === todayDayIndex ? "bg-indigo-600 text-white" : "text-slate-900"}`}>{formatShortDate(weekDates[dayIndex])}</span>
+                            </p>
                         </div>
                     ))}
 
@@ -108,19 +110,22 @@ function WeekGrid({
                     </div>
 
                     {dayLabels.map((_, dayIndex) => (
-                        <div key={dayIndex} className="relative border-e border-slate-200">
+                        <div key={dayIndex} className={`relative border-e border-slate-200 ${dayIndex === todayDayIndex ? "ring-1 ring-inset ring-indigo-200" : ""}`}>
                             {renderDayColumn(dayIndex)}
 
-                            {dayIndex === todayDayIndex && showNowLine && (
-                                <div
-                                    className="absolute left-0 right-0 pointer-events-none border-t-2 border-red-500 z-10"
-                                    style={{ top: `${nowLineTop}px` }}
-                                >
-                                    <span className="absolute -start-1.5 -top-1.5 w-3 h-3 rounded-full bg-red-500" />
-                                </div>
-                            )}
                         </div>
                     ))}
+
+                    {showNowLine && (
+                        <div className="pointer-events-none relative z-10 col-span-7 col-start-2 row-start-2 h-0">
+                            <div className="absolute inset-x-0 border-t-2 border-red-500/70" style={{ top: `${nowLineTop}px` }}>
+                                <span
+                                    className="absolute -top-[5px] h-2.5 w-2.5 rounded-full bg-red-500"
+                                    style={{ insetInlineStart: `calc(${todayDayIndex} * 100% / 7)` }}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

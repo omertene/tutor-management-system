@@ -205,9 +205,9 @@ function StudentScheduleGrid() {
                                         boxSizing: "border-box",
                                         background: allCovered || noneCovered ? undefined : ruleCoverageBackground(quarters),
                                     }}
-                                    className={`block w-full border-b border-slate-300 transition-colors select-none ${
+                                    className={`group flex w-full items-center justify-center border-b border-slate-200 transition-colors select-none ${
                                         allCovered
-                                            ? `bg-white ${isClickable ? "hover:bg-slate-50 cursor-pointer" : isTooSoon ? "cursor-help" : "cursor-default"}`
+                                            ? `bg-emerald-50 ${isClickable ? "hover:bg-emerald-100 cursor-pointer" : isTooSoon ? "cursor-help" : "cursor-default"}`
                                             : noneCovered
                                                 ? "bg-slate-200 cursor-default"
                                                 : isClickable
@@ -216,7 +216,13 @@ function StudentScheduleGrid() {
                                                         ? "cursor-help"
                                                         : "cursor-default"
                                     }`}
-                                />
+                                >
+                                    {allCovered && isClickable && (
+                                        <span className="text-xs font-medium text-emerald-700 opacity-0 transition-opacity group-hover:opacity-100">
+                                            + קביעת שיעור
+                                        </span>
+                                    )}
+                                </button>
                             );
                         })}
 
@@ -234,7 +240,7 @@ function StudentScheduleGrid() {
                             <button
                                 key={`lesson-${lesson.id}`}
                                 onClick={() => setViewingLesson(lesson)}
-                                className={`absolute block left-0 right-0 m-0 px-1.5 py-1 text-xs text-start leading-tight overflow-hidden transition-colors ${lessonBlockStyles[lesson.status] ?? lessonBlockStyles.SCHEDULED}`}
+                                className={`absolute block left-0.5 right-0.5 m-0 px-1.5 py-1 text-xs text-start leading-tight overflow-hidden rounded-md border-s-4 border-blue-500 shadow-sm transition-colors ${lessonBlockStyles[lesson.status] ?? lessonBlockStyles.SCHEDULED}`}
                                 style={{ top: `${top}px`, height: `${height}px` }}
                                 title={lesson.subjectName}
                             >
