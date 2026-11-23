@@ -58,6 +58,13 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("המשתמש לא נמצא"));
     }
 
+    /* The logged-in user's own account info (name shown in the greeting) */
+    public UserResponse getOwnAccount(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("המשתמש לא נמצא"));
+        return toResponse(user);
+    }
+
     /* Projects User entity into clean UserResponse DTO */
     private UserResponse toResponse(User user) {
         return new UserResponse(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName());

@@ -2,6 +2,10 @@ package com.tutor.tutormanagementsystem.controller;
 
 import com.tutor.tutormanagementsystem.dto.AvailabilityOverrideResponse;
 import com.tutor.tutormanagementsystem.dto.ScheduleRuleResponse;
+import com.tutor.tutormanagementsystem.dto.UserResponse;
+import com.tutor.tutormanagementsystem.security.AuthenticatedUser;
+import com.tutor.tutormanagementsystem.service.UserService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.tutor.tutormanagementsystem.service.ScheduleOverrideService;
 import com.tutor.tutormanagementsystem.service.ScheduleRuleService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +27,14 @@ public class StudentAvailabilityController {
 
     private final ScheduleRuleService scheduleRuleService;
     private final ScheduleOverrideService scheduleOverrideService;
+    private final UserService userService;
+
+    /* the logged-in student's own name, for the greeting on the home page */
+    @PreAuthorize("hasRole('STUDENT')")
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getMe(@AuthenticationPrincipal AuthenticatedUser caller) {
+        return ResponseEntity.ok(userService.getOwnAccount(caller.id()));
+    }
 
     /* the teacher's recurring weekly availability (e.g. "Mondays 4-8pm") */
     @PreAuthorize("hasRole('STUDENT')")

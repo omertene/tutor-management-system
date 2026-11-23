@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import StudentScheduleGrid from "../components/StudentScheduleGrid";
 import { studentLinks } from "../constants/navLinks";
 import { useLessons } from "../hooks/useLessons";
+import { apiFetch } from "../utils/api";
 import { dayFullNames, formatShortDateString, formatTimeOfDay } from "../utils/time";
 
 /* Next upcoming scheduled lesson, or null */
@@ -22,13 +24,23 @@ function StudentDashboard() {
   const { lessons } = useLessons("STUDENT");
   const next = pickNextLesson(lessons);
 
+  /* First name for the greeting; until it loads (or if it fails) the generic greeting shows */
+  const [firstName, setFirstName] = useState("");
+  useEffect(() => {
+    async function loadName() {
+      const response = await apiFetch("/student/me");
+      if (response.ok) setFirstName(((await response.json()) as { firstName: string }).firstName);
+    }
+    loadName();
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <NavBar homePath="/student" links={studentLinks} />
 
       <main className="max-w-6xl mx-auto px-4 py-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">ברוכים השבים 👋</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">{firstName ? `היי ${firstName} 👋` : "ברוכים השבים 👋"}</h1>
           <p className="text-slate-500 mt-1">לחצו על אחת המשבצות הירוקות בלוח כדי לקבוע שיעור חדש.</p>
         </div>
 
