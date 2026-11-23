@@ -81,7 +81,7 @@ function WeekGrid({
                     {dayLabels.map((label, dayIndex) => (
                         <div
                             key={label}
-                            className={`border-b border-l border-slate-100 px-2 py-2 text-center ${dayIndex === todayDayIndex ? "bg-indigo-50" : ""}`}
+                            className={`border-b border-e border-slate-200 px-2 py-2 text-center ${dayIndex === todayDayIndex ? "bg-indigo-50" : ""}`}
                         >
                             <p className={`text-xs font-medium ${dayIndex === todayDayIndex ? "text-indigo-500" : "text-slate-500"}`}>{label}</p>
                             <p className={`text-sm font-semibold ${dayIndex === todayDayIndex ? "text-indigo-700" : "text-slate-900"}`}>{formatShortDate(weekDates[dayIndex])}</p>
@@ -93,14 +93,14 @@ function WeekGrid({
                             <div
                                 key={hour}
                                 style={{ height: `${ROW_HEIGHT}px`, boxSizing: "border-box" }}
-                                className="border-b border-slate-300"
+                                className=""
                             />
                         ))}
                         {hours.map((hour, index) => (
                             <div
                                 key={hour}
                                 style={{ top: `${index * ROW_HEIGHT}px` }}
-                                className="absolute end-2 -translate-y-1/2 text-xs text-slate-400"
+                                className="absolute inset-x-0 -translate-y-1/2 text-center text-xs text-slate-400"
                             >
                                 {String(hour).padStart(2, "0")}:00
                             </div>
@@ -108,7 +108,7 @@ function WeekGrid({
                     </div>
 
                     {dayLabels.map((_, dayIndex) => (
-                        <div key={dayIndex} className="relative border-l border-slate-100">
+                        <div key={dayIndex} className="relative border-e border-slate-200">
                             {renderDayColumn(dayIndex)}
 
                             {dayIndex === todayDayIndex && showNowLine && (
