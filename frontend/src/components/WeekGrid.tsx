@@ -9,6 +9,9 @@ type WeekGridProps = {
     onHourEndChange: (updater: (current: number) => number) => void;
     onPreviousWeek: () => void;
     onNextWeek: () => void;
+    /* Optional "back to this week" button, shown only while another week is displayed */
+    onCurrentWeek?: () => void;
+    isCurrentWeek?: boolean;
     todayDayIndex: number;
     showNowLine: boolean;
     nowLineTop: number;
@@ -34,6 +37,8 @@ function WeekGrid({
     onHourEndChange,
     onPreviousWeek,
     onNextWeek,
+    onCurrentWeek,
+    isCurrentWeek = true,
     todayDayIndex,
     showNowLine,
     nowLineTop,
@@ -51,8 +56,16 @@ function WeekGrid({
                 >
                     &rarr; השבוע הקודם
                 </button>
-                <span className="text-sm font-medium text-slate-700">
-                    {formatShortDate(weekDates[0])} &ndash; {formatShortDate(weekDates[6])}
+                <span className="flex items-center gap-3 text-sm font-medium text-slate-700">
+                    <span dir="ltr">{formatShortDate(weekDates[0])} &ndash; {formatShortDate(weekDates[6])}</span>
+                    {onCurrentWeek && !isCurrentWeek && (
+                        <button
+                            onClick={onCurrentWeek}
+                            className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
+                        >
+                            חזרה להיום
+                        </button>
+                    )}
                 </span>
                 <button
                     onClick={onNextWeek}

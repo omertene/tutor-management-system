@@ -85,6 +85,13 @@ export function useStudentSchedule() {
     }, [hourStart, hourEnd]);
 
     /* Moves the visible week back by 7 days */
+    /* Jumps back to the week that contains today */
+    function goToCurrentWeek() {
+        setWeekStart(getStartOfWeek(new Date()));
+    }
+
+    const isCurrentWeek = toDateString(weekStart) === toDateString(getStartOfWeek(new Date()));
+
     function goToPreviousWeek() {
         setWeekStart((current) => {
             const previous = new Date(current);
@@ -154,7 +161,7 @@ export function useStudentSchedule() {
     return {
         weekDates, hours,
         hourStart, hourEnd, setHourStart, setHourEnd,
-        goToPreviousWeek, goToNextWeek,
+        goToPreviousWeek, goToNextWeek, goToCurrentWeek, isCurrentWeek,
         scheduleRules, scheduleOverrides, lessons, busySlots, subjects,
         now,
         errorMessage,

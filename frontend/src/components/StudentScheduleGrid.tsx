@@ -35,7 +35,7 @@ function StudentScheduleGrid() {
     const {
         weekDates, hours,
         hourStart, hourEnd, setHourStart, setHourEnd,
-        goToPreviousWeek, goToNextWeek,
+        goToPreviousWeek, goToNextWeek, goToCurrentWeek, isCurrentWeek,
         scheduleRules, scheduleOverrides, lessons, busySlots, subjects,
         now,
         errorMessage,
@@ -223,6 +223,8 @@ function StudentScheduleGrid() {
                 onHourEndChange={setHourEnd}
                 onPreviousWeek={goToPreviousWeek}
                 onNextWeek={goToNextWeek}
+                onCurrentWeek={goToCurrentWeek}
+                isCurrentWeek={isCurrentWeek}
                 todayDayIndex={todayDayIndex}
                 showNowLine={showNowLine}
                 nowLineTop={nowLineTop}
