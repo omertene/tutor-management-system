@@ -326,7 +326,7 @@ class LessonServiceTest {
         service.createLessonAsStudent(STUDENT_ID,
                 studentRequest(LocalDate.now().plusDays(1), LocalTime.of(10, 0), LocalTime.of(11, 0)));
 
-        verify(emailService).sendEmail(any(), eq("New lesson booked"), anyString());
+        verify(emailService).sendEmail(any(), eq("נקבע שיעור חדש"), anyString());
     }
 
     /* a failed notification email must never break the booking itself */
