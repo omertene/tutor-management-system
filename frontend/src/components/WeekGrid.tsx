@@ -77,11 +77,11 @@ function WeekGrid({
 
             <div className="mt-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
                 <div className="min-w-[700px] grid grid-cols-[60px_repeat(7,1fr)] items-start">
-                    <div className="border-b border-slate-100" />
+                    <div className="border-b border-slate-300 bg-slate-50" />
                     {dayLabels.map((label, dayIndex) => (
                         <div
                             key={label}
-                            className={`border-b border-e border-slate-200 px-2 py-2 text-center ${dayIndex === todayDayIndex ? "bg-indigo-50" : ""}`}
+                            className={`border-b border-e border-slate-300 bg-slate-50 px-2 py-2 text-center ${dayIndex === todayDayIndex ? "!bg-indigo-100" : ""}`}
                         >
                             <p className={`text-xs font-medium ${dayIndex === todayDayIndex ? "text-indigo-500" : "text-slate-500"}`}>{label}</p>
                             <p className={`text-sm font-semibold ${dayIndex === todayDayIndex ? "text-indigo-700" : "text-slate-900"}`}>{formatShortDate(weekDates[dayIndex])}</p>
