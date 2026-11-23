@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { apiFetch } from "../../utils/api";
 import ListPager from "../ListPager";
 import { usePagination } from "../../hooks/usePagination";
 import { formatMoney } from "../../utils/money";
 import { formatTimeOfDay } from "../../utils/time";
 import { formatRelativeLessonDate, statusStyles, studentStatusLabels, STUDENT_MIN_CANCEL_NOTICE_HOURS } from "../../types/lesson";
 import type { Lesson } from "../../types/lesson";
+import type { Material } from "../../types/material";
 
 const LESSONS_PER_PAGE = 10;
 
@@ -116,6 +119,19 @@ export default function StudentLessonSections({
     const [tab, setTab] = useState<Tab>("ALL");
     const [subjectFilter, setSubjectFilter] = useState("ALL");
 
+    /* Which lessons have materials attached, so the "lesson materials" button only
+       appears where there is something to open. A failed request just hides the button. */
+    const [lessonsWithMaterials, setLessonsWithMaterials] = useState<Set<number>>(new Set());
+    useEffect(() => {
+        async function loadMaterials() {
+            const response = await apiFetch("/student/materials");
+            if (!response.ok) return;
+            const materials = (await response.json()) as Material[];
+            setLessonsWithMaterials(new Set(materials.flatMap((m) => (m.lessonId === null ? [] : [m.lessonId]))));
+        }
+        loadMaterials();
+    }, []);
+
     /* Every subject the student has a lesson in, for the subject filter */
     const subjectNames = Array.from(new Set([...upcoming, ...completed, ...cancelled].map((l) => l.subjectName))).sort();
     const bySubject = (lessons: Lesson[]) => subjectFilter === "ALL" ? lessons : lessons.filter((l) => l.subjectName === subjectFilter);
@@ -141,6 +157,18 @@ export default function StudentLessonSections({
             >
                 ביטול שיעור
             </button>
+        );
+    }
+
+    function renderMaterials(lesson: Lesson) {
+        if (!lessonsWithMaterials.has(lesson.id)) return null;
+        return (
+            <Link
+                to={`/student/materials?lesson=${lesson.id}`}
+                className="px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-100 transition-colors"
+            >
+                חומרי שיעור
+            </Link>
         );
     }
 
@@ -179,7 +207,7 @@ export default function StudentLessonSections({
                     <>
                         <LessonGroup title="שיעורים קרובים" lessons={shownUpcoming} today={today} renderAction={renderCancel}
                             emptyText="אין שיעורים קרובים. אפשר לקבוע שיעור בלוח הזמנים!" />
-                        <LessonGroup title="שיעורים שהושלמו" lessons={shownCompleted} today={today}
+                        <LessonGroup title="שיעורים שהושלמו" lessons={shownCompleted} today={today} renderAction={renderMaterials}
                             emptyText="עדיין אין שיעורים שהושלמו." />
                     </>
                 )}
@@ -188,7 +216,7 @@ export default function StudentLessonSections({
                         emptyText="אין שיעורים קרובים. אפשר לקבוע שיעור בלוח הזמנים!" />
                 )}
                 {tab === "COMPLETED" && (
-                    <LessonGroup lessons={shownCompleted} today={today} emptyText="עדיין אין שיעורים שהושלמו." />
+                    <LessonGroup lessons={shownCompleted} today={today} renderAction={renderMaterials} emptyText="עדיין אין שיעורים שהושלמו." />
                 )}
                 {tab === "CANCELLED" && (
                     <LessonGroup lessons={shownCancelled} today={today} muted emptyText="אין שיעורים שבוטלו." />

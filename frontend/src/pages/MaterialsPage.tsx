@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import ListPager from "../components/ListPager";
 import AddMaterialForm from "../components/materials/AddMaterialForm";
@@ -27,6 +28,11 @@ function MaterialsPage() {
         addMaterial, downloadMaterial, deleteMaterial,
     } = useMaterials(role);
 
+    /* "?lesson=ID" (from the student's lessons page) narrows the list to one lesson's materials */
+    const [searchParams, setSearchParams] = useSearchParams();
+    const lessonIdParam = searchParams.get("lesson");
+    const lessonIdFilter = lessonIdParam !== null && /^\d+$/.test(lessonIdParam) ? Number(lessonIdParam) : null;
+
     const [searchQuery, setSearchQuery] = useState("");
     const [typeFilter, setTypeFilter] = useState("ALL");
     const [subjectFilter, setSubjectFilter] = useState("ALL");
@@ -35,6 +41,7 @@ function MaterialsPage() {
     const [lessonFilterQuery, setLessonFilterQuery] = useState("");
 
     const filteredMaterials = materials
+        .filter((material) => lessonIdFilter === null || material.lessonId === lessonIdFilter)
         .filter((material) => typeFilter === "ALL" || material.type === typeFilter)
         .filter((material) => subjectFilter === "ALL" || material.lessonSubject === subjectFilter)
         .filter((material) => {
@@ -58,7 +65,7 @@ function MaterialsPage() {
     const { page, totalPages, visibleItems, setPage } = usePagination(
         filteredMaterials,
         MATERIALS_PER_PAGE,
-        `${searchQuery}|${typeFilter}|${subjectFilter}|${lessonFilterQuery}`
+        `${searchQuery}|${typeFilter}|${subjectFilter}|${lessonFilterQuery}|${lessonIdFilter}`
     );
 
     return (
@@ -69,6 +76,13 @@ function MaterialsPage() {
                 <h1 className="text-2xl font-semibold text-slate-900">חומרי לימוד</h1>
 
                 {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
+
+                {lessonIdFilter !== null && (
+                    <div className="mt-3 inline-flex items-center gap-3 rounded-full bg-indigo-50 px-4 py-1.5 text-sm text-indigo-700">
+                        מוצגים החומרים של שיעור אחד
+                        <button onClick={() => setSearchParams({})} className="font-semibold underline">הצגת הכל</button>
+                    </div>
+                )}
 
                 {isTeacher && (
                     <AddMaterialForm students={students} onCreated={addMaterial} onError={setErrorMessage} />
