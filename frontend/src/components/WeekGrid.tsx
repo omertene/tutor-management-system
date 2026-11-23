@@ -14,6 +14,8 @@ type WeekGridProps = {
     nowLineTop: number;
     /* "week" draws the now-line across every day, "day" only across today's column */
     nowLineScope?: "day" | "week";
+    /* CSS max-height for the grid card; when set the card scrolls inside itself and keeps the day header pinned */
+    maxHeight?: string;
     hours: number[];
     /* Each grid's own cell/override/lesson rendering stays owned by the caller -
        teacher and student grids differ too much to share safely (drag-select vs
@@ -36,6 +38,7 @@ function WeekGrid({
     showNowLine,
     nowLineTop,
     nowLineScope = "week",
+    maxHeight,
     hours,
     renderDayColumn,
 }: WeekGridProps) {
@@ -78,13 +81,13 @@ function WeekGrid({
                 )}
             </div>
 
-            <div className="mt-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+            <div className="mt-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-auto" style={maxHeight ? { maxHeight } : undefined}>
                 <div className="min-w-[700px] grid grid-cols-[60px_repeat(7,1fr)] items-start">
-                    <div className="border-b border-slate-200 bg-slate-50" />
+                    <div className={`border-b border-slate-200 bg-slate-50 ${maxHeight ? "sticky top-0 z-20" : ""}`} />
                     {dayLabels.map((label, dayIndex) => (
                         <div
                             key={label}
-                            className={`border-b border-e border-slate-200 bg-slate-50 px-2 py-2.5 text-center`}
+                            className={`border-b border-e border-slate-200 bg-slate-50 px-2 py-2.5 text-center ${maxHeight ? "sticky top-0 z-20" : ""}`}
                         >
                             <p className={`text-xs font-medium ${dayIndex === todayDayIndex ? "text-indigo-500" : "text-slate-500"}`}>{label}</p>
                             <p className="mt-0.5">

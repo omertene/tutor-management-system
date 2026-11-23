@@ -227,6 +227,7 @@ function StudentScheduleGrid() {
                 showNowLine={showNowLine}
                 nowLineTop={nowLineTop}
                 nowLineScope="day"
+                maxHeight="max(26rem, calc(100vh - 15rem))"
                 hours={hours}
                 renderDayColumn={(dayIndex) => (
                     <>
