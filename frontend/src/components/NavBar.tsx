@@ -13,7 +13,7 @@ function NavBar({ homePath, links }: NavBarProps) {
         <header className="bg-white border-b border-slate-200">
             <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
                 <NavLink to={homePath} className="text-lg font-semibold text-slate-900">
-                    TutorHub
+                    omerlessons
                 </NavLink>
 
                 <nav className="flex items-center gap-1">

@@ -98,3 +98,9 @@ code {
 }
 .font-display { font-family: 'Rubik', var(--sans); }
 .font-login { font-family: 'Heebo', var(--sans); }
+
+/* Login screen: scale the content up on big monitors so it does not look tiny */
+.login-zoom { transform-origin: top right; }
+@media (min-width: 1500px) { .login-zoom { zoom: 1.12; } }
+@media (min-width: 1900px) { .login-zoom { zoom: 1.25; } }
+@media (min-width: 2400px) { .login-zoom { zoom: 1.5; } }
