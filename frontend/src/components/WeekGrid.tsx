@@ -96,7 +96,7 @@ function WeekGrid({
 
             <div className="mt-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-auto" style={maxHeight ? { maxHeight } : undefined}>
                 <div className="min-w-[700px] grid grid-cols-[60px_repeat(7,1fr)] items-start">
-                    <div className={`border-b border-slate-200 bg-slate-50 ${maxHeight ? "sticky top-0 z-20" : ""}`} />
+                    <div className={`self-stretch border-b border-slate-200 bg-slate-50 ${maxHeight ? "sticky top-0 z-20" : ""}`} />
                     {dayLabels.map((label, dayIndex) => (
                         <div
                             key={label}
