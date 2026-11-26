@@ -6,7 +6,7 @@ import { studentLinks } from "../constants/navLinks";
 import { useLessons } from "../hooks/useLessons";
 import { apiFetch } from "../utils/api";
 import { formatMoney } from "../utils/money";
-import { dayFullNames, formatShortDateString, formatTimeOfDay } from "../utils/time";
+import { dayLabels, formatTimeOfDay } from "../utils/time";
 import type { Debt } from "../types/payment";
 import type { Material } from "../types/material";
 
@@ -19,6 +19,12 @@ function pickNextLesson<T extends { date: string; startTime: string; endTime: st
     .filter(({ start }) => start >= now)
     .sort((a, b) => a.start - b.start);
   return upcoming.length > 0 ? upcoming[0].lesson : null;
+}
+
+/* "2026-11-27" -> "יום ו׳, 27 בנובמבר" */
+function longLessonDate(date: string): string {
+  const d = new Date(`${date}T00:00:00`);
+  return `יום ${dayLabels[d.getDay()]}, ${d.toLocaleDateString("he-IL", { day: "numeric", month: "long" })}`;
 }
 
 const card = "rounded-[18px] border border-slate-200 bg-white shadow-sm";
@@ -43,7 +49,6 @@ function StudentDashboard() {
   const { lessons } = useLessons("STUDENT");
   const next = pickNextLesson(lessons);
   const nextDayLabel = next ? relativeDayLabel(next.date) : null;
-  const upcomingCount = lessons.filter((l) => l.status === "SCHEDULED" && new Date(`${l.date}T${l.startTime}`).getTime() >= Date.now()).length;
 
   /* Side data loads independently; any card whose request fails just stays hidden */
   const [firstName, setFirstName] = useState("");
@@ -95,9 +100,7 @@ function StudentDashboard() {
                     <span className="text-[32px] font-extrabold leading-tight tracking-tight">{next.subjectName}</span>
                   </div>
                   <div className="flex flex-col gap-0.5 text-[18px] text-[#e0e7ff]">
-                    <span>
-                      {dayFullNames[new Date(`${next.date}T00:00:00`).getDay()]}, {formatShortDateString(next.date)}
-                    </span>
+                    <span>{longLessonDate(next.date)}</span>
                     <span dir="ltr" className="text-start font-semibold">{formatTimeOfDay(next.startTime)}&ndash;{formatTimeOfDay(next.endTime)}</span>
                   </div>
                 </>
@@ -134,11 +137,6 @@ function StudentDashboard() {
               </section>
             )}
 
-            <section className={`${card} flex items-baseline justify-center gap-3 px-6 py-4`}>
-              <span className="text-[28px] font-extrabold text-slate-900">{upcomingCount}</span>
-              <span className="text-sm text-slate-500">שיעורים קרובים</span>
-            </section>
-
             {latestMaterials.length > 0 && (
               <section className={`${card} px-[22px] pb-3 pt-5`}>
                 <h3 className="text-lg font-extrabold text-slate-900">חומרי לימוד אחרונים</h3>
@@ -151,7 +149,12 @@ function StudentDashboard() {
                           <path d="M14 3v5h5M9 13h6M9 17h6" />
                         </svg>
                       </span>
-                      <span className="truncate text-[15px] font-semibold text-slate-900">{material.title}</span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-[15px] font-semibold text-slate-900">{material.title}</span>
+                        <span className="block text-[13px] text-slate-500">
+                          הועלה {new Date(material.uploadedAt).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
+                        </span>
+                      </span>
                     </li>
                   ))}
                 </ul>

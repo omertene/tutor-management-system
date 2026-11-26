@@ -252,7 +252,7 @@ function StudentScheduleGrid() {
                                     onMouseEnter={() => handleCellMouseEnter(dayIndex, hour)}
                                     title={isTooSoon ? tooSoonMessage : undefined}
                                     style={{ height: `${ROW_HEIGHT}px`, boxSizing: "border-box" }}
-                                    className={`group flex w-full items-center justify-center border-b border-slate-100 bg-white px-1.5 py-1 select-none ${
+                                    className={`group flex w-full items-center justify-center border-b border-slate-100 ${new Date(weekDates[dayIndex]).setHours(hour + 1, 0, 0, 0) <= now.getTime() ? "bg-slate-100/80" : "bg-white"} px-1.5 py-1 select-none ${
                                         isClickable ? "cursor-pointer" : isTooSoon ? "cursor-help" : "cursor-default"
                                     }`}
                                 >
