@@ -223,7 +223,7 @@ function StudentScheduleGrid() {
                     לא זמין
                 </span>
                 <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-3 w-5 rounded border border-slate-200 bg-slate-100" />
+                    <span className="inline-block h-3 w-5 rounded border border-slate-200 bg-slate-50" />
                     עבר
                 </span>
             </div>
@@ -281,7 +281,7 @@ function StudentScheduleGrid() {
                                         </span>
                                     ) : !underOwnLesson ? (
                                         <span
-                                            className={`h-full w-full rounded-lg border border-slate-200 ${isPastHour ? "bg-slate-100" : ""}`}
+                                            className={`h-full w-full rounded-lg border border-slate-200 ${isPastHour ? "bg-slate-50" : ""}`}
                                             style={isPastHour ? undefined : hatchStyle}
                                         />
                                     ) : null}
@@ -294,7 +294,7 @@ function StudentScheduleGrid() {
                         {getBusySlotsForDay(dayIndex).map(({ item: slot, top, height }, index) => (
                             <div
                                 key={`busy-${slot.date}-${slot.startTime}-${index}`}
-                                className={`absolute block left-0 right-0 m-0 rounded-lg border border-slate-200 ${new Date(`${slot.date}T${slot.endTime}`) <= now ? "bg-slate-100" : ""}`}
+                                className={`absolute block left-0 right-0 m-0 rounded-lg border border-slate-200 ${new Date(`${slot.date}T${slot.endTime}`) <= now ? "bg-slate-50" : ""}`}
                                 style={{ top: `${top + 3}px`, height: `${height - 6}px`, ...(new Date(`${slot.date}T${slot.endTime}`) <= now ? {} : hatchStyle) }}
                             />
                         ))}
