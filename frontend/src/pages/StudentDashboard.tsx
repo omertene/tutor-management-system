@@ -141,10 +141,7 @@ function StudentDashboard() {
                 {Number(debt.debt) > 0 ? (
                   <span className="text-[34px] font-extrabold tracking-tight text-amber-700">{formatMoney(debt.debt)}</span>
                 ) : (
-                  <>
-                    <span className="text-[34px] font-extrabold tracking-tight text-emerald-600">{formatMoney(0)}</span>
-                    <span className="text-sm font-semibold text-emerald-700">אין מה לשלם כרגע</span>
-                  </>
+                  <span className="text-[34px] font-extrabold tracking-tight text-emerald-600">{formatMoney(0)}</span>
                 )}
                 <Link to="/student/payments" className="mt-1 text-[15px] font-bold text-[#27377d] hover:underline">
                   היסטוריית תשלומים &larr;
