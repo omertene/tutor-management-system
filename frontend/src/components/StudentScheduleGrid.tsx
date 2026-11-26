@@ -54,7 +54,7 @@ function StudentScheduleGrid() {
     const todayDayIndex = weekDates.findIndex((date) => toDateString(date) === toDateString(now));
 
     /* On a phone the week is too wide, so it shows one day at a time with a day picker */
-    const isPhone = useMediaQuery("(max-width: 767px)");
+    const isPhone = useMediaQuery("(max-width: 639px)");
     const [pickedDay, setPickedDay] = useState<number | null>(null);
     const phoneDay = pickedDay ?? (todayDayIndex !== -1 ? todayDayIndex : 0);
     const nowMinutes = minutesSinceMidnight(now);
