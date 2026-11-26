@@ -180,7 +180,7 @@ function StudentDashboard() {
                     </Link>
                   </>
                 ) : (
-                  <p className="mb-2 mt-2 text-[15px] text-slate-500">עדיין אין חומרי לימוד.</p>
+                  <p className="mb-2 mt-2 text-[15px] text-slate-500">עדיין לא הועלו חומרי לימוד.</p>
                 )}
               </section>
             )}
