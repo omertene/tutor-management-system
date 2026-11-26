@@ -111,7 +111,7 @@ export default function StudentBookLessonModal({
 
                 <button
                     onClick={handleBook}
-                    className="w-full mt-2 rounded-lg bg-indigo-600 text-white text-sm font-medium py-2.5 hover:bg-indigo-700 transition-colors"
+                    className="w-full mt-2 rounded-lg bg-[#1e2a66] text-white text-sm font-medium py-2.5 hover:bg-[#18214f] transition-colors"
                 >
                     קביעת שיעור
                 </button>

@@ -12,7 +12,8 @@ export const teacherLinks: NavLink[] = [
 ];
 
 export const studentLinks: NavLink[] = [
+    { label: "בית", to: "/student" },
     { label: "שיעורים", to: "/student/lessons" },
-    { label: "תשלומים", to: "/student/payments" },
     { label: "חומרי לימוד", to: "/student/materials" },
+    { label: "תשלומים", to: "/student/payments" },
 ];
