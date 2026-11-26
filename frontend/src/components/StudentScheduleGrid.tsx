@@ -241,6 +241,7 @@ function StudentScheduleGrid() {
                 showNowLine={showNowLine}
                 nowLineTop={nowLineTop}
                 nowLineScope="day"
+                variant="cards"
                 hours={hours}
                 renderDayColumn={(dayIndex) => (
                     <>
@@ -269,7 +270,7 @@ function StudentScheduleGrid() {
                                     onMouseEnter={() => handleCellMouseEnter(dayIndex, hour)}
                                     title={isTooSoon ? tooSoonMessage : undefined}
                                     style={{ height: `${ROW_HEIGHT}px`, boxSizing: "border-box" }}
-                                    className={`group flex w-full items-center justify-center bg-white px-1.5 py-[3px] select-none ${
+                                    className={`group flex w-full items-center justify-center bg-white px-0 py-[3px] select-none ${
                                         isClickable ? "cursor-pointer" : isTooSoon ? "cursor-help" : "cursor-default"
                                     }`}
                                 >
@@ -293,7 +294,7 @@ function StudentScheduleGrid() {
                         {getBusySlotsForDay(dayIndex).map(({ item: slot, top, height }, index) => (
                             <div
                                 key={`busy-${slot.date}-${slot.startTime}-${index}`}
-                                className={`absolute block left-1.5 right-1.5 m-0 rounded-lg border border-slate-200 ${new Date(`${slot.date}T${slot.endTime}`) <= now ? "bg-slate-100" : ""}`}
+                                className={`absolute block left-0 right-0 m-0 rounded-lg border border-slate-200 ${new Date(`${slot.date}T${slot.endTime}`) <= now ? "bg-slate-100" : ""}`}
                                 style={{ top: `${top + 3}px`, height: `${height - 6}px`, ...(new Date(`${slot.date}T${slot.endTime}`) <= now ? {} : hatchStyle) }}
                             />
                         ))}
@@ -302,8 +303,8 @@ function StudentScheduleGrid() {
                             <button
                                 key={`lesson-${lesson.id}`}
                                 onClick={() => setViewingLesson(lesson)}
-                                className={`absolute block left-0.5 right-0.5 m-0 px-1.5 py-1 text-xs text-start leading-tight overflow-hidden rounded-lg shadow-sm transition-colors ${lessonBlockStyles[lesson.status] ?? lessonBlockStyles.SCHEDULED}`}
-                                style={{ top: `${top}px`, height: `${height}px` }}
+                                className={`absolute block left-0 right-0 m-0 px-1.5 py-1 text-xs text-start leading-tight overflow-hidden rounded-lg shadow-sm transition-colors ${lessonBlockStyles[lesson.status] ?? lessonBlockStyles.SCHEDULED}`}
+                                style={{ top: `${top + 3}px`, height: `${height - 6}px` }}
                                 title={lesson.subjectName}
                             >
                                 <span className="block truncate font-semibold">{lesson.subjectName}</span>

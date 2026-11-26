@@ -19,6 +19,8 @@ type WeekGridProps = {
     nowLineScope?: "day" | "week";
     /* CSS max-height for the grid card; when set the card scrolls inside itself and keeps the day header pinned */
     maxHeight?: string;
+    /* "cards": every cell is its own rounded block with gaps (no table lines) - used by the student view */
+    variant?: "table" | "cards";
     hours: number[];
     /* Each grid's own cell/override/lesson rendering stays owned by the caller -
        teacher and student grids differ too much to share safely (drag-select vs
@@ -44,9 +46,11 @@ function WeekGrid({
     nowLineTop,
     nowLineScope = "week",
     maxHeight,
+    variant = "table",
     hours,
     renderDayColumn,
 }: WeekGridProps) {
+    const cards = variant === "cards";
     return (
         <>
             <div className="flex items-center justify-between">
@@ -94,17 +98,17 @@ function WeekGrid({
                 )}
             </div>
 
-            <div className="mt-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-auto" style={maxHeight ? { maxHeight } : undefined}>
-                <div className="min-w-[700px] grid grid-cols-[60px_repeat(7,1fr)] items-start">
-                    <div className={`self-stretch border-b border-e border-slate-200 bg-slate-50 ${maxHeight ? "sticky top-0 z-20" : ""}`} />
+            <div className={`mt-2 bg-white border border-slate-200 shadow-sm overflow-auto ${cards ? "rounded-2xl p-4" : "rounded-xl"}`} style={maxHeight ? { maxHeight } : undefined}>
+                <div className={`min-w-[700px] grid grid-cols-[60px_repeat(7,1fr)] items-start ${cards ? "gap-x-2" : ""}`}>
+                    <div className={`self-stretch ${cards ? "" : "border-b border-e border-slate-200 bg-slate-50"} ${maxHeight ? "sticky top-0 z-20" : ""}`} />
                     {dayLabels.map((label, dayIndex) => (
                         <div
                             key={label}
-                            className={`border-b border-e border-slate-200 bg-slate-50 px-2 py-2.5 text-center ${maxHeight ? "sticky top-0 z-20" : ""}`}
+                            className={`px-2 text-center ${cards ? `mb-2 rounded-xl py-2 ${dayIndex === todayDayIndex ? "bg-[#1e2a66]" : ""}` : "border-b border-e border-slate-200 bg-slate-50 py-2.5"} ${maxHeight ? "sticky top-0 z-20" : ""}`}
                         >
-                            <p className={`text-xs font-medium ${dayIndex === todayDayIndex ? "text-[#27377d]" : "text-slate-500"}`}>{label}</p>
+                            <p className={`text-xs font-medium ${dayIndex === todayDayIndex ? (cards ? "text-[#c7d2fe]" : "text-[#27377d]") : "text-slate-500"}`}>{label}</p>
                             <p className="mt-0.5">
-                                <span className={`inline-block rounded-full px-2.5 py-0.5 text-sm font-semibold ${dayIndex === todayDayIndex ? "bg-[#1e2a66] text-white" : "text-slate-900"}`}>{formatShortDate(weekDates[dayIndex])}</span>
+                                <span className={`inline-block rounded-full px-2.5 py-0.5 text-sm font-semibold ${dayIndex === todayDayIndex ? (cards ? "text-white" : "bg-[#1e2a66] text-white") : "text-slate-900"}`}>{formatShortDate(weekDates[dayIndex])}</span>
                             </p>
                         </div>
                     ))}
@@ -120,7 +124,7 @@ function WeekGrid({
                         {hours.map((hour, index) => (
                             <div
                                 key={hour}
-                                style={{ top: `${index * ROW_HEIGHT}px` }}
+                                style={{ top: `${index * ROW_HEIGHT + (cards ? ROW_HEIGHT / 2 : 0)}px` }}
                                 className="absolute inset-x-0 -translate-y-1/2 text-center text-xs text-slate-400"
                             >
                                 {String(hour).padStart(2, "0")}:00
@@ -129,7 +133,7 @@ function WeekGrid({
                     </div>
 
                     {dayLabels.map((_, dayIndex) => (
-                        <div key={dayIndex} style={{ gridColumnStart: dayIndex + 2, gridRowStart: 2 }} className={`relative border-e border-slate-200 ${dayIndex === todayDayIndex ? "ring-1 ring-inset ring-[#c7cde6]" : ""}`}>
+                        <div key={dayIndex} style={{ gridColumnStart: dayIndex + 2, gridRowStart: 2 }} className={cards ? "relative" : `relative border-e border-slate-200 ${dayIndex === todayDayIndex ? "ring-1 ring-inset ring-[#c7cde6]" : ""}`}>
                             {renderDayColumn(dayIndex)}
 
                         </div>
