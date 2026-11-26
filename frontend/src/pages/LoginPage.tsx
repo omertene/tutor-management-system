@@ -2,18 +2,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { API_BASE_URL, readErrorMessage } from "../utils/api";
+import { CONTACT_PHONE, whatsappDigits } from "../utils/contact";
 import type { LoginResponse } from "../types";
-
-/* Optional contact block under the form. Set VITE_CONTACT_PHONE (in frontend/.env.local
-   for local dev) to show it; when it is not set the block is hidden, so no phone number
-   has to live in the code or in git. */
-const CONTACT_PHONE: string | undefined = import.meta.env.VITE_CONTACT_PHONE || undefined;
-
-/* wa.me links want international digits only: an Israeli 05X number becomes 9725X... */
-function whatsappDigits(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  return digits.startsWith("0") ? "972" + digits.slice(1) : digits;
-}
 
 /* The login screen - one form for both roles, redirects to the right
    dashboard based on the role the backend returns */

@@ -19,8 +19,8 @@ import type { StudentLesson } from "../types/schedule";
 /* Scheduled and completed lessons look identical to the student - no need to
    tell them apart at a glance here like the teacher's schedule does */
 const lessonBlockStyles: Record<string, string> = {
-    SCHEDULED: "bg-indigo-600 hover:bg-indigo-700 text-white",
-    COMPLETED: "bg-indigo-400 hover:bg-indigo-500 text-white",
+    SCHEDULED: "bg-[#1e2a66] hover:bg-[#18214f] text-white",
+    COMPLETED: "bg-[#5a67a8] hover:bg-[#4a5698] text-white",
 };
 
 /* Shown for a slot that's otherwise open but falls inside the minimum booking
@@ -211,7 +211,7 @@ function StudentScheduleGrid() {
                     פנוי לקביעה (אפשר לגרור כמה שעות)
                 </span>
                 <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-3 w-3 rounded bg-indigo-600" />
+                    <span className="inline-block h-3 w-3 rounded bg-[#1e2a66]" />
                     השיעור שלי
                 </span>
             </div>

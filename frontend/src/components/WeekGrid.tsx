@@ -61,7 +61,7 @@ function WeekGrid({
                     {onCurrentWeek && !isCurrentWeek && (
                         <button
                             onClick={onCurrentWeek}
-                            className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
+                            className="rounded-full bg-[#eef1f8] px-3 py-1 text-xs font-semibold text-[#1e2a66] hover:bg-[#dfe4f2] transition-colors"
                         >
                             חזרה להיום
                         </button>
@@ -79,7 +79,7 @@ function WeekGrid({
                 {hourStart > MIN_HOUR ? (
                     <button
                         onClick={() => onHourStartChange((current) => Math.max(MIN_HOUR, current - 2))}
-                        className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                        className="text-sm text-[#27377d] hover:text-[#18214f] font-medium"
                     >
                         &uarr; הצגת שעות מוקדמות
                     </button>
@@ -102,9 +102,9 @@ function WeekGrid({
                             key={label}
                             className={`border-b border-e border-slate-200 bg-slate-50 px-2 py-2.5 text-center ${maxHeight ? "sticky top-0 z-20" : ""}`}
                         >
-                            <p className={`text-xs font-medium ${dayIndex === todayDayIndex ? "text-indigo-500" : "text-slate-500"}`}>{label}</p>
+                            <p className={`text-xs font-medium ${dayIndex === todayDayIndex ? "text-[#27377d]" : "text-slate-500"}`}>{label}</p>
                             <p className="mt-0.5">
-                                <span className={`inline-block rounded-full px-2.5 py-0.5 text-sm font-semibold ${dayIndex === todayDayIndex ? "bg-indigo-600 text-white" : "text-slate-900"}`}>{formatShortDate(weekDates[dayIndex])}</span>
+                                <span className={`inline-block rounded-full px-2.5 py-0.5 text-sm font-semibold ${dayIndex === todayDayIndex ? "bg-[#1e2a66] text-white" : "text-slate-900"}`}>{formatShortDate(weekDates[dayIndex])}</span>
                             </p>
                         </div>
                     ))}
@@ -129,7 +129,7 @@ function WeekGrid({
                     </div>
 
                     {dayLabels.map((_, dayIndex) => (
-                        <div key={dayIndex} style={{ gridColumnStart: dayIndex + 2, gridRowStart: 2 }} className={`relative border-e border-slate-200 ${dayIndex === todayDayIndex ? "ring-1 ring-inset ring-indigo-200" : ""}`}>
+                        <div key={dayIndex} style={{ gridColumnStart: dayIndex + 2, gridRowStart: 2 }} className={`relative border-e border-slate-200 ${dayIndex === todayDayIndex ? "ring-1 ring-inset ring-[#c7cde6]" : ""}`}>
                             {renderDayColumn(dayIndex)}
 
                         </div>
@@ -156,7 +156,7 @@ function WeekGrid({
             {hourEnd < MAX_HOUR && (
                 <button
                     onClick={() => onHourEndChange((current) => Math.min(MAX_HOUR, current + 2))}
-                    className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                    className="mt-2 text-sm text-[#27377d] hover:text-[#18214f] font-medium"
                 >
                     &darr; הצגת שעות מאוחרות
                 </button>
