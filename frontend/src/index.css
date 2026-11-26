@@ -104,3 +104,8 @@ code {
 @media (min-width: 1500px) { .login-zoom { zoom: 1.12; } }
 @media (min-width: 1900px) { .login-zoom { zoom: 1.25; } }
 @media (min-width: 2400px) { .login-zoom { zoom: 1.5; } }
+
+/* room for the fixed bottom tab bar on phones */
+@media (max-width: 767px) {
+  body.has-bottom-nav { padding-bottom: 64px; }
+}

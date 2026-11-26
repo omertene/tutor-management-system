@@ -76,15 +76,15 @@ function StudentDashboard() {
     <div className="min-h-screen bg-slate-50">
       <NavBar homePath="/student" links={studentLinks} />
 
-      <main className="mx-auto max-w-[1600px] px-6 pt-4 pb-3">
-        <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-slate-900">
+      <main className="mx-auto max-w-[1600px] px-3 pt-3 pb-3 sm:px-6 sm:pt-4">
+        <h1 className="mb-2 text-2xl font-extrabold sm:mb-3 sm:text-3xl tracking-tight text-slate-900">
           {firstName ? `היי ${firstName}!` : "ברוכים השבים!"}
         </h1>
 
-        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex flex-col gap-3 lg:grid lg:items-start lg:gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
           {/* main column: next lesson strip + the booking calendar */}
-          <div className="min-w-0 space-y-4">
-            <section className="flex flex-wrap items-center justify-between gap-x-8 gap-y-2 rounded-[18px] bg-[linear-gradient(160deg,#18214f_0%,#1e2a66_55%,#27377d_100%)] px-7 py-4 text-white">
+          <div className="contents lg:block lg:min-w-0 lg:space-y-4">
+            <section className="order-1 flex flex-wrap items-center justify-between gap-x-8 gap-y-2 rounded-[18px] bg-[linear-gradient(160deg,#18214f_0%,#1e2a66_55%,#27377d_100%)] px-5 py-4 text-white sm:px-7">
               {next ? (
                 <>
                   <div className="flex flex-col gap-1">
@@ -97,7 +97,7 @@ function StudentDashboard() {
                         </span>
                       )}
                     </span>
-                    <span className="text-[32px] font-extrabold leading-tight tracking-tight">{next.subjectName}</span>
+                    <span className="text-[26px] font-extrabold leading-tight sm:text-[32px] tracking-tight">{next.subjectName}</span>
                     <div className="mt-1 flex flex-wrap items-center gap-x-5 gap-y-1 text-[18px] text-[#e0e7ff]">
                       <span className="flex items-center gap-2">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c7d2fe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -130,13 +130,15 @@ function StudentDashboard() {
               )}
             </section>
 
-            <StudentScheduleGrid />
+            <div className="order-3 min-w-0">
+              <StudentScheduleGrid />
+            </div>
           </div>
 
           {/* side column: balance, count, latest materials */}
-          <aside className="space-y-4">
+          <aside className="contents lg:block lg:space-y-4">
             {debt && (
-              <section className={`${card} flex flex-col gap-1.5 px-6 py-5`}>
+              <section className={`${card} order-2 flex flex-col gap-1.5 px-6 py-4 lg:py-5`}>
                 <span className="text-sm font-semibold text-slate-500">יתרה לתשלום</span>
                 {Number(debt.debt) > 0 ? (
                   <span className="text-[34px] font-extrabold tracking-tight text-amber-700">{formatMoney(debt.debt)}</span>
@@ -150,7 +152,7 @@ function StudentDashboard() {
             )}
 
             {materials !== null && (
-              <section className={`${card} px-[22px] pb-3 pt-5`}>
+              <section className={`${card} order-4 px-[22px] pb-3 pt-5`}>
                 <h3 className="text-lg font-extrabold text-slate-900">חומרי לימוד אחרונים</h3>
                 {latestMaterials.length > 0 ? (
                   <>

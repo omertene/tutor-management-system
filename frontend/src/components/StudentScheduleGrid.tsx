@@ -3,8 +3,9 @@ import WeekGrid from "./WeekGrid";
 import StudentBookLessonModal, { STUDENT_MIN_BOOKING_NOTICE_HOURS } from "./schedule/StudentBookLessonModal";
 import StudentLessonModal from "./schedule/StudentLessonModal";
 import { useDragSelect } from "../hooks/useDragSelect";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useStudentSchedule } from "../hooks/useStudentSchedule";
-import { ROW_HEIGHT, minutesSinceMidnight, toDateString } from "../utils/time";
+import { ROW_HEIGHT, dayLabels, minutesSinceMidnight, toDateString } from "../utils/time";
 import {
     dayDateString,
     firstAvailableQuarterRun,
@@ -51,6 +52,11 @@ function StudentScheduleGrid() {
     const [viewingLesson, setViewingLesson] = useState<StudentLesson | null>(null);
 
     const todayDayIndex = weekDates.findIndex((date) => toDateString(date) === toDateString(now));
+
+    /* On a phone the week is too wide, so it shows one day at a time with a day picker */
+    const isPhone = useMediaQuery("(max-width: 767px)");
+    const [pickedDay, setPickedDay] = useState<number | null>(null);
+    const phoneDay = pickedDay ?? (todayDayIndex !== -1 ? todayDayIndex : 0);
     const nowMinutes = minutesSinceMidnight(now);
     const nowLineTop = ((nowMinutes - hourStart * 60) / 60) * ROW_HEIGHT;
     const showNowLine = todayDayIndex !== -1 && nowMinutes >= hourStart * 60 && nowMinutes <= hourEnd * 60;
@@ -238,6 +244,29 @@ function StudentScheduleGrid() {
                 nowLineTop={nowLineTop}
                 nowLineScope="day"
                 variant="cards"
+                visibleDays={isPhone ? [phoneDay] : undefined}
+                dayStrip={isPhone ? (
+                    <div className="grid grid-cols-7 gap-1.5">
+                        {weekDates.map((date, index) => (
+                            <button
+                                key={index}
+                                type="button"
+                                onClick={() => setPickedDay(index)}
+                                aria-pressed={index === phoneDay}
+                                className={`flex flex-col items-center rounded-xl py-1.5 text-xs font-semibold transition-colors ${
+                                    index === phoneDay
+                                        ? "bg-[#1e2a66] text-white"
+                                        : index === todayDayIndex
+                                            ? "border border-[#1e2a66] text-[#1e2a66]"
+                                            : "border border-slate-200 bg-white text-slate-600"
+                                }`}
+                            >
+                                <span>{dayLabels[index]}</span>
+                                <span className="text-sm">{date.getDate()}</span>
+                            </button>
+                        ))}
+                    </div>
+                ) : undefined}
                 hours={hours}
                 renderDayColumn={(dayIndex) => (
                     <>
