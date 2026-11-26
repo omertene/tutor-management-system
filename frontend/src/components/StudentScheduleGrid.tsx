@@ -256,6 +256,10 @@ function StudentScheduleGrid() {
                             const isTooSoon = !isCovered && !isPast && availableRun !== null && isCellTooSoonToBook(dayIndex, hour, runStartTime);
                             const isClickable = runStartTime !== undefined && bookableStart(dayIndex, hour) !== null;
                             const isPastHour = new Date(weekDates[dayIndex]).setHours(hour + 1, 0, 0, 0) <= now.getTime();
+                            const cellTop = (hour - hourStart) * ROW_HEIGHT;
+                            const underOwnLesson = getLessonsForDay(dayIndex).some(
+                                ({ top, height }) => top < cellTop + ROW_HEIGHT && top + height > cellTop
+                            );
 
                             return (
                                 <button
@@ -264,17 +268,22 @@ function StudentScheduleGrid() {
                                     onMouseDown={() => handleCellMouseDown(dayIndex, hour)}
                                     onMouseEnter={() => handleCellMouseEnter(dayIndex, hour)}
                                     title={isTooSoon ? tooSoonMessage : undefined}
-                                    style={{ height: `${ROW_HEIGHT}px`, boxSizing: "border-box", ...(!isClickable && !isPastHour ? hatchStyle : {}) }}
-                                    className={`group flex w-full items-center justify-center border-b border-slate-100 ${isClickable ? "bg-white" : isPastHour ? "bg-slate-100" : ""} px-1.5 py-1 select-none ${
+                                    style={{ height: `${ROW_HEIGHT}px`, boxSizing: "border-box" }}
+                                    className={`group flex w-full items-center justify-center bg-white px-1.5 py-[3px] select-none ${
                                         isClickable ? "cursor-pointer" : isTooSoon ? "cursor-help" : "cursor-default"
                                     }`}
                                 >
-                                    {isClickable && runStartTime && (
+                                    {isClickable && runStartTime ? (
                                         <span className={`flex h-full w-full items-center justify-center gap-1 rounded-lg border text-xs font-semibold transition-colors ${isCellInDragSelection(dayIndex, hour) ? "border-emerald-600 bg-emerald-200 text-emerald-900" : "border-emerald-300 bg-emerald-50 text-emerald-800 group-hover:border-emerald-500 group-hover:bg-emerald-100"}`}>
                                             <span dir="ltr">{runStartTime}</span>
                                             <span aria-hidden="true">+</span>
                                         </span>
-                                    )}
+                                    ) : !underOwnLesson ? (
+                                        <span
+                                            className={`h-full w-full rounded-lg border border-slate-200 ${isPastHour ? "bg-slate-100" : ""}`}
+                                            style={isPastHour ? undefined : hatchStyle}
+                                        />
+                                    ) : null}
                                 </button>
                             );
                         })}
@@ -284,8 +293,8 @@ function StudentScheduleGrid() {
                         {getBusySlotsForDay(dayIndex).map(({ item: slot, top, height }, index) => (
                             <div
                                 key={`busy-${slot.date}-${slot.startTime}-${index}`}
-                                className={`absolute block left-0 right-0 m-0 ${new Date(`${slot.date}T${slot.endTime}`) <= now ? "bg-slate-100" : ""}`}
-                                style={{ top: `${top}px`, height: `${height}px`, ...(new Date(`${slot.date}T${slot.endTime}`) <= now ? {} : hatchStyle) }}
+                                className={`absolute block left-1.5 right-1.5 m-0 rounded-lg border border-slate-200 ${new Date(`${slot.date}T${slot.endTime}`) <= now ? "bg-slate-100" : ""}`}
+                                style={{ top: `${top + 3}px`, height: `${height - 6}px`, ...(new Date(`${slot.date}T${slot.endTime}`) <= now ? {} : hatchStyle) }}
                             />
                         ))}
 
