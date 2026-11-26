@@ -208,6 +208,39 @@ function StudentScheduleGrid() {
         if (cancelled) setViewingLesson(null);
     }
 
+    /* Phone view: one row per hour of the picked day that is bookable, already booked, or one of my lessons.
+       Hours outside the teacher's availability and hours already past are left out to keep the list short. */
+    function phoneRows(dayIndex: number) {
+        const dateStr = dayDateString(weekDates, dayIndex);
+        const rows: { key: string; hour: number; kind: "free" | "own" | "busy"; label: string; lesson?: StudentLesson }[] = [];
+        const seenLessons = new Set<number>();
+        for (let hour = 0; hour < 24; hour++) {
+            const start = bookableStart(dayIndex, hour);
+            if (start !== null) {
+                rows.push({ key: `f${hour}`, hour, kind: "free", label: start });
+                continue;
+            }
+            const ownLesson = lessons.find((lesson) => lesson.date === dateStr && overlaps(lesson, hour * 60, hour * 60 + 60));
+            if (ownLesson) {
+                if (!seenLessons.has(ownLesson.id)) {
+                    seenLessons.add(ownLesson.id);
+                    rows.push({ key: `l${ownLesson.id}`, hour, kind: "own", label: ownLesson.startTime.slice(0, 5), lesson: ownLesson });
+                }
+                continue;
+            }
+            const covered = isCellCoveredByOverrideOrLesson(dayIndex, hour);
+            const hasRule = firstAvailableQuarterRun(quartersForCell(dayIndex, hour)) !== null;
+            if (hasRule && covered && !isCellInThePast(dayIndex, hour)) {
+                rows.push({ key: `b${hour}`, hour, kind: "busy", label: hourToTime(hour) });
+            }
+        }
+        return rows;
+    }
+
+    const phoneList = isPhone ? phoneRows(phoneDay) : [];
+
+    const phoneWeekLabel = `${weekDates[0].getDate()}.${weekDates[0].getMonth() + 1} – ${weekDates[6].getDate()}.${weekDates[6].getMonth() + 1}`;
+
     return (
         <>
 
@@ -215,7 +248,7 @@ function StudentScheduleGrid() {
             {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
             <div className="mt-4">
-            <div className="mb-3 flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-600">
+            {!isPhone && <div className="mb-3 flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-600">
                 <span className="flex items-center gap-1.5">
                     <span className="inline-block h-3 w-5 rounded border border-emerald-300 bg-emerald-50" />
                     פנוי לקביעה (אפשר לגרור כמה שעות)
@@ -228,24 +261,19 @@ function StudentScheduleGrid() {
                     <span className="inline-block h-3.5 w-6 rounded border border-slate-400" style={{ backgroundImage: "repeating-linear-gradient(135deg,#cbd5e1,#cbd5e1 2px,#f1f5f9 2px,#f1f5f9 5px)" }} />
                     לא זמין
                 </span>
-            </div>
-            <WeekGrid
-                weekDates={weekDates}
-                hourStart={hourStart}
-                hourEnd={hourEnd}
-                onHourStartChange={setHourStart}
-                onHourEndChange={setHourEnd}
-                onPreviousWeek={goToPreviousWeek}
-                onNextWeek={goToNextWeek}
-                onCurrentWeek={goToCurrentWeek}
-                isCurrentWeek={isCurrentWeek}
-                todayDayIndex={todayDayIndex}
-                showNowLine={showNowLine}
-                nowLineTop={nowLineTop}
-                nowLineScope="day"
-                variant="cards"
-                visibleDays={isPhone ? [phoneDay] : undefined}
-                dayStrip={isPhone ? (
+            </div>}
+            {isPhone && (
+                <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                        <button type="button" onClick={goToPreviousWeek} aria-label="שבוע קודם" className="h-9 w-9 rounded-lg border border-slate-200 text-slate-600">&rarr;</button>
+                        <div className="text-center">
+                            <div dir="ltr" className="text-sm font-bold text-slate-800">{phoneWeekLabel}</div>
+                            {!isCurrentWeek && (
+                                <button type="button" onClick={goToCurrentWeek} className="text-xs font-semibold text-[#27377d]">חזרה להיום</button>
+                            )}
+                        </div>
+                        <button type="button" onClick={goToNextWeek} aria-label="שבוע הבא" className="h-9 w-9 rounded-lg border border-slate-200 text-slate-600">&larr;</button>
+                    </div>
                     <div className="grid grid-cols-7 gap-1.5">
                         {weekDates.map((date, index) => (
                             <button
@@ -266,7 +294,56 @@ function StudentScheduleGrid() {
                             </button>
                         ))}
                     </div>
-                ) : undefined}
+                    <p className="mb-2 mt-3 text-xs font-semibold text-slate-500">שעות ביום {dayLabels[phoneDay]}' {weekDates[phoneDay].getDate()}.{weekDates[phoneDay].getMonth() + 1}</p>
+                    {phoneList.length === 0 ? (
+                        <p className="py-4 text-center text-sm text-slate-500">אין שעות פנויות ביום הזה.</p>
+                    ) : (
+                        <div className="grid grid-cols-3 gap-2">
+                            {phoneList.map((row) =>
+                                row.kind === "free" ? (
+                                    <button
+                                        key={row.key}
+                                        type="button"
+                                        onClick={() => openBookingForRange(phoneDay, row.hour, row.hour + 1)}
+                                        className="rounded-xl border border-emerald-300 bg-emerald-50 py-3 text-[15px] font-bold text-emerald-800 active:bg-emerald-100"
+                                    >
+                                        <span dir="ltr">{row.label}</span>
+                                    </button>
+                                ) : row.kind === "own" ? (
+                                    <button
+                                        key={row.key}
+                                        type="button"
+                                        onClick={() => setViewingLesson(row.lesson!)}
+                                        className={`col-span-3 flex items-center justify-between rounded-xl px-4 py-3 text-start text-[15px] font-bold ${lessonBlockStyles[row.lesson!.status] ?? lessonBlockStyles.SCHEDULED}`}
+                                    >
+                                        <span>{row.lesson!.subjectName}</span>
+                                        <span dir="ltr">{row.lesson!.startTime.slice(0, 5)}&ndash;{row.lesson!.endTime.slice(0, 5)}</span>
+                                    </button>
+                                ) : (
+                                    <span key={row.key} dir="ltr" className="rounded-xl border border-slate-200 bg-slate-100 py-3 text-center text-[15px] text-slate-400 line-through">
+                                        {row.label}
+                                    </span>
+                                )
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+            {!isPhone && <WeekGrid
+                weekDates={weekDates}
+                hourStart={hourStart}
+                hourEnd={hourEnd}
+                onHourStartChange={setHourStart}
+                onHourEndChange={setHourEnd}
+                onPreviousWeek={goToPreviousWeek}
+                onNextWeek={goToNextWeek}
+                onCurrentWeek={goToCurrentWeek}
+                isCurrentWeek={isCurrentWeek}
+                todayDayIndex={todayDayIndex}
+                showNowLine={showNowLine}
+                nowLineTop={nowLineTop}
+                nowLineScope="day"
+                variant="cards"
                 hours={hours}
                 renderDayColumn={(dayIndex) => (
                     <>
@@ -340,7 +417,7 @@ function StudentScheduleGrid() {
                         ))}
                     </>
                 )}
-            />
+            />}
             </div>
 
             {bookingSlot && (

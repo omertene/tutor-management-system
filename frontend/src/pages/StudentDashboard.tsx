@@ -138,14 +138,16 @@ function StudentDashboard() {
           {/* side column: balance, count, latest materials */}
           <aside className="contents lg:block lg:space-y-4">
             {debt && (
-              <section className={`${card} order-2 flex flex-col gap-1.5 px-6 py-4 lg:py-5`}>
-                <span className="text-sm font-semibold text-slate-500">יתרה לתשלום</span>
-                {Number(debt.debt) > 0 ? (
-                  <span className="text-[34px] font-extrabold tracking-tight text-amber-700">{formatMoney(debt.debt)}</span>
-                ) : (
-                  <span className="text-[34px] font-extrabold tracking-tight text-emerald-600">{formatMoney(0)}</span>
-                )}
-                <Link to="/student/payments" className="mt-1 text-[15px] font-bold text-[#27377d] hover:underline">
+              <section className={`${card} ${Number(debt.debt) > 0 ? "order-2" : "order-5"} flex flex-row items-center justify-between gap-3 px-4 py-2.5 lg:flex-col lg:items-stretch lg:justify-start lg:gap-1.5 lg:px-6 lg:py-5`}>
+                <div className="flex items-baseline gap-2 lg:flex-col lg:gap-1.5">
+                  <span className="text-sm font-semibold text-slate-500">יתרה לתשלום</span>
+                  {Number(debt.debt) > 0 ? (
+                    <span className="text-xl font-extrabold tracking-tight text-amber-700 lg:text-[34px]">{formatMoney(debt.debt)}</span>
+                  ) : (
+                    <span className="text-xl font-extrabold tracking-tight text-emerald-600 lg:text-[34px]">{formatMoney(0)}</span>
+                  )}
+                </div>
+                <Link to="/student/payments" className="text-sm font-bold text-[#27377d] hover:underline lg:mt-1 lg:text-[15px]">
                   היסטוריית תשלומים &larr;
                 </Link>
               </section>
