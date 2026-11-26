@@ -53,7 +53,7 @@ function StudentDashboard() {
   /* Side data loads independently; any card whose request fails just stays hidden */
   const [firstName, setFirstName] = useState("");
   const [debt, setDebt] = useState<Debt | null>(null);
-  const [materials, setMaterials] = useState<Material[]>([]);
+  const [materials, setMaterials] = useState<Material[] | null>(null);
   useEffect(() => {
     async function load() {
       const [meRes, debtRes, materialsRes] = await Promise.all([
@@ -68,7 +68,7 @@ function StudentDashboard() {
     load();
   }, []);
 
-  const latestMaterials = [...materials]
+  const latestMaterials = [...(materials ?? [])]
     .sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt))
     .slice(0, 3);
 
@@ -141,38 +141,47 @@ function StudentDashboard() {
                 {Number(debt.debt) > 0 ? (
                   <span className="text-[34px] font-extrabold tracking-tight text-amber-700">{formatMoney(debt.debt)}</span>
                 ) : (
-                  <span className="text-2xl font-extrabold text-emerald-600">הכל שולם ✓</span>
+                  <>
+                    <span className="text-[34px] font-extrabold tracking-tight text-emerald-600">{formatMoney(0)}</span>
+                    <span className="text-sm font-semibold text-emerald-700">אין מה לשלם כרגע</span>
+                  </>
                 )}
                 <Link to="/student/payments" className="mt-1 text-[15px] font-bold text-[#27377d] hover:underline">
-                  לתשלומים &larr;
+                  היסטוריית תשלומים &larr;
                 </Link>
               </section>
             )}
 
-            {latestMaterials.length > 0 && (
+            {materials !== null && (
               <section className={`${card} px-[22px] pb-3 pt-5`}>
                 <h3 className="text-lg font-extrabold text-slate-900">חומרי לימוד אחרונים</h3>
-                <ul className="mt-2">
-                  {latestMaterials.map((material) => (
-                    <li key={material.id} className="flex items-center gap-3 border-t border-slate-100 py-2.5">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#eef1f8] text-[#1e2a66]" aria-hidden="true">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-                          <path d="M14 3v5h5M9 13h6M9 17h6" />
-                        </svg>
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate text-[15px] font-semibold text-slate-900">{material.title}</span>
-                        <span className="block text-[13px] text-slate-500">
-                          הועלה {new Date(material.uploadedAt).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
-                        </span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <Link to="/student/materials" className="mb-2 mt-1.5 inline-block text-[15px] font-bold text-[#27377d] hover:underline">
-                  לכל החומרים &larr;
-                </Link>
+                {latestMaterials.length > 0 ? (
+                  <>
+                    <ul className="mt-2">
+                      {latestMaterials.map((material) => (
+                        <li key={material.id} className="flex items-center gap-3 border-t border-slate-100 py-2.5">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#eef1f8] text-[#1e2a66]" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+                              <path d="M14 3v5h5M9 13h6M9 17h6" />
+                            </svg>
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-[15px] font-semibold text-slate-900">{material.title}</span>
+                            <span className="block text-[13px] text-slate-500">
+                              הועלה {new Date(material.uploadedAt).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
+                            </span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link to="/student/materials" className="mb-2 mt-1.5 inline-block text-[15px] font-bold text-[#27377d] hover:underline">
+                      לכל החומרים &larr;
+                    </Link>
+                  </>
+                ) : (
+                  <p className="mb-2 mt-2 text-[15px] text-slate-500">עדיין אין חומרי לימוד.</p>
+                )}
               </section>
             )}
           </aside>
