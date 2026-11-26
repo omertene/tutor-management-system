@@ -219,12 +219,8 @@ function StudentScheduleGrid() {
                     השיעור שלי
                 </span>
                 <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-3 w-5 rounded border border-slate-200" style={hatchStyle} />
+                    <span className="inline-block h-3.5 w-6 rounded border border-slate-400" style={{ backgroundImage: "repeating-linear-gradient(135deg,#cbd5e1,#cbd5e1 2px,#f1f5f9 2px,#f1f5f9 5px)" }} />
                     לא זמין
-                </span>
-                <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-3 w-5 rounded border border-slate-100 bg-[#fbfcfe]" />
-                    עבר
                 </span>
             </div>
             <WeekGrid
