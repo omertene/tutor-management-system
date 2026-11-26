@@ -98,10 +98,22 @@ function StudentDashboard() {
                       )}
                     </span>
                     <span className="text-[32px] font-extrabold leading-tight tracking-tight">{next.subjectName}</span>
-                  </div>
-                  <div className="flex flex-col gap-0.5 text-[18px] text-[#e0e7ff]">
-                    <span>{longLessonDate(next.date)}</span>
-                    <span dir="ltr" className="text-start font-semibold">{formatTimeOfDay(next.startTime)}&ndash;{formatTimeOfDay(next.endTime)}</span>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-5 gap-y-1 text-[18px] text-[#e0e7ff]">
+                      <span className="flex items-center gap-2">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c7d2fe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <rect x="3" y="5" width="18" height="16" rx="3" />
+                          <path d="M3 10h18M8 3v4M16 3v4" />
+                        </svg>
+                        {longLessonDate(next.date)}
+                      </span>
+                      <span dir="ltr" className="flex items-center gap-2 font-semibold">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c7d2fe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="M12 7v5l3 2" />
+                        </svg>
+                        {formatTimeOfDay(next.startTime)}&ndash;{formatTimeOfDay(next.endTime)}
+                      </span>
+                    </div>
                   </div>
                 </>
               ) : (
