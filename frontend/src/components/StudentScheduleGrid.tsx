@@ -209,7 +209,7 @@ function StudentScheduleGrid() {
             {errorMessage && <p className="text-sm text-red-600 mt-3">{errorMessage}</p>}
 
             <div className="mt-4">
-            <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-slate-600">
+            <div className="mb-3 flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-600">
                 <span className="flex items-center gap-1.5">
                     <span className="inline-block h-3 w-5 rounded border border-emerald-300 bg-emerald-50" />
                     פנוי לקביעה (אפשר לגרור כמה שעות)
@@ -223,7 +223,7 @@ function StudentScheduleGrid() {
                     לא זמין
                 </span>
                 <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-3 w-5 rounded border border-slate-200 bg-slate-50" />
+                    <span className="inline-block h-3 w-5 rounded border border-slate-100 bg-[#fbfcfe]" />
                     עבר
                 </span>
             </div>
@@ -281,7 +281,7 @@ function StudentScheduleGrid() {
                                         </span>
                                     ) : !underOwnLesson ? (
                                         <span
-                                            className={`h-full w-full rounded-lg border border-slate-200 ${isPastHour ? "bg-slate-50" : ""}`}
+                                            className={`h-full w-full rounded-lg border ${isPastHour ? "border-slate-100 bg-[#fbfcfe]" : "border-slate-200"}`}
                                             style={isPastHour ? undefined : hatchStyle}
                                         />
                                     ) : null}
@@ -294,7 +294,7 @@ function StudentScheduleGrid() {
                         {getBusySlotsForDay(dayIndex).map(({ item: slot, top, height }, index) => (
                             <div
                                 key={`busy-${slot.date}-${slot.startTime}-${index}`}
-                                className={`absolute block left-0 right-0 m-0 rounded-lg border border-slate-200 ${new Date(`${slot.date}T${slot.endTime}`) <= now ? "bg-slate-50" : ""}`}
+                                className={`absolute block left-0 right-0 m-0 rounded-lg border ${new Date(`${slot.date}T${slot.endTime}`) <= now ? "border-slate-100 bg-[#fbfcfe]" : "border-slate-200"}`}
                                 style={{ top: `${top + 3}px`, height: `${height - 6}px`, ...(new Date(`${slot.date}T${slot.endTime}`) <= now ? {} : hatchStyle) }}
                             />
                         ))}
