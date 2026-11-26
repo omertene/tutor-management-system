@@ -71,8 +71,8 @@ function StudentDashboard() {
     <div className="min-h-screen bg-slate-50">
       <NavBar homePath="/student" links={studentLinks} />
 
-      <main className="mx-auto max-w-[1600px] px-6 py-5">
-        <h1 className="mb-4 text-3xl font-extrabold tracking-tight text-slate-900">
+      <main className="mx-auto max-w-[1600px] px-6 pt-4 pb-3">
+        <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-slate-900">
           {firstName ? `היי ${firstName}!` : "ברוכים השבים!"}
         </h1>
 
