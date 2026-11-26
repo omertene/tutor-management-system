@@ -16,7 +16,7 @@ export const DEFAULT_HOUR_START = 8;
 export const DEFAULT_HOUR_END = 22;
 export const MIN_HOUR = 0;
 export const MAX_HOUR = 24;
-export const ROW_HEIGHT = 48; /* px, must match the h-12 cell height in WeekGrid */
+export const ROW_HEIGHT = 40; /* px per hour in every week grid */
 
 export const HOUR_OPTIONS: string[] = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, "0"));
 export const MINUTE_OPTIONS: string[] = ["00", "15", "30", "45"];
